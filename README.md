@@ -2,6 +2,12 @@
 
 Ponto de partida .NET 8 em camadas para desenvolvedores iniciarem seus próprios projetos com uma fábrica de desenvolvimento para **Codex e Claude Code**. O negócio começa em aberto: primeiro descreva o problema; depois a fábrica ajuda a descobrir requisitos, desenhar a solução, planejar e implementar fases aprovadas.
 
+## Conheça a fábrica
+
+![Mapa mental do IntegraTech: benefícios para desenvolvedores e pessoas com uma ideia, processo de descoberta, planejamento, aprovação e desenvolvimento, com testes, revisão e registros.](docs/imagens/mapa-mental-integratech.png)
+
+[Abrir o mapa mental em tamanho completo](docs/imagens/mapa-mental-integratech.png).
+
 ## Crie seu projeto
 
 Para transformar **sua cópia atual** no projeto real, informe à fábrica o nome e o problema de negócio. Ela pergunta somente o que faltar, personaliza a cópia na mesma pasta e continua no contexto informado. O repositório-modelo canônico é protegido e permanece reutilizável. Consulte [adoção do modelo](docs/inicio/adotar-projeto.md). Abaixo está a alternativa de criar em outra pasta.
