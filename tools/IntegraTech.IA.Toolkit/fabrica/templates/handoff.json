@@ -1,0 +1,6 @@
+{
+  "schema_version": 1, "task_id": "TASK-PENDING", "provider": "codex",
+  "objective": "Preparar a base técnica", "phase": "toolkit", "files": [],
+  "validations": [], "evidence": [], "pending_items": ["Preencher com resultados observados"],
+  "human_gate": "none", "verdict": "blocked", "next_step": "Validar estado atual antes de retomar."
+}

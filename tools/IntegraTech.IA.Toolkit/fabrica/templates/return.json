@@ -1,0 +1,7 @@
+{
+  "schema_version": 1, "task_id": "TASK-PENDING", "status": "blocked",
+  "summary": "Modelo de retorno; preencher com fatos observados.", "work_completed": [],
+  "files_analyzed": [], "files_changed": [], "tests_executed": [], "test_results": [],
+  "evidence": [], "risks_found": [], "pending_items": ["Execução pendente"],
+  "decisions_required": [], "recommended_next_step": "Definir tarefa e executar validações."
+}

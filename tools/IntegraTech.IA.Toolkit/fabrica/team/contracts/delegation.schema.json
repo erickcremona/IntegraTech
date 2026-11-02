@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://integratech.local/contracts/delegation-v1.schema.json",
+  "title": "IntegraTech Agent Delegation v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "task_id", "objective", "business_context", "technical_context",
+    "scope", "out_of_scope", "assigned_agent", "supporting_agents", "required_inputs",
+    "expected_deliverables", "constraints", "file_ownership", "risks", "acceptance_criteria",
+    "validation_commands", "evidence_required", "deadline_or_priority", "human_gate"
+  ],
+  "properties": {
+    "schema_version": { "const": 1 },
+    "task_id": { "type": "string", "minLength": 1 },
+    "objective": { "type": "string", "minLength": 1 },
+    "business_context": { "type": "string" },
+    "technical_context": { "type": "string" },
+    "scope": { "type": "array", "items": { "type": "string" } },
+    "out_of_scope": { "type": "array", "items": { "type": "string" } },
+    "assigned_agent": { "type": "string", "minLength": 1 },
+    "supporting_agents": { "type": "array", "items": { "type": "string" } },
+    "required_inputs": { "type": "array", "items": { "type": "string" } },
+    "expected_deliverables": { "type": "array", "items": { "type": "string" } },
+    "constraints": { "type": "array", "items": { "type": "string" } },
+    "file_ownership": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["read", "write"],
+      "properties": {
+        "read": { "type": "array", "items": { "type": "string" } },
+        "write": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "risks": { "type": "array", "items": { "type": "string" } },
+    "acceptance_criteria": { "type": "array", "items": { "type": "string" } },
+    "validation_commands": { "type": "array", "items": { "type": "string" } },
+    "evidence_required": { "type": "array", "items": { "type": "string" } },
+    "deadline_or_priority": { "type": "string", "minLength": 1 },
+    "human_gate": { "type": "string", "enum": ["none", "required", "pending"] }
+  }
+}

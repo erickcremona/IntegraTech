@@ -1,0 +1,16 @@
+{
+  "schema_version": 1,
+  "task_id": "CONFIABILIDADE-20261102",
+  "review_type": "code",
+  "verdict": "changes_required",
+  "findings": [{
+    "severity": "medium",
+    "title": "Avaliação de protocolo aceita identidade de cenário inválida",
+    "evidence": "A condição output.case_id && output.case_id !== item.id ignora identificadores falsy. A função grade aceitou case_id vazio, null, 0 e false. A verificação de propriedades não validava os tipos.",
+    "path": "tools/IntegraTech.IA.Toolkit/scripts/lib/evaluations.mjs",
+    "line": 26,
+    "impact": "O relatório pode aprovar respostas sem identidade válida do cenário.",
+    "recommendation": "Exigir igualdade de case_id, validar o contrato completo e cobrir identificadores vazios e tipos inválidos."
+  }],
+  "residual_risk": "Revisão nativa independente somente leitura. Nenhuma CLI de IA, API externa ou avaliação com modelo real foi executada. Não comprova comportamento de modelos, autenticação, isolamento efetivo nem CI remoto. Veredito original preservado; correção e regressões documentadas separadamente."
+}

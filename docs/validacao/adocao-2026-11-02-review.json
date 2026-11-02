@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "task_id": "ADOCAO-MODELO-20261102",
+  "review_type": "code",
+  "verdict": "changes_required",
+  "findings": [
+    {
+      "severity": "medium",
+      "title": "Gravação parcial impede a recuperação com backup válido",
+      "evidence": "project-adoption.mjs:108 substitui arquivos diretamente com writeFileSync e flag 'w'. Uma interrupção após truncamento ou escrita parcial deixa conteúdo cujo hash difere de before e after. adoption-recovery.mjs:47 rejeita esse estado antes de restaurar qualquer arquivo. Reprodução: interromper uma substituição depois do truncamento, mantendo o journal e o backup intactos; executar recover.mjs --dry-run resulta em conflito. O teste existente de falha lança antes da escrita, portanto não cobre essa condição.",
+      "path": "tools/IntegraTech.IA.Toolkit/scripts/lib/project-adoption.mjs",
+      "line": 108,
+      "impact": "Uma interrupção durante a adoção pode deixar arquivos controlados truncados e bloquear tanto a restauração automática quanto o utilitário independente, contrariando a recuperação prevista para interrupções.",
+      "recommendation": "Preparar cada conteúdo em arquivo temporário e substituir o destino mediante rename, preservando estados reconhecíveis pela recuperação. Proteger também a atualização do journal contra truncamento e cobrir interrupção ou erro após escrita parcial."
+    }
+  ],
+  "residual_risk": "Revisão nativa independente por leitura dos arquivos, sem alterações no repositório e sem execução de adaptadores CLI de IA. A reprodução descrita deriva do fluxo de escrita e das condições explícitas de recuperação; não foi executada uma interrupção de processo nesta revisão. Execução real dos adaptadores CLI não comprovada."
+}

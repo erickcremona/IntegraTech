@@ -1,0 +1,6 @@
+{
+  "name": "codex", "command": "codex",
+  "required_flags": ["--sandbox", "--output-schema", "--output-last-message", "--ephemeral"],
+  "entrypoint": "AGENTS.md", "skills": ".agents/skills", "agents": ".codex/agents",
+  "review_mode": "read-only; pacote explícito; sem aprovação para ampliar permissões"
+}

@@ -1,0 +1,13 @@
+{
+  "name": "integratech-toolkit",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "test": "node --test --test-isolation=none tools/IntegraTech.IA.Toolkit/tests/*.test.mjs",
+    "toolkit": "node tools/IntegraTech.IA.Toolkit/scripts/toolkit.mjs",
+    "check": "node tools/IntegraTech.IA.Toolkit/scripts/toolkit.mjs validate",
+    "verify": "node tools/IntegraTech.IA.Toolkit/scripts/verify-model.mjs"
+  }
+}

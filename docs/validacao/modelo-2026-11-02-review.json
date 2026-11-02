@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "task_id": "MODELO-REUTILIZAVEL-20261102",
+  "review_type": "code",
+  "verdict": "changes_required",
+  "findings": [
+    {
+      "severity": "medium",
+      "title": "[P2] Evitar colisões entre o nome do produto e tipos usados nos templates",
+      "evidence": "A simulação createProject({name:'Task', target:'C:/IntegraTech-Review-DryRun-Task', dryRun:true}) retornou status planned. presentationFiles('Task','worker') produziu namespace Task.Apresentacao.Worker, retorno Task e chamada Task.Delay. Nesse namespace, Task identifica o namespace raiz do produto e colide com System.Threading.Tasks.Task. Host e Timeout também são nomes aceitos que colidem com referências não qualificadas dos templates. Reprodução: gerar Worker com nome Task e compilar a solução. A aceitação do nome e o conteúdo renderizado foram observados sem escrita; a compilação desse caso não foi executada nesta revisão.",
+      "path": "tools/IntegraTech.IA.Toolkit/scripts/lib/project-generator.mjs",
+      "line": 12,
+      "impact": "Nomes aceitos pelo gerador podem produzir uma solução que não compila, contrariando o contrato de criação de uma base compilável.",
+      "recommendation": "Qualificar os tipos de infraestrutura nos templates com global::, incluindo global::System.Threading.Tasks.Task, global::System.Threading.Timeout e global::Microsoft.Extensions.Hosting.Host; adicionar cobertura de compilação para nomes que colidem com esses tipos."
+    }
+  ],
+  "residual_risk": "Revisão independente somente leitura dos arquivos locais de geração, apresentações, manifesto, gates, contratos, instalador e testes relacionados. Executada apenas simulação sem escrita e renderização em memória para confirmar o achado. Não foram reexecutados os 26 testes, builds ou ciclos dos hosts relatados pelo implementador. Não foram chamados provedores, APIs externas ou CLIs de IA. A compatibilidade efetiva dos adaptadores Codex/Claude em execução permanece fora desta verificação."
+}

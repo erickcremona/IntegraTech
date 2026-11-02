@@ -1,0 +1,8 @@
+{
+  "schema_version": 1,
+  "name": "IntegraTech",
+  "slug": "integratech",
+  "presentation": "worker",
+  "provider": "both",
+  "is_model": true
+}

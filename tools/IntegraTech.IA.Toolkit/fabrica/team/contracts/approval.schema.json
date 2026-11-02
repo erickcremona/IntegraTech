@@ -1,0 +1,11 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema", "title": "Registro de aceite v1",
+  "type": "object", "additionalProperties": false,
+  "required": ["schema_version", "decision", "context_sha256", "plan_sha256", "approved_by", "approved_at", "source_reference"],
+  "properties": {
+    "schema_version": { "const": 1 }, "decision": { "const": "approved" },
+    "context_sha256": { "type": "string", "minLength": 64 }, "plan_sha256": { "type": "string", "minLength": 64 },
+    "approved_by": { "type": "string", "minLength": 1 }, "approved_at": { "type": "string", "minLength": 1 },
+    "source_reference": { "type": "string", "minLength": 1 }
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "date": "2026-10-29",
+  "scope": "toolkit_and_inactive_worker",
+  "local_validation": {
+    "toolkit_tests": { "passed": 20, "failed": 0 },
+    "dotnet_build": { "projects": 7, "warnings": 0, "errors": 0 },
+    "worker_lifecycle": "passed",
+    "installed_roles": 7,
+    "scope_status": "pending"
+  },
+  "providers": {
+    "codex": { "executable_flags": "compatible", "real_review": "blocked_by_approval_review_before_process_start" },
+    "claude": { "executable_flags": "unavailable", "real_review": "not_executed" }
+  },
+  "independent_review": {
+    "status": "pending",
+    "verdict": null,
+    "reason": "Explicit authorization required before sending the selected local files to the external Codex service."
+  },
+  "business_integration": "not_implemented_pending_scope",
+  "git_remote_actions": "not_executed",
+  "production_deployment": "not_executed"
+}

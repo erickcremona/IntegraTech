@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "scope_status": "pending",
+  "plan_gate": "pending",
+  "active_phase": "discovery",
+  "context_path": "references/business-context.json",
+  "plan_path": null,
+  "approval_path": null,
+  "business_implementation": "blocked_until_scope_and_plan",
+  "external_actions_authorized": false
+}

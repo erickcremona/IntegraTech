@@ -1,0 +1,6 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup><OutputType>Exe</OutputType></PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../src/IntegraTech.Apresentacao/IntegraTech.Apresentacao.Worker/IntegraTech.Apresentacao.Worker.csproj" />
+  </ItemGroup>
+</Project>

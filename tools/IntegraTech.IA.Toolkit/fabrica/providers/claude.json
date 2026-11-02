@@ -1,0 +1,6 @@
+{
+  "name": "claude", "command": "claude",
+  "required_flags": ["--tools", "--bare", "--json-schema", "--strict-mcp-config", "--no-session-persistence"],
+  "entrypoint": "CLAUDE.md", "skills": ".claude/skills", "agents": ".claude/agents",
+  "review_mode": "pacote explícito; sem ferramentas; bare; MCP desativado"
+}

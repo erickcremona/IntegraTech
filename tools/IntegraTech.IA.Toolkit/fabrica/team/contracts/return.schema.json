@@ -1,0 +1,59 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://integratech.local/contracts/return-v1.schema.json",
+  "title": "IntegraTech Agent Return v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "task_id", "status", "summary", "work_completed", "files_analyzed",
+    "files_changed", "tests_executed", "test_results", "evidence", "risks_found",
+    "pending_items", "decisions_required", "recommended_next_step"
+  ],
+  "properties": {
+    "schema_version": { "const": 1 },
+    "task_id": { "type": "string", "minLength": 1 },
+    "status": {
+      "type": "string",
+      "enum": ["completed", "completed_with_risks", "blocked", "needs_clarification", "failed"]
+    },
+    "summary": { "type": "string", "minLength": 1 },
+    "work_completed": { "type": "array", "items": { "type": "string" } },
+    "files_analyzed": { "type": "array", "items": { "type": "string" } },
+    "files_changed": { "type": "array", "items": { "type": "string" } },
+    "tests_executed": { "type": "array", "items": { "type": "string" } },
+    "test_results": { "type": "array", "items": { "type": "string" } },
+    "evidence": { "type": "array", "items": { "type": "string" } },
+    "risks_found": { "type": "array", "items": { "type": "string" } },
+    "pending_items": { "type": "array", "items": { "type": "string" } },
+    "decisions_required": { "type": "array", "items": { "type": "string" } },
+    "recommended_next_step": { "type": "string", "minLength": 1 }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": { "status": { "const": "completed" } }
+      },
+      "then": {
+        "properties": {
+          "tests_executed": { "minItems": 1 },
+          "test_results": { "minItems": 1 },
+          "evidence": { "minItems": 1 },
+          "pending_items": { "maxItems": 0 },
+          "decisions_required": { "maxItems": 0 }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": { "status": { "const": "completed_with_risks" } }
+      },
+      "then": {
+        "properties": {
+          "tests_executed": { "minItems": 1 },
+          "test_results": { "minItems": 1 },
+          "evidence": { "minItems": 1 }
+        }
+      }
+    }
+  ]
+}

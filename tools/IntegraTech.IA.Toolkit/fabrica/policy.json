@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "limits": { "max_review_time_ms": 120000, "max_attempts": 1 },
+  "actions": {
+    "review": ["reviewer"],
+    "implement": ["executor"],
+    "adopt": ["cto"],
+    "discover": ["executor", "cto"],
+    "design": ["executor", "cto"]
+  }
+}

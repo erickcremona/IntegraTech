@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema", "title": "Plano de negócio v1",
+  "type": "object", "additionalProperties": false,
+  "required": ["schema_version", "context_sha256", "objective", "scope", "out_of_scope", "risks", "phases"],
+  "properties": {
+    "schema_version": { "const": 1 }, "context_sha256": { "type": "string", "minLength": 64 },
+    "objective": { "type": "string", "minLength": 1 },
+    "scope": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } },
+    "out_of_scope": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+    "risks": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+    "phases": { "type": "array", "minItems": 1, "items": {
+      "type": "object", "additionalProperties": false,
+      "required": ["id", "deliverables", "acceptance_criteria", "validation_commands"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "deliverables": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } },
+        "acceptance_criteria": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } },
+        "validation_commands": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } }
+      }
+    } }
+  }
+}

@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://integratech.local/contracts/review-v1.schema.json",
+  "title": "IntegraTech Agent Review v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "task_id", "review_type", "verdict", "findings", "residual_risk"],
+  "properties": {
+    "schema_version": { "const": 1 },
+    "task_id": { "type": "string", "minLength": 1 },
+    "review_type": { "type": "string", "enum": ["code", "security", "data", "ux_accessibility"] },
+    "verdict": { "type": "string", "enum": ["approved", "approved_with_findings", "changes_required", "blocked"] },
+    "findings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["severity", "title", "evidence", "path", "line", "impact", "recommendation"],
+        "properties": {
+          "severity": { "type": "string", "enum": ["blocker", "high", "medium", "low"] },
+          "title": { "type": "string", "minLength": 1 },
+          "evidence": { "type": "string", "minLength": 1 },
+          "path": { "type": "string", "minLength": 1 },
+          "line": { "type": ["integer", "null"], "minimum": 1 },
+          "impact": { "type": "string", "minLength": 1 },
+          "recommendation": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "residual_risk": { "type": "string" }
+  }
+}

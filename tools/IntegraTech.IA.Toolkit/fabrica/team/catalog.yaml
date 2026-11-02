@@ -1,0 +1,27 @@
+{
+  "version": 1,
+  "entrypoint": "cto",
+  "delegation_depth_max": 1,
+  "specialists": [
+    { "name": "business-analyst", "kind": "executor", "read_only": true, "skill": "integratech-planejamento", "description": "Levanta problema, usuários, resultados, escopo e dúvidas antes de propor funcionalidades." },
+    { "name": "integration-analyst", "kind": "executor", "read_only": true, "skill": "integratech-planejamento", "description": "Analisa contratos externos somente quando o contexto incluir integrações." },
+    { "name": "application-engineer", "kind": "executor", "read_only": false, "skill": "integratech-aplicacao", "description": "Implementa a apresentação e os casos de uso do plano aprovado, preservando as camadas." },
+    { "name": "qa-engineer", "kind": "executor", "read_only": false, "skill": "integratech-qa", "description": "Valida critérios de aceite, ciclo de vida e cenários de falha com recursos isolados." },
+    { "name": "platform-engineer", "kind": "executor", "read_only": false, "skill": "integratech-fabrica-autonoma", "description": "Mantém toolkit, configuração e automação local." },
+    { "name": "security-reviewer", "kind": "reviewer", "read_only": true, "skill": "integratech-seguranca", "review_type": "security", "description": "Revisa segurança, credenciais, isolamento e efeitos externos." },
+    { "name": "data-migration-reviewer", "kind": "reviewer", "read_only": true, "skill": "integratech-arquitetura", "review_type": "data", "description": "Revisa impacto em dados e migrações quando aplicável." },
+    { "name": "code-reviewer", "kind": "reviewer", "read_only": true, "skill": "integratech-arquitetura", "review_type": "code", "description": "Revisa bugs, testes e aderência às camadas sem alterar o código." }
+  ],
+  "routes": {
+    "discovery": "business-analyst",
+    "worker": "application-engineer",
+    "application": "application-engineer",
+    "integration": "application-engineer",
+    "qa": "qa-engineer",
+    "toolkit": "platform-engineer",
+    "platform": "platform-engineer",
+    "security": "security-reviewer",
+    "data": "data-migration-reviewer",
+    "review": "code-reviewer"
+  }
+}

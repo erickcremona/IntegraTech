@@ -1,0 +1,6 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <ProjectReference Include="../IntegraTech.Aplicacao/IntegraTech.Aplicacao/IntegraTech.Aplicacao.csproj" />
+    <ProjectReference Include="../IntegraTech.Dominio/IntegraTech.Dominio/IntegraTech.Dominio.csproj" />
+  </ItemGroup>
+</Project>

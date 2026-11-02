@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "IntegraTech Provider Handoff v1", "type": "object", "additionalProperties": false,
+  "required": ["schema_version", "task_id", "provider", "objective", "phase", "files", "validations", "evidence", "pending_items", "human_gate", "verdict", "next_step"],
+  "properties": {
+    "schema_version": { "const": 1 },
+    "task_id": { "type": "string", "minLength": 1 },
+    "provider": { "type": "string", "enum": ["codex", "claude"] },
+    "objective": { "type": "string", "minLength": 1 },
+    "phase": { "type": "string", "enum": ["toolkit", "discovery", "design", "business"] },
+    "files": { "type": "array", "items": { "type": "string" } },
+    "validations": { "type": "array", "items": { "type": "string" } },
+    "evidence": { "type": "array", "items": { "type": "string" } },
+    "pending_items": { "type": "array", "items": { "type": "string" } },
+    "human_gate": { "type": "string", "enum": ["none", "required", "pending"] },
+    "verdict": { "type": "string", "enum": ["approved", "approved_with_findings", "changes_required", "blocked"] },
+    "next_step": { "type": "string", "minLength": 1 }
+  }
+}
