@@ -42,17 +42,17 @@ Escolha `worker` quando houver processamento em segundo plano que justifique um 
 Na cópia do desenvolvedor:
 
 ```powershell
-npm run toolkit -- adopt-project --name MeuProjeto --context-file .scratch/contexto-inicial.json --technology-file .scratch/decisao-tecnologica.json --dry-run
-npm run toolkit -- adopt-project --name MeuProjeto --context-file .scratch/contexto-inicial.json --technology-file .scratch/decisao-tecnologica.json
+npm run toolkit -- adopt-project --name MeuProjeto --context-file .scratch/contexto-inicial.json --preparation-file .scratch/pesquisa.json --technology-file .scratch/decisao-tecnologica.json --dry-run
+npm run toolkit -- adopt-project --name MeuProjeto --context-file .scratch/contexto-inicial.json --preparation-file .scratch/pesquisa.json --technology-file .scratch/decisao-tecnologica.json
 ```
 
 A decisão aprovada e seu aceite são preservados em `references/technology-decision.json` e `references/technology-approval.md`; o estado aponta para a decisão. O contexto não pode mudar sem reavaliá-la. O precheck business verifica esse vínculo e a apresentação aplicada, além dos gates funcionais existentes.
 
 A transação remove somente arquivos controlados do modelo, inclusive o host worker substituído, e atualiza solução, referências, código e teste de ciclo de vida para a apresentação escolhida. Qualquer arquivo controlado modificado bloqueia a operação antes de escrever. Arquivos pessoais, remotos e arquivos desconhecidos permanecem; o journal permite recuperação. Diretórios que ficaram vazios após a remoção dos arquivos controlados são retirados. Artefatos locais de builds anteriores e diretórios com arquivos desconhecidos permanecem, pois a operação não apaga recursivamente arquivos fora do manifesto. Não reaplique adoção a um projeto real; evolução posterior é uma tarefa explícita com preservação do trabalho existente.
 
-Para gerar em outra pasta vazia, use `create-project --name MeuProjeto --target DESTINO --context-file .scratch/contexto-inicial.json --technology-file .scratch/decisao-tecnologica.json`; referências de aceite são resolvidas na raiz do modelo que executa o comando. Projetos descendentes não herdam contexto, decisão nem aceite do projeto anterior.
+Para gerar em outra pasta vazia, use `create-project --name MeuProjeto --target DESTINO --context-file .scratch/contexto-inicial.json --preparation-file .scratch/pesquisa.json --technology-file .scratch/decisao-tecnologica.json`; referências de aceite são resolvidas na raiz do modelo que executa o comando. Projetos descendentes não herdam contexto, decisão nem aceite do projeto anterior.
 
-A opção avançada `--presentation api|console|worker` permanece para seleção manual explícita de um modelo .NET, inclusive na adoção. Não representa pesquisa nem aprovação registrada. Se uma pesquisa estiver bloqueada, não troque automaticamente para esse modo: a seleção manual precisa ser solicitada explicitamente pelo usuário. Sem apresentação explícita ou decisão aprovada, a geração/adoção é rejeitada antes de escrever; o fluxo assistido usa a decisão pesquisada.
+A opção `--presentation api|console|worker` apenas confere a apresentação da decisão aprovada. Não dispensa contexto completo, pesquisa externa verificada ou aprovação. Se a consulta estiver bloqueada, a criação e adoção ficam bloqueadas até conseguir acesso. Prepare o especialista e conclua a otimização global conforme [especialista-dominio.md](especialista-dominio.md).
 
 ## Referências do desenho
 

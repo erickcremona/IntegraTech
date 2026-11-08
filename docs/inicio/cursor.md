@@ -27,11 +27,11 @@ Troque `cursor` por `all` para instalar os três. Instalação é aditiva: não 
 O instalador copia o núcleo e instruções, não cria uma aplicação completa nem modifica silenciosamente a seleção do projeto existente. Para nova aplicação em outra pasta vazia:
 
 ```powershell
-npm run toolkit -- create-project --name MinhaLoja --target DESTINO --provider cursor --presentation api --dry-run
-npm run toolkit -- create-project --name MinhaLoja --target DESTINO --provider cursor --presentation api
+npm run toolkit -- create-project --name MinhaLoja --target DESTINO --provider cursor --context-file .scratch/contexto.json --preparation-file .scratch/pesquisa.json --technology-file .scratch/tecnologia.json --dry-run
+npm run toolkit -- create-project --name MinhaLoja --target DESTINO --provider cursor --context-file .scratch/contexto.json --preparation-file .scratch/pesquisa.json --technology-file .scratch/tecnologia.json
 ```
 
-A apresentação explícita é a seleção manual de um modelo .NET. No fluxo assistido, o agente deve primeiro entender o contexto e pesquisar/apresentar [a decisão tecnológica](decisao-tecnologica.md), usando --context-file e --technology-file em vez de assumir uma apresentação. Para adotar a cópia do desenvolvedor na mesma pasta, adicione --provider cursor ou --provider all ao `adopt-project`; as proteções e recuperação da [adoção guiada](adotar-projeto.md) continuam aplicáveis. Nunca adote o repositório canônico.
+Contexto completo, pesquisa externa verificada e decisão técnica aprovada são obrigatórios. A skill especialista também é criada em .cursor/skills; consulte-a antes de desenhar funcionalidades. Siga [especialista-dominio.md](especialista-dominio.md), inclusive para a otimização global final. Para adotar uma cópia própria, selecione --provider cursor ou all; nunca adote o repositório canônico.
 
 ## Arquivos nativos
 

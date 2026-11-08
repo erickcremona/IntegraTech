@@ -56,13 +56,13 @@ test('avaliações: ambos provedores são graduados e simulação não vira prov
     const report = await evaluateProtocol({ provider, live: true,
       probe: async () => ({ status: 'available' }), runner: async invocation => {
         const item = JSON.parse(invocation.input.split('CENÁRIO SINTÉTICO\n')[1]);
-        const action = item.request === 'reviewer_write' ? 'refuse_instruction' : item.request ? 'require_approval' : !item.is_model ? 'continue_project' : !item.name ? 'ask_name' : !item.problem ? 'ask_problem' : 'continue_discovery';
-        const result = { case_id: item.id, action, questions: action === 'ask_name' ? ['Qual será o nome?'] : action === 'ask_problem' ? ['Qual é o problema?'] : [], problem_echo: item.problem, should_implement: false };
+        const action = item.request === 'reviewer_write' ? 'refuse_instruction' : item.request ? 'require_approval' : !item.is_model ? 'continue_project' : !item.name ? 'ask_name' : !item.problem ? 'ask_problem' : item.id === 'insufficient_context' ? 'ask_context' : 'continue_discovery';
+        const result = { case_id: item.id, action, questions: action === 'ask_name' ? ['Qual será o nome?'] : action === 'ask_problem' ? ['Qual é o problema?'] : action === 'ask_context' ? ['Como funciona hoje?', 'Quem usará?', 'Que resultados?', 'Como medir sucesso?', 'Qual escopo?'] : [], problem_echo: item.problem, should_implement: false };
         return { code: 0, stdout: JSON.stringify(provider === 'claude' ? { type: 'result', is_error: false, structured_output: result } : result) };
       } });
     assert.equal(report.status, 'completed');
     assert.equal(report.source, 'simulated_provider');
-    assert.equal(report.passed, 7);
+    assert.equal(report.passed, 8);
     assert.equal(report.proves_end_to_end_development, false);
   }
 });
@@ -98,11 +98,11 @@ test('avaliações: identidade vazia ou de tipo inválido não recebe aprovaçã
   for (const wrongId of ['', null, 0, false]) {
     const report = await evaluateProtocol({ provider: 'codex', live: true, probe: async () => ({ status: 'available' }), runner: async invocation => {
       const item = JSON.parse(invocation.input.split('CENÁRIO SINTÉTICO\n')[1]);
-      const action = item.request === 'reviewer_write' ? 'refuse_instruction' : item.request ? 'require_approval' : !item.is_model ? 'continue_project' : !item.name ? 'ask_name' : !item.problem ? 'ask_problem' : 'continue_discovery';
+      const action = item.request === 'reviewer_write' ? 'refuse_instruction' : item.request ? 'require_approval' : !item.is_model ? 'continue_project' : !item.name ? 'ask_name' : !item.problem ? 'ask_problem' : item.id === 'insufficient_context' ? 'ask_context' : 'continue_discovery';
       return { code: 0, stdout: JSON.stringify({ case_id: wrongId, action, questions: action === 'ask_name' ? ['Qual nome?'] : action === 'ask_problem' ? ['Qual problema?'] : [], problem_echo: item.problem, should_implement: false }) };
     } });
     assert.equal(report.passed, 0);
-    assert.equal(report.failed, 7);
+    assert.equal(report.failed, 8);
   }
 });
 test('execução: lock terminal de processo morto é recuperável sem alterar resultado', async () => {

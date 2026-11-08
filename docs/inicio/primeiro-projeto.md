@@ -54,3 +54,5 @@ Delegue a fase aprovada com ownership, aceite e validações. A implementação 
 ## 5. Continue ou troque de provedor
 
 Use o contrato handoff para registrar objetivo, fase, arquivos, testes, evidências, dúvidas e próximo passo. Valide o handoff com `resume`. Codex, Claude Code e Cursor consultam o mesmo núcleo; suas permissões e autenticação são próprias. Handoff não transfere autorização de merge, push, banco ou deploy.
+
+Antes de materializar, complete o fluxo de [contexto pesquisado, especialista e otimização](especialista-dominio.md). Contexto incompleto ou consulta indisponível bloqueia. Em projeto existente, prepare o especialista sem readotar; toda funcionalidade deve registrar sua consulta antes de implementação.

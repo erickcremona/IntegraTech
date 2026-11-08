@@ -2,8 +2,7 @@ import { readFileSync, readdirSync, mkdtempSync, mkdirSync, writeFileSync } from
 import { join, dirname } from 'node:path';
 import { tmpdir } from 'node:os';
 import { repoRoot } from './lib/installer.mjs';
-import { adoptProject } from './lib/project-adoption.mjs';
-import { createProject } from './lib/project-generator.mjs';
+import { adoptProject, createProject } from '../tests/generation-fixture.mjs';
 import { evaluateLocal } from './lib/evaluations.mjs';
 import { scanRepository } from './lib/secret-scan.mjs';
 import { main } from './toolkit.mjs';
@@ -36,6 +35,7 @@ try {
     const target = mkdtempSync(join(tmpdir(), 'factory-ci-'));
     createProject({ name, target, presentation, provider: presentation === 'worker' ? 'both' : presentation === 'api' ? 'all' : 'cursor' });
     await command(`generated_${presentation}_consistency`, process.execPath, [`tools/${name}.IA.Toolkit/scripts/toolkit.mjs`, 'validate'], target);
+    await command(`generated_${presentation}_toolkit_tests`, 'npm', ['test'], target);
     await command(`generated_${presentation}_build`, 'dotnet', ['build', `${name}.sln`, '--disable-build-servers', '-m:1', '-p:UseSharedCompilation=false'], target);
     await command(`generated_${presentation}_lifecycle`, 'dotnet', ['run', '--project', `tests/${name}.Arquitetura.Tests`, '--no-build'], target);
   }

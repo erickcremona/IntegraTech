@@ -6,6 +6,7 @@ import { contained, assertNoLinks } from './paths.mjs';
 import { restoreAdoption, transactionPath, exactHash, currentHash, atomicFileWrite } from './adoption-recovery.mjs';
 import { normalizeInitialContext } from './business-context.mjs';
 export { normalizeInitialContext } from './business-context.mjs';
+import { assessContext } from './domain-specialist.mjs';
 import { checkPolicy } from './policy.mjs';
 
 export const baselineHash = data => exactHash(data.toString('utf8').replaceAll('\r\n', '\n'));
@@ -21,11 +22,11 @@ export function onboarding({ repo, name, context }) {
   if (identity.is_model === false) return { status: 'project_real', name: identity.name, next_step: 'Ler o contexto existente e continuar a descoberta; não repetir adoção.' };
   const questions = [];
   if (typeof name !== 'string' || !name.trim()) questions.push('Qual será o nome do projeto?');
-  const problem = typeof context === 'string' ? context : context?.problem;
-  if (typeof problem !== 'string' || !problem.trim()) questions.push('Qual problema seu projeto precisa resolver?');
-  return { status: questions.length ? 'needs_input' : 'needs_technology_decision', questions };
+  const assessed = assessContext(context);
+  questions.push(...assessed.questions.map(q => q.question));
+  return { status: questions.length ? 'needs_input' : 'needs_domain_research', questions };
 }
-export function adoptProject({ repo, name, context, dryRun = false, contextFile, presentation, technologyDecision, provider }) {
+export function adoptProject({ repo, name, context, dryRun = false, contextFile, presentation, technologyDecision, preparation, researchRequest, provider }) {
   const root = resolve(repo);
   assertNoLinks(root);
   const identity = JSON.parse(readFileSync(transactionPath(root, 'project.json'), 'utf8'));
@@ -45,7 +46,7 @@ export function adoptProject({ repo, name, context, dryRun = false, contextFile,
       throw new Error('modelo canônico protegido: use uma cópia/repositório próprio antes de adotar');
   }
   const initial = normalizeInitialContext(context);
-  const files = prepareProject({ source: root, name, provider: provider ?? identity.provider, presentation, context: initial, technologyDecision, decisionRepo: root });
+  const files = prepareProject({ source: root, name, provider: provider ?? identity.provider, presentation, context: initial, technologyDecision, preparation, researchRequest, decisionRepo: root });
   const newIdentity = JSON.parse(files.get('project.json'));
   newIdentity.adoption = { status: 'adopted', context_path: 'references/business-context.json' };
   files.set('project.json', JSON.stringify(newIdentity, null, 2) + '\n');
@@ -113,5 +114,5 @@ export function adoptProject({ repo, name, context, dryRun = false, contextFile,
     try { restoreAdoption(journalPath); } catch { throw new Error(`adoção interrompida; recuperação local necessária: ${journalPath}`); }
     throw error;
   }
-  return { status: 'adopted', name, root, journal: journalPath, recovery: join(run, 'recover.mjs'), next_step: 'Continuar discovery a partir do contexto já informado, sem repetir onboarding.' };
+  return { status: 'adopted', name, root, journal: journalPath, recovery: join(run, 'recover.mjs'), next_step: 'Projeto materializado; revisar, otimizar e executar coherence-check antes de concluir o fluxo.' };
 }

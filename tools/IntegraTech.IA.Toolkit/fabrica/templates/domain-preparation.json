@@ -1,0 +1,16 @@
+{
+  "schema_version": 1,
+  "context_sha256": "",
+  "assessment": {
+    "domain": "",
+    "main_flow": "",
+    "critical_questions": [],
+    "dimensions": []
+  },
+  "sources": [],
+  "synthesis": [],
+  "coverage": [],
+  "risks": [],
+  "assumptions": [],
+  "action_plan": []
+}

@@ -16,11 +16,11 @@ Requisitos: Node.js >=22 e SDK .NET 8. Autenticação de Codex/Claude Code/Curso
 
 ```powershell
 # Use um destino vazio fora da pasta do modelo.
-npm run toolkit -- create-project --name MeuProjeto --target C:\Projetos\MeuProjeto --presentation api --provider all --dry-run
-npm run toolkit -- create-project --name MeuProjeto --target C:\Projetos\MeuProjeto --presentation api --provider all
+npm run toolkit -- create-project --name MeuProjeto --target C:\Projetos\MeuProjeto --context-file .scratch/contexto.json --preparation-file .scratch/pesquisa.json --technology-file .scratch/tecnologia.json --provider all --dry-run
+npm run toolkit -- create-project --name MeuProjeto --target C:\Projetos\MeuProjeto --context-file .scratch/contexto.json --preparation-file .scratch/pesquisa.json --technology-file .scratch/tecnologia.json --provider all
 ```
 
-Não há apresentação padrão: o fluxo assistido segue [a decisão tecnológica](docs/inicio/decisao-tecnologica.md). Worker é um exemplo opcional, incluído somente quando necessário. A seleção explícita do exemplo acima continua disponível para uso manual dos modelos .NET.
+Não há apresentação padrão: o fluxo assistido segue [a decisão tecnológica](docs/inicio/decisao-tecnologica.md). Worker é um exemplo opcional, incluído somente quando necessário. Contexto completo e consultas externas verificadas são obrigatórios; não há desvio manual. Veja [especialista de domínio e otimização final](docs/inicio/especialista-dominio.md).
 
 Apresentações: `worker` (aguarda cancelamento), `api` (host HTTP sem endpoints de negócio) ou `console` (inicia e encerra). Provedores: `codex`, `claude`, `cursor`, `both` (Codex+Claude) ou `all` (as três ferramentas). Os defaults existentes continuam `both`. Veja [uso no Cursor](docs/inicio/cursor.md). O nome deve ser PascalCase alfanumérico, sem espaços ou nomes reservados. A criação não instala dependências nem executa Git, autenticação ou publicação.
 

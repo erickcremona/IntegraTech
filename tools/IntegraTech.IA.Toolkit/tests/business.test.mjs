@@ -1,3 +1,5 @@
+import { specialistFiles } from '../scripts/lib/domain-specialist.mjs';
+import { preparationFor } from './domain-fixture.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdtempSync, mkdirSync, writeFileSync } from 'node:fs';
@@ -13,7 +15,13 @@ function setup() {
   const save = (path, data) => { const text = typeof data === 'string' ? data : JSON.stringify(data); writeFileSync(join(repo, path), text); return text; };
   const context = { schema_version: 1, problem: 'O atendimento demora e precisa de acompanhamento.', current_situation: 'Solicitações são registradas manualmente.', stakeholders: ['Atendentes'], desired_outcomes: ['Acompanhar solicitações'], success_criteria: ['Todas as solicitações têm responsável'], scope: ['Registrar solicitações'], out_of_scope: [], known_rules: [], data: [], constraints: [], integrations: [], open_questions: [], assumptions: [] };
   const contextText = save(state.context_path, context);
-  const plan = { schema_version: 1, context_sha256: hash(contextText), objective: 'Registrar solicitações com responsável', scope: ['Registro'], out_of_scope: [], risks: [], phases: [{ id: 'fase-1', deliverables: ['Registro'], acceptance_criteria: ['Responsável obrigatório'], validation_commands: ['Teste do caso de uso'] }] };
+  save('project.json', { name: 'Atendimento', provider: 'both', presentation: 'api', is_model: false });
+  const files = specialistFiles({ name: 'Atendimento', provider: 'both', context, preparation: preparationFor(context) });
+  for (const [path, text] of files) { mkdirSync(join(repo, path, '..'), { recursive: true }); save(path, text); }
+  const meta = JSON.parse(files.get('references/domain-specialist.json'));
+  state.specialist_path = 'references/domain-specialist.json';
+  save('references/consulta.json', { schema_version: 1, feature_id: 'fase-1', context_sha256: meta.context_sha256, preparation_sha256: meta.preparation_sha256, skill_sha256: meta.skill_sha256, findings: ['Fluxo de atribuição'], domain_impacts: ['Responsável obrigatório'] });
+  const plan = { schema_version: 1, consultation_paths: ['references/consulta.json'], context_sha256: hash(contextText), objective: 'Registrar solicitações com responsável', scope: ['Registro'], out_of_scope: [], risks: [], phases: [{ id: 'fase-1', deliverables: ['Registro'], acceptance_criteria: ['Responsável obrigatório'], validation_commands: ['Teste do caso de uso'] }] };
   const planText = save(state.plan_path, plan);
   const approval = { schema_version: 1, decision: 'approved', context_sha256: hash(contextText), plan_sha256: hash(planText), approved_by: 'Responsável pelo produto', approved_at: '2026-11-02T12:00:00Z', source_reference: 'references/aceite.md' };
   save(approval.source_reference, 'O responsável aprovou a fase 1 descrita no plano nesta sessão.');
@@ -56,13 +64,13 @@ test('negócio: decisão aplicada não pode divergir do contexto ou da apresenta
   const f = setup();
   const decision = decisionFor(f.context);
   f.save(decision.approval.source_reference, 'Usuário aprovou API para o atendimento.');
-  f.save('project.json', { presentation: 'api' });
+  f.save('project.json', { name: 'Atendimento', provider: 'both', is_model: false, presentation: 'api' });
   f.save('references/technology-decision.json', decision);
   f.save('references/project-state.json', { ...f.state, technology_decision_path: 'references/technology-decision.json' });
   assert.equal(precheck(f.repo, 'business').status, 'ready');
-  f.save('project.json', { presentation: 'worker' });
+  f.save('project.json', { name: 'Atendimento', provider: 'both', is_model: false, presentation: 'worker' });
   assert.equal(precheck(f.repo, 'business').status, 'blocked');
-  f.save('project.json', { presentation: 'api' });
+  f.save('project.json', { name: 'Atendimento', provider: 'both', is_model: false, presentation: 'api' });
   f.save('references/technology-decision.json', { ...decision, context_sha256: 'invalid' });
   assert.equal(precheck(f.repo, 'business').status, 'blocked');
 });

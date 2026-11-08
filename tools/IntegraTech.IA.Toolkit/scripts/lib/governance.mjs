@@ -3,6 +3,7 @@ import { join } from 'node:path';
 import { createHash } from 'node:crypto';
 import { contained, assertNoLinks } from './paths.mjs';
 import { inspectTechnologyDecision } from './technology-decision.mjs';
+import { inspectSpecialist, inspectConsultation, readDocument } from './domain-workflow.mjs';
 import { validateContract } from './contracts.mjs';
 
 export const factoryRoot = new URL('../../fabrica/', import.meta.url);
@@ -32,6 +33,7 @@ export function precheck(repo, phase) {
     const contextText = read(state.context_path);
     const context = validateContract('business-context', JSON.parse(contextText));
     assertMeaningful(context);
+    inspectSpecialist(repo);
     if (phase === 'design') return result(true, 'Contexto estruturado válido; desenho ainda exige validação humana.');
     if (state.technology_decision_path) {
       const decision = JSON.parse(read(state.technology_decision_path));
@@ -43,6 +45,9 @@ export function precheck(repo, phase) {
     const planText = read(state.plan_path);
     const plan = validateContract('business-plan', JSON.parse(planText));
     assertMeaningful(plan);
+    if (!Array.isArray(plan.consultation_paths) || !plan.consultation_paths.length) throw new Error('Consulta do especialista por funcionalidade ausente.');
+    const consulted = plan.consultation_paths.map(path => { const record = readDocument(repo, path); inspectConsultation(repo, record); return record.feature_id; });
+    if (new Set(consulted).size !== consulted.length || plan.phases.some(phase => !consulted.includes(phase.id))) throw new Error('Cada fase funcional exige consulta atual do especialista.');
     const contextHash = sha256(contextText);
     if (plan.context_sha256 !== contextHash || new Set(plan.phases.map(p => p.id)).size !== plan.phases.length) throw new Error('plano divergente');
     const approval = validateContract('approval', JSON.parse(read(state.approval_path)));
@@ -53,7 +58,7 @@ export function precheck(repo, phase) {
     assertMeaningful(read(approval.source_reference));
     return result(true, 'Contexto, plano e referência de aceite válidos. A estrutura não autentica o aprovador nem autoriza efeitos externos.');
   } catch {
-    return result(false, 'Contexto, plano ou aceite pendente/inválido. Confira documentos, placeholders, referências e hashes.');
+    return result(false, 'Contexto, especialista, pesquisa, consulta por funcionalidade, plano ou aceite pendente/inválido. Confira documentos e hashes; use specialist-prepare para preparar o domínio.');
   }
 }
 export const sha256 = text => createHash('sha256').update(text).digest('hex');

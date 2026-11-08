@@ -1,3 +1,5 @@
+import { adoptProject as preparedAdopt } from './generation-fixture.mjs';
+import { fullContext } from './domain-fixture.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync, writeFileSync, mkdirSync, mkdtempSync, existsSync } from 'node:fs';
@@ -22,7 +24,7 @@ async function fixture({ git = false, canonical = false } = {}) {
     execFileSync('git', ['init', '--initial-branch=main', repo], { stdio: 'ignore' });
     execFileSync('git', ['-C', repo, 'remote', 'add', 'origin', canonical ? baseline.canonical_repository : 'https://github.com/example/MeuProjeto.git']);
   }
-  return { repo, baseline, ...module };
+  return { repo, baseline, ...module, adoptProject: preparedAdopt };
 }
 test('adoção: simula sem escrita e converte nome/contexto na mesma pasta', options, async () => {
   const f = await fixture({ git: true });
@@ -40,7 +42,7 @@ test('adoção: simula sem escrita e converte nome/contexto na mesma pasta', opt
   assert.equal(identity.adoption.status, 'adopted');
   const context = JSON.parse(readFileSync(join(f.repo, 'references/business-context.json')));
   assert.equal(context.problem, args.context.problem);
-  assert.deepEqual(context.stakeholders, []);
+  assert.deepEqual(context.stakeholders, fullContext.stakeholders);
   assert.equal(readFileSync(join(f.repo, 'personal.txt'), 'utf8'), 'Meu arquivo pessoal');
   assert.deepEqual(readFileSync(join(f.repo, '.git/config')), gitConfig);
   const { main } = await import(pathToFileURL(join(f.repo, 'tools/MensagensCliente.IA.Toolkit/scripts/toolkit.mjs')));
@@ -73,10 +75,10 @@ test('adoção: restaura snapshot preservando arquivos pessoais e recusa trabalh
 });
 test('adoção: perguntas apenas para dados ausentes e projeto real não reinicia', options, async () => {
   const f = await fixture();
-  assert.deepEqual(f.onboarding({ repo: f.repo }).questions, ['Qual será o nome do projeto?', 'Qual problema seu projeto precisa resolver?']);
-  assert.deepEqual(f.onboarding({ repo: f.repo, presentation: 'worker', name: 'MeuNegocio' }).questions, ['Qual problema seu projeto precisa resolver?']);
-  assert.deepEqual(f.onboarding({ repo: f.repo, presentation: 'worker', context: 'Organizar atendimento.' }).questions, ['Qual será o nome do projeto?']);
-  assert.deepEqual(f.onboarding({ repo: f.repo, presentation: 'worker', name: 'MeuNegocio', context: 'Organizar atendimento.' }).questions, []);
+  assert.ok(f.onboarding({ repo: f.repo }).questions.length >= 7);
+  assert.ok(f.onboarding({ repo: f.repo, name: 'MeuNegocio' }).questions.length >= 6);
+  assert.deepEqual(f.onboarding({ repo: f.repo, presentation: 'worker', context: fullContext }).questions, ['Qual será o nome do projeto?']);
+  assert.deepEqual(f.onboarding({ repo: f.repo, presentation: 'worker', name: 'MeuNegocio', context: fullContext }).questions, []);
   f.adoptProject({ repo: f.repo, presentation: 'worker', name: 'MeuNegocio', context: 'Organizar atendimento.' });
   assert.equal(f.onboarding({ repo: f.repo }).status, 'project_real');
 });
@@ -141,7 +143,7 @@ test('adoção: exige seleção explícita em vez de herdar exemplo worker', opt
   assert.throws(() => f.adoptProject({ repo: f.repo, name: 'Catalogo', context: 'Publicar catálogo.' }), /decisão tecnológica/i);
   assert.equal(JSON.parse(readFileSync(join(f.repo, 'project.json'))).is_model, true);
   assert.equal(existsSync(join(f.repo, '.scratch')), false);
-  assert.equal(f.onboarding({ repo: f.repo, name: 'Catalogo', context: 'Publicar catálogo.' }).status, 'needs_technology_decision');
+  assert.equal(f.onboarding({ repo: f.repo, name: 'Catalogo', context: fullContext }).status, 'needs_domain_research');
 });
 test('adoção: troca worker por api/console limpa referências e restaura o exemplo por recovery', options, async () => {
   const { restoreAdoption } = await import('../scripts/lib/adoption-recovery.mjs');

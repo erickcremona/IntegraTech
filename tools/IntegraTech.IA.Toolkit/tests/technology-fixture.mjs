@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto';
 import { normalizeInitialContext } from '../scripts/lib/project-adoption.mjs';
-export const context = { problem: 'Publicar catálogo web para clientes.', constraints: ['Equipe conhece .NET; operação simples.'] };
+import { fullContext } from './domain-fixture.mjs';
+export const context = { ...fullContext, problem: 'Publicar catálogo web para clientes.', constraints: ['Equipe conhece .NET; operação simples.'] };
 export function decisionFor(input = context, presentation = 'api') {
   return {
     schema_version: 1,

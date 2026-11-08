@@ -1,3 +1,5 @@
+import { cliResearchFixture } from './cli-research-fixture.mjs';
+import { generationOptions } from './generation-fixture.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdtempSync, readFileSync, writeFileSync, existsSync, mkdirSync, symlinkSync, readdirSync } from 'node:fs';
@@ -70,7 +72,7 @@ test('Cursor: conflitos e links são detectados antes de escrever', () => {
   assert.deepEqual(readdirSync(outside), []);
 });
 test('Cursor: geração e regeneração atualizam nomes sem copiar adaptadores indesejados', async () => {
-  const { createProject } = await import('../scripts/lib/project-generator.mjs');
+  const { createProject } = await import('./generation-fixture.mjs');
   for (const provider of ['cursor', 'all']) {
     const target = temp('cursor-project-');
     createProject({ name: 'LojaCursor', target, provider, presentation: 'api' });
@@ -88,7 +90,7 @@ test('Cursor: geração e regeneração atualizam nomes sem copiar adaptadores i
     const { createProject: again } = await import(pathToFileURL(join(toolkit, 'lib/project-generator.mjs')));
     for (const nextProvider of ['cursor', 'both']) {
       const child = temp('cursor-regenerated-');
-      again({ name: 'LojaSeguinte', target: child, provider: nextProvider, presentation: 'console' });
+      again(generationOptions({ name: 'LojaSeguinte', target: child, provider: nextProvider, presentation: 'console' }));
       assert.equal(existsSync(join(child, '.cursor/rules/private.mdc')), false);
       assert.equal(existsSync(join(child, '.cursor')), nextProvider === 'cursor');
       const { main: nextMain } = await import(pathToFileURL(join(child, 'tools/LojaSeguinte.IA.Toolkit/scripts/toolkit.mjs')));
@@ -130,9 +132,12 @@ test('Cursor: handoff aceita origem Cursor sem habilitar dispatcher nem avaliaç
 const isModel = read(join(repoRoot, 'project.json')).is_model;
 test('Cursor: CLI real cria e adota com escolha explícita e recuperação', { skip: !isModel }, async () => {
   const cli = fileURLToPath(new URL('../scripts/toolkit.mjs', import.meta.url));
-  const run = args => JSON.parse(execFileSync(process.execPath, [cli, ...args], { encoding: 'utf8' }));
+  const transport = cliResearchFixture();
+  const run = args => JSON.parse(execFileSync(process.execPath, [cli, ...args], { encoding: 'utf8', env: transport.env }));
+  const inputs = temp('cursor-cli-inputs-');
+  const inputArgs = transport.prepare(inputs);
   const created = temp('cursor-cli-create-');
-  assert.equal(run(['create-project', '--name', 'ViaCursor', '--target', created, '--provider', 'cursor', '--presentation', 'api']).status, 'created');
+  assert.equal(run(['create-project', '--name', 'ViaCursor', '--target', created, '--provider', 'cursor', '--presentation', 'api', '--repo', inputs, ...inputArgs]).status, 'created');
   const generatedCli = join(created, 'tools/ViaCursor.IA.Toolkit/scripts/toolkit.mjs');
   const checked = JSON.parse(execFileSync(process.execPath, [generatedCli, 'validate'], { encoding: 'utf8' }));
   assert.equal(checked.status, 'valid');
@@ -146,8 +151,8 @@ test('Cursor: CLI real cria e adota com escolha explícita e recuperação', { s
       writeFileSync(join(repo, path), readFileSync(join(repoRoot, path)));
     }
     writeFileSync(join(repo, 'personal.txt'), 'arquivo pessoal');
-    writeFileSync(join(repo, 'context.txt'), 'Oferecer um catálogo de produtos.');
-    const args = ['adopt-project', '--repo', repo, '--name', 'ProdutoCursor', '--context-file', join(repo, 'context.txt'), '--provider', provider, '--presentation', 'api'];
+    const adoptionInputs = transport.prepare(repo);
+    const args = ['adopt-project', '--repo', repo, '--name', 'ProdutoCursor', ...adoptionInputs, '--provider', provider, '--presentation', 'api'];
     assert.equal(run([...args, '--dry-run']).status, 'planned');
     assert.equal(read(join(repo, 'project.json')).is_model, true);
     const result = run(args);

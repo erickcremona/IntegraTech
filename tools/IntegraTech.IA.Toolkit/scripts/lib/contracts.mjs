@@ -41,7 +41,7 @@ function check(schema, value, path = '$') {
   }
 }
 export function loadSchema(kind) {
-  if (!['delegation', 'return', 'review', 'handoff', 'business-context', 'business-plan', 'approval', 'technology-decision'].includes(kind)) throw new Error('contrato desconhecido');
+  if (!['delegation', 'return', 'review', 'handoff', 'business-context', 'business-plan', 'approval', 'technology-decision', 'domain-preparation', 'domain-consultation', 'domain-coherence'].includes(kind)) throw new Error('contrato desconhecido');
   return JSON.parse(readFileSync(new URL(`../../fabrica/team/contracts/${kind}.schema.json`, import.meta.url), 'utf8'));
 }
 export function validateContract(kind, value, expectedTaskId) {

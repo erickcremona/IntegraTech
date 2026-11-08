@@ -1,3 +1,5 @@
+import { generationOptions } from './generation-fixture.mjs';
+import { fullContext } from './domain-fixture.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdtempSync, readFileSync, existsSync, readdirSync, writeFileSync, symlinkSync } from 'node:fs';
@@ -5,7 +7,7 @@ import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { pathToFileURL } from 'node:url';
 import { presentationFiles } from '../scripts/lib/presentation-templates.mjs';
-const generatorUrl = new URL('../scripts/lib/project-generator.mjs', import.meta.url);
+const generatorUrl = new URL('./generation-fixture.mjs', import.meta.url);
 const read = path => JSON.parse(readFileSync(path, 'utf8'));
 test('gerador: templates qualificam Task, Host e Timeout sem alterar namespaces', () => {
   for (const name of ['Task', 'Host', 'Timeout']) {
@@ -45,7 +47,7 @@ test('gerador: identidades, três apresentações e provedores independentes', a
     const state = read(join(target, 'references/project-state.json'));
     assert.equal(state.scope_status, 'pending');
     assert.equal(state.plan_path, null);
-    assert.equal(read(join(target, 'references/business-context.json')).problem, '');
+    assert.equal(read(join(target, 'references/business-context.json')).problem, fullContext.problem);
     for (const forbidden of ['.git', '.scratch', 'qa-artifacts', '.integratech-toolkit.json', 'docs/validacao/bootstrap-results.json', 'docs/superpowers'])
       assert.equal(existsSync(join(target, forbidden)), false, forbidden);
     assert.equal(existsSync(join(target, 'AGENTS.md')), provider !== 'claude');
@@ -60,8 +62,8 @@ test('gerador: identidades, três apresentações e provedores independentes', a
       writeFileSync(join(target, 'references/business-context.json'), JSON.stringify({ problem: 'Contexto privado do projeto anterior' }));
       const child = mkdtempSync(join(tmpdir(), 'model-regenerated-'));
       const { createProject: createAgain } = await import(pathToFileURL(join(toolkit, 'scripts/lib/project-generator.mjs')));
-      assert.equal(createAgain({ name: 'CopiaLimpa', target: child, provider: 'both', presentation: 'console' }).status, 'created');
-      assert.equal(read(join(child, 'references/business-context.json')).problem, '');
+      assert.equal(createAgain(generationOptions({ name: 'CopiaLimpa', target: child, provider: 'both', presentation: 'console' })).status, 'created');
+      assert.equal(read(join(child, 'references/business-context.json')).problem, fullContext.problem);
       assert.ok(existsSync(join(child, '.claude/agents/business-analyst.md')));
       assert.ok(!readFileSync(join(child, 'SOLUTION_CONTEXT.md'), 'utf8').includes('Contexto privado'));
     }
@@ -101,8 +103,8 @@ test('gerador: contexto sozinho nunca escolhe worker e decisão aprovada gera so
   assert.equal(checked.status, 'approved');
   const child = mkdtempSync(join(tmpdir(), 'technology-child-'));
   const { createProject: again } = await import(pathToFileURL(join(target, 'tools/Catalogo.IA.Toolkit/scripts/lib/project-generator.mjs')));
-  again({ name: 'OutroCatalogo', target: child, presentation: 'console' });
-  assert.equal(existsSync(join(child, 'references/technology-decision.json')), false);
-  assert.equal(existsSync(join(child, 'references/technology-approval.md')), false);
-  assert.equal(read(join(child, 'references/business-context.json')).problem, '');
+  again(generationOptions({ name: 'OutroCatalogo', target: child, presentation: 'console' }));
+  assert.equal(read(join(child, 'references/technology-decision.json')).options[0].presentation, 'console');
+  assert.equal(read(join(child, 'references/domain-preparation.json')).context_sha256 === read(join(target, 'references/domain-preparation.json')).context_sha256, false);
+  assert.equal(read(join(child, 'references/business-context.json')).problem, fullContext.problem);
 });
