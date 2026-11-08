@@ -1,7 +1,7 @@
 [CmdletBinding(SupportsShouldProcess)]
 param(
     [Parameter(Mandatory)][string]$TargetRepo,
-    [ValidateSet('codex', 'claude', 'both')][string]$Provider = 'both'
+    [ValidateSet('codex', 'claude', 'cursor', 'both', 'all')][string]$Provider = 'both'
 )
 $ErrorActionPreference = 'Stop'
 if ($PSCmdlet.ShouldProcess($TargetRepo, "Instalar adaptadores $Provider")) {

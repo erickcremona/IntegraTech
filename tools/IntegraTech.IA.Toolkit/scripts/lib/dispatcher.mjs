@@ -14,6 +14,7 @@ export async function dispatch({ repo, provider, task, phase, files, timeoutMs =
   const blocked = reason => { runStatus = 'blocked'; runReason = 'validation_or_execution_blocked'; return { status: 'blocked', reason, ...(run ? { run_id: run.id } : {}) }; };
   let rawOutput;
   try {
+    if (provider === 'cursor') return blocked('Automação Cursor ainda não suportada; use a sessão nativa do editor.');
     validateContract('delegation', task);
     if (!['codex', 'claude'].includes(provider)) return blocked('Provedor inválido.');
     if (!/^[A-Za-z0-9_-]{1,80}$/.test(task.task_id)) return blocked('Identificador inválido.');

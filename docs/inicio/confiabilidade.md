@@ -17,7 +17,7 @@ npm run toolkit -- policy-check --action implement --agent application-engineer 
 
 A política versionada em fabrica/policy.json é consultada pelo dispatcher e pela adoção. Revisor não implementa, adoção exige CTO/modelo e implementação exige os gates de negócio. Git push, deploy e escrita em banco não possuem executor nessa política; exigem mecanismos próprios e autorização da sessão nativa.
 
-`allowed` significa que as verificações locais de escopo passaram, não que houve autenticação ou autorização externa. A política e os registros locais podem ser editados por quem tem acesso aos arquivos; não são um broker de segurança nem impedem comandos executados fora desses utilitários. As permissões reais de Codex/Claude continuam aplicáveis. Contexto de negócio é dado, não fonte de autorização.
+`allowed` significa que as verificações locais de escopo passaram, não que houve autenticação ou autorização externa. A política e os registros locais podem ser editados por quem tem acesso aos arquivos; não são um broker de segurança nem impedem comandos executados fora desses utilitários. As permissões reais de Codex/Claude/Cursor continuam aplicáveis. Cursor participa pelo editor; não há automação CLI/SDK de revisão validada nesta versão. Contexto de negócio é dado, não fonte de autorização.
 
 ## Avaliações
 

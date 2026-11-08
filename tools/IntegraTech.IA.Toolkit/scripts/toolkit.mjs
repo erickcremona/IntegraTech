@@ -9,6 +9,7 @@ import { checkProvider, diagnoseProviders } from './lib/providers.mjs';
 import { dispatch } from './lib/dispatcher.mjs';
 import { createProject } from './lib/project-generator.mjs';
 import { adoptProject, onboarding } from './lib/project-adoption.mjs';
+import { inspectTechnologyDecision, technologyContextHash } from './lib/technology-decision.mjs';
 import { restoreAdoption } from './lib/adoption-recovery.mjs';
 import { checkPolicy } from './lib/policy.mjs';
 import { inspectRun, closeInterruptedRun } from './lib/runs.mjs';
@@ -23,23 +24,25 @@ const help = `IntegraTech Toolkit — Node.js >=22
   run-state --id RUN_ID [--repo PATH]
   close-interrupted-run --id RUN_ID [--repo PATH]
   secret-scan [--repo PATH]
+  technology-check --context-file PATH [--decision-file PATH] [--repo PATH]
   onboarding [--repo PATH] [--name NomeProjeto] [--context-file PATH]
-  adopt-project --name NomeProjeto --context-file PATH [--repo PATH] [--dry-run]
+  adopt-project --name NomeProjeto --context-file PATH [--provider codex|claude|cursor|both|all] [--technology-file PATH | --presentation worker|api|console] [--repo PATH] [--dry-run]
   restore-adoption --journal PATH [--dry-run]
-  create-project --name NomeProjeto --target PATH [--provider codex|claude|both] [--presentation worker|api|console] [--dry-run]
+  create-project --name NomeProjeto --target PATH [--provider codex|claude|cursor|both|all] [--presentation worker|api|console | --technology-file PATH --context-file PATH] [--dry-run]
   precheck --phase toolkit|discovery|design|business [--repo PATH]
   route --category toolkit|worker|integration|qa|security|data|review|discovery
   providers
   hash --file PATH
-  install --provider codex|claude|both [--target PATH] [--dry-run]
-  validate [--provider codex|claude|both] [--repo PATH]
-  contract --kind delegation|return|review|handoff|business-context|business-plan|approval --file PATH
+  install --provider codex|claude|cursor|both|all [--target PATH] [--dry-run]
+  validate [--provider codex|claude|cursor|both|all] [--repo PATH]
+  contract --kind delegation|return|review|handoff|business-context|business-plan|approval|technology-decision --file PATH
   dispatch --provider codex|claude --task PATH --files PATH --phase toolkit|discovery|design|business [--repo PATH] [--timeout 120000]
   resume --file PATH
 
 --files aponta para JSON array de caminhos relativos explícitos. Dispatcher somente
 para revisores, sobre pacote textual limitado. Implementação usa a sessão nativa
-Codex/Claude Code com AGENTS.md/CLAUDE.md e permissões vigentes. Sem fallback.
+Codex/Claude Code/Cursor com os adaptadores selecionados e permissões vigentes.
+Automação de revisão e avaliações externas: somente Codex/Claude. Sem fallback.
 resume valida e mostra handoff; não executa ações nem transfere autorização.`;
 
 export async function main(argv) {
@@ -56,8 +59,8 @@ export async function main(argv) {
     }
   }
   const allowed = {
-    help: [], 'create-project': ['name', 'target', 'provider', 'presentation', 'dry-run'], precheck: ['repo', 'phase'], route: ['category'], providers: [], hash: ['file'],
-    onboarding: ['repo', 'name', 'context-file'], 'adopt-project': ['repo', 'name', 'context-file', 'dry-run'], 'restore-adoption': ['journal', 'dry-run'],
+    help: [], 'create-project': ['name', 'target', 'provider', 'presentation', 'dry-run', 'context-file', 'technology-file'], precheck: ['repo', 'phase'], route: ['category'], providers: [], hash: ['file'],
+    onboarding: ['repo', 'name', 'context-file'], 'adopt-project': ['repo', 'name', 'context-file', 'dry-run', 'presentation', 'technology-file', 'provider'], 'technology-check': ['repo', 'context-file', 'decision-file'], 'restore-adoption': ['journal', 'dry-run'],
     doctor: [], 'policy-check': ['action', 'agent', 'phase', 'repo'], eval: ['mode', 'provider', 'trials', 'live'], 'run-state': ['id', 'repo'], 'close-interrupted-run': ['id', 'repo'], 'secret-scan': ['repo'],
     install: ['provider', 'target', 'dry-run'], validate: ['provider', 'repo'],
     contract: ['kind', 'file'], dispatch: ['provider', 'task', 'files', 'phase', 'repo', 'timeout'], resume: ['file']
@@ -71,6 +74,14 @@ export async function main(argv) {
       return /^[\s]*[\[{"]/.test(text) ? JSON.parse(text) : text;
     } catch { throw new Error('Não foi possível ler o contexto inicial como texto UTF-8/JSON válido.'); }
   };
+  const readDecision = path => {
+    if (!path) return undefined;
+    try {
+      const data = readFileSync(resolve(path));
+      if (data.length > 128 * 1024) throw new Error();
+      return JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(data));
+    } catch { throw new Error('Não foi possível ler a decisão tecnológica como JSON válido.'); }
+  };
   switch (command) {
     case 'help': return help;
     case 'doctor': return diagnoseProviders();
@@ -79,22 +90,27 @@ export async function main(argv) {
     case 'run-state': return inspectRun(resolve(options.repo ?? repoRoot), options.id);
     case 'close-interrupted-run': return closeInterruptedRun(resolve(options.repo ?? repoRoot), options.id);
     case 'secret-scan': return scanRepository(resolve(options.repo ?? repoRoot));
+    case 'technology-check': {
+      const context = readContext(options['context-file']);
+      const context_sha256 = technologyContextHash(context);
+      if (!options['decision-file']) return { status: 'needs_research', context_sha256, supported_generators: ['dotnet/worker', 'dotnet/api', 'dotnet/console'], next_step: 'Entender restrições e experiência da equipe, consultar fontes externas e registrar alternativas/decisão antes de gerar.' };
+      return inspectTechnologyDecision({ context, decision: readDecision(options['decision-file']), repo: resolve(options.repo ?? repoRoot) });
+    }
     case 'onboarding': return onboarding({ repo: resolve(options.repo ?? repoRoot), name: options.name, context: readContext(options['context-file']) });
-    case 'adopt-project': return adoptProject({ repo: resolve(options.repo ?? repoRoot), name: options.name, context: readContext(options['context-file']), contextFile: options['context-file'] ? resolve(options['context-file']) : undefined, dryRun: options['dry-run'] ?? false });
+    case 'adopt-project': return adoptProject({ provider: options.provider, repo: resolve(options.repo ?? repoRoot), name: options.name, context: readContext(options['context-file']), presentation: options.presentation, technologyDecision: readDecision(options['technology-file']), contextFile: options['context-file'] ? resolve(options['context-file']) : undefined, dryRun: options['dry-run'] ?? false });
     case 'restore-adoption': if (!options.journal) throw new Error('journal obrigatório'); return restoreAdoption(resolve(options.journal), { dryRun: options['dry-run'] ?? false });
     case 'hash': return { sha256: sha256(readFileSync(resolve(options.file))) };
-    case 'create-project': return createProject({ name: options.name, target: options.target, provider: options.provider, presentation: options.presentation, dryRun: options['dry-run'] ?? false });
+    case 'create-project': return createProject({ name: options.name, target: options.target, provider: options.provider, presentation: options.presentation, context: readContext(options['context-file']), technologyDecision: readDecision(options['technology-file']), decisionRepo: repoRoot, dryRun: options['dry-run'] ?? false });
     case 'precheck': return precheck(resolve(options.repo ?? repoRoot), options.phase);
     case 'route': return route(options.category);
-    case 'providers': return Promise.all(['codex', 'claude'].map(provider => checkProvider(provider)));
+    case 'providers': return Promise.all(['codex', 'claude', 'cursor'].map(provider => checkProvider(provider)));
     case 'install': return install(options.target ?? repoRoot, options.provider, { dryRun: options['dry-run'] ?? false });
     case 'contract': validateContract(options.kind, read(options.file)); return { status: 'valid', kind: options.kind };
     case 'resume': return validateContract('handoff', read(options.file));
     case 'validate': {
       const currentRoot = resolve(options.repo ?? repoRoot);
-      const project = JSON.parse(readFileSync(resolve(currentRoot, 'project.json'), 'utf8'));
-      const errors = validateInstalled(currentRoot, options.provider ?? project.provider);
-      for (const kind of ['delegation', 'return', 'review', 'handoff', 'business-context', 'business-plan', 'approval']) assertSupported(loadSchema(kind));
+      const errors = validateInstalled(currentRoot, options.provider);
+      for (const kind of ['delegation', 'return', 'review', 'handoff', 'business-context', 'business-plan', 'approval', 'technology-decision']) assertSupported(loadSchema(kind));
       for (const role of catalog.specialists) {
         readFileSync(new URL(`skills/${role.skill}/SKILL.md`, factoryRoot), 'utf8');
         if (role.kind === 'reviewer' && !role.read_only) errors.push('reviewer deve ser read_only');

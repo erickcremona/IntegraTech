@@ -42,8 +42,9 @@ export function evaluateLocal() {
     passed: results.filter(r => r.status === 'passed').length, failed: results.filter(r => r.status === 'failed').length, results };
 }
 export async function evaluateProtocol({ provider, live = false, trials = 1, runner = runProcess, probe = checkProvider }) {
-  if (!['codex', 'claude'].includes(provider) || !Number.isInteger(trials) || trials < 1 || trials > 3) throw new Error('avaliação inválida');
+  if (!['codex', 'claude', 'cursor'].includes(provider) || !Number.isInteger(trials) || trials < 1 || trials > 3) throw new Error('avaliação inválida');
   const base = { mode: 'provider_protocol', provider, trials, source: runner === runProcess && probe === checkProvider ? 'provider_live' : 'simulated_provider', proves_end_to_end_development: false, tokens: null, cost: null };
+  if (provider === 'cursor') return { ...base, source: 'not_executed', status: 'blocked', executed: false, reason_code: 'cursor_automation_not_supported' };
   if (!live) return { ...base, source: 'not_executed', status: 'not_executed', reason_code: 'live_opt_in_required' };
   const started = performance.now();
   const budget = policyConfig().limits.max_review_time_ms;

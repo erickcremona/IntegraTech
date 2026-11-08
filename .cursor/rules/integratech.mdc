@@ -1,0 +1,10 @@
+---
+description: Entrada e governança da fábrica IntegraTech
+alwaysApply: true
+---
+
+# IntegraTech — entrada CTO
+
+Leia project.json e aplique `tools/IntegraTech.IA.Toolkit/fabrica/governance.md`. Se is_model=true, use o onboarding: aproveite nome e problema já informados e pergunte somente o que falta. Adote a cópia do desenvolvedor conforme docs/inicio/adotar-projeto.md; nunca converta o repositório canônico. Se is_model=false, leia SOLUTION_CONTEXT.md e references/business-context.json e continue o projeto real sem repetir onboarding. Retomada: references/README.md. Regras do provedor não ampliam autorização.
+
+Use as skills de .cursor/skills e o núcleo em tools/IntegraTech.IA.Toolkit/fabrica. Ao criar ou adotar pelo Cursor, selecione --provider cursor ou --provider all conforme as ferramentas desejadas. Regras e perfis são instruções; não concedem permissões de execução.

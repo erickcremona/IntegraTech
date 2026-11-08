@@ -1,9 +1,11 @@
-import { readFileSync, writeFileSync, mkdirSync, mkdtempSync, existsSync, unlinkSync } from 'node:fs';
+import { readFileSync, writeFileSync, mkdirSync, mkdtempSync, existsSync, unlinkSync, rmdirSync } from 'node:fs';
 import { resolve, join, dirname } from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { prepareProject } from './project-generator.mjs';
-import { contained, assertNoLinks, assertSanitized } from './paths.mjs';
+import { contained, assertNoLinks } from './paths.mjs';
 import { restoreAdoption, transactionPath, exactHash, currentHash, atomicFileWrite } from './adoption-recovery.mjs';
+import { normalizeInitialContext } from './business-context.mjs';
+export { normalizeInitialContext } from './business-context.mjs';
 import { checkPolicy } from './policy.mjs';
 
 export const baselineHash = data => exactHash(data.toString('utf8').replaceAll('\r\n', '\n'));
@@ -21,23 +23,9 @@ export function onboarding({ repo, name, context }) {
   if (typeof name !== 'string' || !name.trim()) questions.push('Qual será o nome do projeto?');
   const problem = typeof context === 'string' ? context : context?.problem;
   if (typeof problem !== 'string' || !problem.trim()) questions.push('Qual problema seu projeto precisa resolver?');
-  return { status: questions.length ? 'needs_input' : 'ready_for_adoption', questions };
+  return { status: questions.length ? 'needs_input' : 'needs_technology_decision', questions };
 }
-export function normalizeInitialContext(input) {
-  const initial = typeof input === 'string' ? { problem: input } : input;
-  if (!initial || Array.isArray(initial) || typeof initial !== 'object') throw new Error('contexto inicial inválido');
-  const result = { schema_version: 1, problem: '', current_situation: '', stakeholders: [], desired_outcomes: [], success_criteria: [], scope: [], out_of_scope: [], known_rules: [], data: [], constraints: [], integrations: [], open_questions: [], assumptions: [] };
-  for (const [key, value] of Object.entries(initial)) {
-    if (!Object.hasOwn(result, key)) throw new Error('campo de contexto desconhecido');
-    if (key === 'schema_version' ? value !== 1 : Array.isArray(result[key]) ? !Array.isArray(value) || value.some(item => typeof item !== 'string') : typeof value !== 'string') throw new Error('tipo de contexto inválido');
-    result[key] = value;
-  }
-  if (!result.problem.trim() || /^(todo|tbd|pendente|a definir|\.\.\.)[.!]?$/i.test(result.problem.trim())) throw new Error('informe o problema de negócio');
-  if (Buffer.byteLength(JSON.stringify(result)) > 128 * 1024) throw new Error('contexto acima do limite');
-  assertSanitized(JSON.stringify(result));
-  return result;
-}
-export function adoptProject({ repo, name, context, dryRun = false, contextFile }) {
+export function adoptProject({ repo, name, context, dryRun = false, contextFile, presentation, technologyDecision, provider }) {
   const root = resolve(repo);
   assertNoLinks(root);
   const identity = JSON.parse(readFileSync(transactionPath(root, 'project.json'), 'utf8'));
@@ -57,7 +45,7 @@ export function adoptProject({ repo, name, context, dryRun = false, contextFile 
       throw new Error('modelo canônico protegido: use uma cópia/repositório próprio antes de adotar');
   }
   const initial = normalizeInitialContext(context);
-  const files = prepareProject({ source: root, name, provider: identity.provider, presentation: identity.presentation });
+  const files = prepareProject({ source: root, name, provider: provider ?? identity.provider, presentation, context: initial, technologyDecision, decisionRepo: root });
   const newIdentity = JSON.parse(files.get('project.json'));
   newIdentity.adoption = { status: 'adopted', context_path: 'references/business-context.json' };
   files.set('project.json', JSON.stringify(newIdentity, null, 2) + '\n');
@@ -108,6 +96,15 @@ export function adoptProject({ repo, name, context, dryRun = false, contextFile 
       if (currentHash(full) !== operation.before) throw new Error('conflito durante aplicação');
       if (operation.after === null) unlinkSync(full);
       else { mkdirSync(dirname(full), { recursive: true }); atomicFileWrite(full, files.get(operation.path), { exclusive: operation.before === null }); }
+    }
+    // Remove only empty directories left by controlled removals. Never recurse into user files.
+    for (const operation of operations.filter(op => op.after === null)) {
+      let directory = dirname(transactionPath(root, operation.path));
+      while (directory !== root) {
+        try { rmdirSync(directory); }
+        catch (error) { if (['ENOTEMPTY', 'EEXIST', 'ENOENT'].includes(error.code)) break; throw error; }
+        directory = dirname(directory);
+      }
     }
     journal.status = 'applied'; save();
   } catch (error) {

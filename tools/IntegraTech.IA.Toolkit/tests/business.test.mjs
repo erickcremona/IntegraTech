@@ -50,3 +50,19 @@ test('negócio: booleanos, placeholders, documentos vazios e escapes não libera
     assert.equal(precheck(f.repo, 'business').status, 'blocked');
   }
 });
+
+test('negócio: decisão aplicada não pode divergir do contexto ou da apresentação', async () => {
+  const { decisionFor } = await import('./technology-fixture.mjs');
+  const f = setup();
+  const decision = decisionFor(f.context);
+  f.save(decision.approval.source_reference, 'Usuário aprovou API para o atendimento.');
+  f.save('project.json', { presentation: 'api' });
+  f.save('references/technology-decision.json', decision);
+  f.save('references/project-state.json', { ...f.state, technology_decision_path: 'references/technology-decision.json' });
+  assert.equal(precheck(f.repo, 'business').status, 'ready');
+  f.save('project.json', { presentation: 'worker' });
+  assert.equal(precheck(f.repo, 'business').status, 'blocked');
+  f.save('project.json', { presentation: 'api' });
+  f.save('references/technology-decision.json', { ...decision, context_sha256: 'invalid' });
+  assert.equal(precheck(f.repo, 'business').status, 'blocked');
+});

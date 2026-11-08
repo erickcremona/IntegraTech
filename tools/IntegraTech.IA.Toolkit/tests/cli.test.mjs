@@ -15,3 +15,28 @@ test('CLI: rejeita opção desconhecida, duplicada, fase e provedor inválidos',
   assert.equal((await main(['route', '--category', 'qa'])).name, 'qa-engineer');
   assert.ok((await main(['help'])).includes('resume'));
 });
+
+test('CLI: tecnologia informa pesquisa pendente e valida recomendação sem gerar arquivos', async () => {
+  const { context, decisionFor } = await import('./technology-fixture.mjs');
+  const { mkdirSync, readdirSync } = await import('node:fs');
+  const repo = mkdtempSync(join(tmpdir(), 'technology-cli-'));
+  const contextFile = join(repo, 'context.json'), decisionFile = join(repo, 'decision.json');
+  writeFileSync(contextFile, JSON.stringify(context));
+  const pending = await main(['technology-check', '--context-file', contextFile]);
+  assert.equal(pending.status, 'needs_research');
+  assert.match(pending.context_sha256, /^[a-f0-9]{64}$/);
+  const decision = decisionFor();
+  decision.approval.status = 'proposed'; decision.approval.source_reference = null;
+  writeFileSync(decisionFile, JSON.stringify(decision));
+  assert.equal((await main(['technology-check', '--repo', repo, '--context-file', contextFile, '--decision-file', decisionFile])).status, 'proposed');
+  const target = join(repo, 'new-project');
+  await assert.rejects(main(['create-project', '--name', 'Catalogo', '--target', target, '--context-file', contextFile, '--technology-file', decisionFile]), /aprova/i);
+  assert.deepEqual(readdirSync(repo).sort(), ['context.json', 'decision.json']);
+  decision.approval.status = 'approved'; decision.selected_option = 'static';
+  mkdirSync(join(repo, 'references'));
+  writeFileSync(join(repo, decision.approval.source_reference = 'references/aceite.md'), 'Aceite para aplicação estática.');
+  writeFileSync(decisionFile, JSON.stringify(decision));
+  const checked = await main(['technology-check', '--repo', repo, '--context-file', contextFile, '--decision-file', decisionFile]);
+  assert.equal(checked.generator_supported, false);
+  assert.equal(checked.selection.stack, 'static-web');
+});

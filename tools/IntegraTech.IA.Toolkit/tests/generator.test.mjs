@@ -80,3 +80,29 @@ test('gerador: manifesto não inclui arquivo pessoal adicionado à árvore', asy
     assert.equal(existsSync(join(target, 'unlisted-personal-probe.txt')), false);
   } finally { unlinkSync(sentinel); }
 });
+
+test('gerador: contexto sozinho nunca escolhe worker e decisão aprovada gera somente API', async () => {
+  const { createProject } = await import(generatorUrl);
+  const { context, decisionFor } = await import('./technology-fixture.mjs');
+  const { mkdirSync } = await import('node:fs');
+  const target = mkdtempSync(join(tmpdir(), 'technology-generated-'));
+  assert.throws(() => createProject({ name: 'Catalogo', target, context }), /decisão tecnológica/i);
+  assert.deepEqual(readdirSync(target), []);
+  const repo = mkdtempSync(join(tmpdir(), 'technology-approval-'));
+  mkdirSync(join(repo, 'references'));
+  writeFileSync(join(repo, 'references/aceite-tecnologia.md'), 'Usuário aprovou API .NET.');
+  createProject({ name: 'Catalogo', target, context, technologyDecision: decisionFor(), decisionRepo: repo });
+  assert.equal(read(join(target, 'project.json')).presentation, 'api');
+  assert.equal(read(join(target, 'references/business-context.json')).problem, context.problem);
+  assert.equal(existsSync(join(target, 'src/Catalogo.Apresentacao/Catalogo.Apresentacao.Worker')), false);
+  assert.equal(read(join(target, 'references/technology-decision.json')).selected_option, 'web');
+  const { main } = await import(pathToFileURL(join(target, 'tools/Catalogo.IA.Toolkit/scripts/toolkit.mjs')));
+  const checked = await main(['technology-check', '--repo', target, '--context-file', join(target, 'references/business-context.json'), '--decision-file', join(target, 'references/technology-decision.json')]);
+  assert.equal(checked.status, 'approved');
+  const child = mkdtempSync(join(tmpdir(), 'technology-child-'));
+  const { createProject: again } = await import(pathToFileURL(join(target, 'tools/Catalogo.IA.Toolkit/scripts/lib/project-generator.mjs')));
+  again({ name: 'OutroCatalogo', target: child, presentation: 'console' });
+  assert.equal(existsSync(join(child, 'references/technology-decision.json')), false);
+  assert.equal(existsSync(join(child, 'references/technology-approval.md')), false);
+  assert.equal(read(join(child, 'references/business-context.json')).problem, '');
+});

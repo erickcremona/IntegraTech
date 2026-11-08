@@ -1,0 +1,14 @@
+{
+  "name": "cursor",
+  "entrypoint": ".cursor/rules/integratech.mdc",
+  "shared_entrypoint": "AGENTS.md",
+  "skills": ".cursor/skills",
+  "agents": ".cursor/agents",
+  "execution": "native-editor",
+  "automated_review": false,
+  "review_mode": "unsupported; perfis são instruções, sem garantia de isolamento técnico",
+  "references": [
+    "https://github.com/cursor/plugin-template",
+    "https://github.com/cursor/cookbook/tree/main/.cursor/skills"
+  ]
+}

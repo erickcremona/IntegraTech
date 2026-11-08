@@ -1,6 +1,6 @@
 # Contexto IntegraTech
 
-Base técnica: aplicação .NET em camadas com fábrica utilizável por Codex e Claude Code. A apresentação inicial está em project.json. Nenhum domínio de negócio foi escolhido.
+Base técnica: aplicação .NET em camadas com fábrica utilizável por Codex, Claude Code e Cursor. A apresentação inicial está em project.json. Nenhum domínio de negócio foi escolhido.
 
 O desenvolvedor informa o problema, usuários afetados, situação atual e resultados esperados. Contexto editável: references/business-context.json. Integração, banco e autenticação são decisões opcionais determinadas pelo problema.
 

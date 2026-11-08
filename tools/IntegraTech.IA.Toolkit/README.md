@@ -1,14 +1,14 @@
 # IntegraTech.IA.Toolkit
 
-Núcleo comum para Codex e Claude Code. Requer Node.js >=22 e, para o produto, SDK .NET 8. A implementação ocorre na sessão nativa; o dispatcher automatiza exclusivamente revisões independentes, como na arquitetura de referência.
+Núcleo comum para Codex, Claude Code e Cursor. [Uso no Cursor](../../docs/inicio/cursor.md). Requer Node.js >=22 e, para o produto, SDK .NET 8. A implementação ocorre na sessão nativa; o dispatcher automatiza exclusivamente revisões independentes, como na arquitetura de referência.
 
 ## Uso a partir da raiz
 
-Adoção na cópia atual: `onboarding` identifica somente os dados ausentes; `adopt-project --name Nome --context-file PATH --dry-run` simula e o mesmo comando sem --dry-run aplica a identidade e o contexto, preservando a pasta raiz e o Git. Consulte [adoção guiada](../../docs/inicio/adotar-projeto.md). A operação exige baseline sem conflitos e bloqueia remotos canônicos. `restore-adoption --journal PATH` ou o recover.mjs do backup permite recuperação protegida por hashes.
+Adoção na cópia atual: `onboarding` identifica somente os dados ausentes; `adopt-project --name Nome --context-file PATH --technology-file DECISAO --dry-run` simula e o mesmo comando sem --dry-run aplica a identidade e o contexto, preservando a pasta raiz e o Git. Consulte [adoção guiada](../../docs/inicio/adotar-projeto.md). A operação exige baseline sem conflitos e bloqueia remotos canônicos. `restore-adoption --journal PATH` ou o recover.mjs do backup permite recuperação protegida por hashes.
 
 Ao manter o modelo, qualquer mudança em arquivo controlado exige revisar a mudança e atualizar o baseline antes de publicar: `node tools/IntegraTech.IA.Toolkit/scripts/update-template-baseline.mjs --write`. Sem --write, o comando apenas verifica. Nunca execute essa atualização no onboarding para contornar conflitos. O baseline detecta customizações acidentais; não é uma assinatura criptográfica de autoria. Projetos reais não podem ser adotados novamente por inferência.
 
-Para iniciar outro produto, use `create-project --name MeuProjeto --target DESTINO --presentation worker|api|console --provider codex|claude|both`. O destino deve ser vazio e externo ao modelo. `--dry-run` mostra o plano sem escrever. O gerador usa o manifesto versionado, renomeia a identidade e inicia o contexto em branco. Não cria Git nem herda remotos, aprovações ou evidências.
+Para iniciar outro produto, use `create-project --name MeuProjeto --target DESTINO --presentation worker|api|console --provider codex|claude|cursor|both|all`. Também é possível usar `create-project --name MeuProjeto --target DESTINO --context-file CONTEXTO --technology-file DECISAO`. O destino deve ser vazio e externo ao modelo. `--dry-run` mostra o plano sem escrever. Não existe apresentação padrão. O fluxo assistido pesquisa tecnologias e usa `--technology-file` com contexto/decisão aprovada; veja [decisão tecnológica](../../docs/inicio/decisao-tecnologica.md). A seleção manual com --presentation não representa pesquisa. O gerador usa o manifesto versionado, renomeia a identidade e inicia o contexto em branco. Não cria Git nem herda remotos, aprovações ou evidências.
 
 O instalador abaixo continua destinado à instalação/manutenção da fábrica; não equivale ao gerador da solução completa. Para o negócio, siga [o guia de início](../../docs/inicio/primeiro-projeto.md).
 
@@ -22,7 +22,7 @@ npm run toolkit -- route --category worker
 npm run toolkit -- install --provider both --dry-run
 ```
 
-Fases: toolkit (manutenção técnica), discovery (contexto incompleto permitido), design (contexto válido) e business (contexto/plano/aceite vinculados por hashes). O precheck retorna código 2 enquanto os requisitos da fase estiverem pendentes. `ready` permite a fase; não autoriza ações externas. A validação não autentica o aprovador. Os arquivos .yaml usam sintaxe JSON, subconjunto válido de YAML, para não exigir parser adicional.
+Fases: toolkit (manutenção técnica), discovery (contexto incompleto permitido), design (contexto válido) e business (contexto/plano/aceite vinculados por hashes). Os comandos de instalação/validação aceitam cursor ou all; a adoção também aceita --provider para selecionar os adaptadores explicitamente. Sem seleção explícita, validate usa a última seleção do manifesto local ou project.provider. O precheck retorna código 2 enquanto os requisitos da fase estiverem pendentes. `ready` permite a fase; não autoriza ações externas. A validação não autentica o aprovador. Os arquivos .yaml usam sintaxe JSON, subconjunto válido de YAML, para não exigir parser adicional.
 
 ## Instalação e manutenção
 
@@ -32,7 +32,7 @@ node tools/IntegraTech.IA.Toolkit/scripts/toolkit.mjs install --provider both
 node tools/IntegraTech.IA.Toolkit/scripts/toolkit.mjs install --provider claude --target C:\MeuDestino --dry-run
 ```
 
-O instalador gera agentes e skills a partir do núcleo. Codex: AGENTS.md, .agents/skills e .codex/agents. Claude Code: CLAUDE.md, .claude/skills e .claude/agents. Não cria repositório Git e não instala nem autentica os provedores. Não instala a solução de produto em outro destino.
+O instalador gera agentes e skills a partir do núcleo. Codex: AGENTS.md, .agents/skills e .codex/agents. Claude Code: CLAUDE.md, .claude/skills e .claude/agents. Cursor: AGENTS.md, .cursor/rules, .cursor/skills e .cursor/agents. both permanece Codex+Claude; all inclui as três ferramentas. Não cria repositório Git e não instala nem autentica os provedores. Não instala a solução de produto em outro destino.
 
 Arquivo existente diferente sem ownership comprovado causa conflito antes das escritas. Atualizações só substituem arquivos ainda iguais ao hash da instalação anterior. Alterações manuais são preservadas. Links/junctions no caminho são rejeitados. Edição do núcleo requer regenerar os adaptadores; `validate` detecta deriva. Não execute instaladores simultâneos no mesmo destino.
 
@@ -52,7 +52,7 @@ Codex recebe execução read-only, sem aprovação para ampliar permissões e co
 
 Revisor não executa testes: avalia os arquivos e resultados fornecidos. Ausência de evidência deve produzir blocked. O dispatcher valida o contrato, identidade da tarefa e tipo do parecer antes de salvar review.json/handoff.json em qa-artifacts/agents. `status=completed` significa processo e contrato concluídos; o aceite depende de `verdict`, riscos e gates.
 
-`providers` verifica executável e flags, não autenticação nem disponibilidade de modelo. Provedor ausente/incompatível, erro, timeout e JSON inválido bloqueiam a rodada; não há fallback silencioso. Testes com processo simulado não comprovam acesso real ao provedor.
+`providers` verifica executável e flags de Codex/Claude, não autenticação nem disponibilidade de modelo. Para Cursor informa suporte de editor e automação unsupported; não inicia CLI/SDK Cursor. Provedor ausente/incompatível, erro, timeout e JSON inválido bloqueiam a rodada; não há fallback silencioso. Testes com processo simulado não comprovam acesso real ao provedor.
 
 ## Contratos e retomada
 

@@ -5,6 +5,7 @@ import { loadSchema } from './contracts.mjs';
 const capabilities = Object.fromEntries(['codex', 'claude'].map(name => [name,
   JSON.parse(readFileSync(new URL(`../../fabrica/providers/${name}.json`, import.meta.url), 'utf8')).required_flags]));
 export function buildInvocation(provider, { workspace, schemaPath, outputPath, jsonSchema }) {
+  if (provider === 'cursor') throw new Error('Automação Cursor ainda não suportada; use a sessão nativa do editor.');
   if (!Object.hasOwn(capabilities, provider)) throw new Error('provedor inválido');
   const args = provider === 'codex'
     ? ['--ask-for-approval', 'never', 'exec', '--sandbox', 'read-only', '--skip-git-repo-check', '--ephemeral',
@@ -56,6 +57,7 @@ export function runProcess({ command, args, cwd, input = '', outputPath, timeout
   });
 }
 export async function checkProvider(provider, runner = runProcess, { timeoutMs = 15000 } = {}) {
+  if (provider === 'cursor') return { provider, status: 'unsupported', native_editor: 'supported', automated_review: false, reason_code: 'cursor_automation_not_supported' };
   if (!Object.hasOwn(capabilities, provider)) throw new Error('provedor inválido');
   const result = await runner({ command: provider, args: provider === 'codex' ? ['exec', '--help'] : ['--help'], timeoutMs });
   if (result.code !== 0 || result.timedOut || result.overflow) return { provider, status: 'unavailable' };
@@ -64,7 +66,7 @@ export async function checkProvider(provider, runner = runProcess, { timeoutMs =
 }
 export async function diagnoseProviders(runner = runProcess) {
   const result = [];
-  for (const provider of ['codex', 'claude']) {
+  for (const provider of ['codex', 'claude', 'cursor']) {
     const capability = await checkProvider(provider, runner);
     const version = capability.status === 'available' ? await runner({ command: provider, args: ['--version'], timeoutMs: 10000 }) : null;
     result.push({ ...capability, cli_version: version?.code === 0 ? version.stdout.match(/\d+\.\d+\.\d+(?:[-.][a-zA-Z0-9]+)*/)?.[0] ?? null : null,

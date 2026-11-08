@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "context_sha256": "",
+  "drivers": [],
+  "options": [],
+  "selected_option": "",
+  "research": [],
+  "validation": [],
+  "approval": {
+    "status": "proposed",
+    "source_reference": null
+  }
+}

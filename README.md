@@ -1,6 +1,6 @@
 # IntegraTech — modelo de arquitetura e fábrica de IA
 
-Ponto de partida .NET 8 em camadas para desenvolvedores iniciarem seus próprios projetos com uma fábrica de desenvolvimento para **Codex e Claude Code**. O negócio começa em aberto: primeiro descreva o problema; depois a fábrica ajuda a descobrir requisitos, desenhar a solução, planejar e implementar fases aprovadas.
+Ponto de partida .NET 8 em camadas para desenvolvedores iniciarem seus próprios projetos com uma fábrica de desenvolvimento para **Codex, Claude Code e Cursor**. O negócio começa em aberto: primeiro descreva o problema; depois a fábrica ajuda a descobrir requisitos, desenhar a solução, planejar e implementar fases aprovadas.
 
 ## Conheça a fábrica
 
@@ -10,23 +10,25 @@ Ponto de partida .NET 8 em camadas para desenvolvedores iniciarem seus próprios
 
 ## Crie seu projeto
 
-Para transformar **sua cópia atual** no projeto real, informe à fábrica o nome e o problema de negócio. Ela pergunta somente o que faltar, personaliza a cópia na mesma pasta e continua no contexto informado. O repositório-modelo canônico é protegido e permanece reutilizável. Consulte [adoção do modelo](docs/inicio/adotar-projeto.md). Abaixo está a alternativa de criar em outra pasta.
+Para transformar **sua cópia atual** no projeto real, informe à fábrica o nome e o problema de negócio. Ela pergunta somente o que faltar, pesquisa tecnologias adequadas, apresenta a decisão e então personaliza a cópia na mesma pasta. O repositório-modelo canônico é protegido e permanece reutilizável. Consulte [adoção do modelo](docs/inicio/adotar-projeto.md). Abaixo está a alternativa de criar em outra pasta.
 
-Requisitos: Node.js >=22 e SDK .NET 8. Autenticação de Codex/Claude Code é configurada separadamente pelo desenvolvedor.
+Requisitos: Node.js >=22 e SDK .NET 8. Autenticação de Codex/Claude Code/Cursor é configurada separadamente pelo desenvolvedor.
 
 ```powershell
 # Use um destino vazio fora da pasta do modelo.
-npm run toolkit -- create-project --name MeuProjeto --target C:\Projetos\MeuProjeto --presentation api --provider both --dry-run
-npm run toolkit -- create-project --name MeuProjeto --target C:\Projetos\MeuProjeto --presentation api --provider both
+npm run toolkit -- create-project --name MeuProjeto --target C:\Projetos\MeuProjeto --presentation api --provider all --dry-run
+npm run toolkit -- create-project --name MeuProjeto --target C:\Projetos\MeuProjeto --presentation api --provider all
 ```
 
-Apresentações: `worker` (aguarda cancelamento), `api` (host HTTP sem endpoints de negócio) ou `console` (inicia e encerra). Provedores: `codex`, `claude` ou `both`. O nome deve ser PascalCase alfanumérico, sem espaços ou nomes reservados. A criação não instala dependências nem executa Git, autenticação ou publicação.
+Não há apresentação padrão: o fluxo assistido segue [a decisão tecnológica](docs/inicio/decisao-tecnologica.md). Worker é um exemplo opcional, incluído somente quando necessário. A seleção explícita do exemplo acima continua disponível para uso manual dos modelos .NET.
+
+Apresentações: `worker` (aguarda cancelamento), `api` (host HTTP sem endpoints de negócio) ou `console` (inicia e encerra). Provedores: `codex`, `claude`, `cursor`, `both` (Codex+Claude) ou `all` (as três ferramentas). Os defaults existentes continuam `both`. Veja [uso no Cursor](docs/inicio/cursor.md). O nome deve ser PascalCase alfanumérico, sem espaços ou nomes reservados. A criação não instala dependências nem executa Git, autenticação ou publicação.
 
 O projeto recebe solução, namespaces, caminhos e skills com seu nome. Não recebe histórico Git, remotos, credenciais, artefatos locais, contexto preenchido, evidências ou aprovações do modelo. A lista permitida está no manifesto project-template.json do toolkit.
 
 ## Comece pelo problema
 
-Abra a pasta gerada no Codex ou Claude Code e peça: “Quero descobrir o contexto do negócio antes de implementar. Meu problema é ...”. Use o [guia de início](docs/inicio/primeiro-projeto.md) e preencha references/business-context.json com apoio da fábrica.
+Abra a pasta gerada no Codex, Claude Code ou Cursor e peça: “Quero descobrir o contexto do negócio antes de implementar. Meu problema é ...”. Use o [guia de início](docs/inicio/primeiro-projeto.md) e preencha references/business-context.json com apoio da fábrica.
 
 Fluxo: **problema → descoberta → contexto validado → desenho/plano → aprovação → implementação → testes/revisão → entrega**.
 

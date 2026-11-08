@@ -3,13 +3,18 @@ import { resolve, relative, isAbsolute, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { contained, assertNoLinks } from './paths.mjs';
 import { presentationFiles, presentationNames } from './presentation-templates.mjs';
+import { selectionForGeneration } from './technology-decision.mjs';
+import { normalizeInitialContext } from './business-context.mjs';
+import { selectedProviders, providerLabel } from './provider-selection.mjs';
 import { providerFiles } from './installer.mjs';
 
 const sourceRoot = fileURLToPath(new URL('../../../../', import.meta.url));
-export function prepareProject({ name, provider = 'both', presentation = 'worker', source = sourceRoot }) {
+export function prepareProject({ name, provider = 'both', presentation, source = sourceRoot, context, technologyDecision, decisionRepo = source }) {
+  presentation = selectionForGeneration({ decision: technologyDecision, context, repo: decisionRepo, presentation });
   if (typeof name !== 'string' || !/^[A-Z][A-Za-z0-9]{0,49}$/.test(name)
     || /^(CON|PRN|AUX|NUL|COM[1-9]|LPT[1-9]|System|Microsoft|Console|Program)$/i.test(name)) throw new Error('nome inválido: use PascalCase alfanumérico, sem nomes reservados');
-  if (!['both', 'codex', 'claude'].includes(provider) || !Object.hasOwn(presentationNames, presentation)) throw new Error('provedor/apresentação inválidos');
+  selectedProviders(provider);
+  if ( !Object.hasOwn(presentationNames, presentation)) throw new Error('provedor/apresentação inválidos');
   const identity = JSON.parse(readFileSync(resolve(source, 'project.json'), 'utf8'));
   const manifest = JSON.parse(readFileSync(contained(source, `tools/${identity.name}.IA.Toolkit/fabrica/project-template.json`), 'utf8'));
   const slug = name.toLowerCase();
@@ -20,7 +25,7 @@ export function prepareProject({ name, provider = 'both', presentation = 'worker
   for (const path of manifest.files) {
     if (typeof path !== 'string' || /(^|\/)(?:\.git|\.scratch|\.vs|bin|obj|secrets|node_modules|qa-artifacts|runtime-publish)(?:\/|$)/i.test(path)) throw new Error('manifesto inválido');
     if (path.endsWith('/template-baseline.json')) continue;
-    if (['AGENTS.md', 'CLAUDE.md'].includes(path) || /^\.(?:codex|agents|claude)\//.test(path)) continue;
+    if (['AGENTS.md', 'CLAUDE.md'].includes(path) || /^\.(?:codex|agents|claude|cursor)\//.test(path)) continue;
     // Presentation sources are generated from reviewed templates, never copied from a customized host.
     if (path.startsWith(`src/${identity.name}.Apresentacao/`) || path === `tests/${identity.name}.Arquitetura.Tests/Program.cs`) continue;
     const origin = contained(source, path);
@@ -41,17 +46,30 @@ export function prepareProject({ name, provider = 'both', presentation = 'worker
   files.set('project.json', JSON.stringify({ schema_version: 1, name, slug, presentation, provider, is_model: false }, null, 2) + '\n');
   files.set('references/project-state.json', JSON.stringify({ schema_version: 1, scope_status: 'pending', plan_gate: 'pending', active_phase: 'discovery', context_path: 'references/business-context.json', plan_path: null, approval_path: null, business_implementation: 'blocked_until_scope_and_plan', external_actions_authorized: false }, null, 2) + '\n');
   files.set('references/business-context.json', JSON.stringify({ schema_version: 1, problem: '', current_situation: '', stakeholders: [], desired_outcomes: [], success_criteria: [], scope: [], out_of_scope: [], known_rules: [], data: [], constraints: [], integrations: [], open_questions: [], assumptions: [] }, null, 2) + '\n');
-  files.set('README.md', `# ${name}\n\nBase .NET 8 em camadas, apresentação ${presentationNames[presentation]} e fábrica de desenvolvimento para ${provider === 'both' ? 'Codex e Claude Code' : provider}. O problema de negócio ainda não foi definido.\n\nComece por [docs/inicio/primeiro-projeto.md](docs/inicio/primeiro-projeto.md) e preencha references/business-context.json com a fábrica.\n\n\x60\x60\x60powershell\ndotnet build ${name}.sln --disable-build-servers -m:1\ndotnet run --project tests/${name}.Arquitetura.Tests --no-build\nnpm test\nnpm run check\nnpm run toolkit -- precheck --phase discovery\n\x60\x60\x60\n\nNenhum remoto, credencial, aprovação ou evidência de outro projeto foi herdado.\n`);
+  files.set('README.md', `# ${name}\n\nBase .NET 8 em camadas, apresentação ${presentationNames[presentation]} e fábrica de desenvolvimento para ${providerLabel(provider)}. O problema de negócio ainda não foi definido.\n\nComece por [docs/inicio/primeiro-projeto.md](docs/inicio/primeiro-projeto.md) e preencha references/business-context.json com a fábrica.\n\n\x60\x60\x60powershell\ndotnet build ${name}.sln --disable-build-servers -m:1\ndotnet run --project tests/${name}.Arquitetura.Tests --no-build\nnpm test\nnpm run check\nnpm run toolkit -- precheck --phase discovery\n\x60\x60\x60\n\nNenhum remoto, credencial, aprovação ou evidência de outro projeto foi herdado.\n`);
+  if (context !== undefined) files.set('references/business-context.json', JSON.stringify(normalizeInitialContext(context), null, 2) + '\n');
+  if (technologyDecision !== undefined) {
+    const decision = structuredClone(technologyDecision);
+    const evidence = readFileSync(contained(decisionRepo, decision.approval.source_reference), 'utf8');
+    decision.approval.source_reference = 'references/technology-approval.md';
+    files.set('references/technology-approval.md', evidence);
+    files.set('references/technology-decision.json', JSON.stringify(decision, null, 2) + '\n');
+    const state = JSON.parse(files.get('references/project-state.json'));
+    state.technology_decision_path = 'references/technology-decision.json';
+    files.set('references/project-state.json', JSON.stringify(state, null, 2) + '\n');
+    files.set('README.md', files.get('README.md').replace('O problema de negócio ainda não foi definido.', 'Contexto e decisão tecnológica registrados em references/.'));
+  }
   return files;
 }
-export function createProject({ name, target, provider = 'both', presentation = 'worker', dryRun = false }) {
+export function createProject({ name, target, provider = 'both', presentation, dryRun = false, context, technologyDecision, decisionRepo = sourceRoot }) {
   if (typeof target !== 'string' || !target.trim()) throw new Error('destino obrigatório');
   const root = resolve(target);
   const rel = relative(sourceRoot, root);
   if (!rel || (!rel.startsWith('..') && !isAbsolute(rel))) throw new Error('destino deve ficar fora do modelo');
   assertNoLinks(root);
   if (existsSync(root) && (!statSync(root).isDirectory() || readdirSync(root).length)) throw new Error('destino deve ser uma pasta vazia');
-  const files = prepareProject({ name, provider, presentation });
+  const files = prepareProject({ name, provider, presentation, context, technologyDecision, decisionRepo });
+  presentation = JSON.parse(files.get('project.json')).presentation;
   for (const path of files.keys()) contained(root, path);
   if (dryRun) return { status: 'planned', name, presentation, provider, files: [...files.keys()] };
   // Recheck immediately before creating files; only explicit destinations are written.

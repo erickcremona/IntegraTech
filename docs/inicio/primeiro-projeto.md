@@ -1,10 +1,10 @@
 # Do problema à primeira fase
 
-Se você ainda está numa cópia do modelo (project.json com is_model=true), informe o nome do projeto e o problema para a fábrica. Ela segue [a adoção guiada](adotar-projeto.md), sem exigir comandos ou edição manual de JSON. Se já é projeto real, leia o contexto existente e continue abaixo; não repita onboarding ou renomeação.
+Se você ainda está numa cópia do modelo (project.json com is_model=true), informe o nome do projeto e o problema para a fábrica. Ela entende o contexto e pesquisa [a decisão tecnológica](decisao-tecnologica.md) antes de seguir [a adoção guiada](adotar-projeto.md), sem exigir comandos ou edição manual de JSON. Se já é projeto real, leia o contexto existente e continue abaixo; não repita onboarding ou renomeação.
 
 ## 1. Descreva o problema
 
-Abra o projeto no Codex ou Claude Code e informe o problema em suas palavras. Exemplo de pedido:
+Abra o projeto no Codex, Claude Code ou Cursor e informe o problema em suas palavras. Exemplo de pedido:
 
 > Quero iniciar a descoberta do negócio. Ainda não implemente funcionalidades. Ajude-me a descrever o problema, os usuários afetados, o funcionamento atual e o resultado esperado. Registre dúvidas sem inventar respostas.
 
@@ -26,7 +26,7 @@ Depois de revisar o contexto com o responsável pelo produto, registre `scope_st
 npm run toolkit -- precheck --phase design
 ```
 
-Peça à fábrica alternativas de solução e um plano faseado. A apresentação escolhida na criação é um ponto de partida; alterar arquitetura materialmente requer decisão documentada. Banco, autenticação, integrações e mensageria não são obrigatórios.
+Peça à fábrica alternativas de solução e um plano faseado. Tecnologias e apresentação devem seguir a decisão pesquisada, não o worker de exemplo. Alterar arquitetura materialmente requer decisão documentada e nova validação do contexto. Banco, autenticação, integrações e mensageria não são obrigatórios.
 
 ## 3. Registre o plano e o aceite humano
 
@@ -53,4 +53,4 @@ Delegue a fase aprovada com ownership, aceite e validações. A implementação 
 
 ## 5. Continue ou troque de provedor
 
-Use o contrato handoff para registrar objetivo, fase, arquivos, testes, evidências, dúvidas e próximo passo. Valide o handoff com `resume`. Codex e Claude Code consultam o mesmo núcleo; suas permissões e autenticação são próprias. Handoff não transfere autorização de merge, push, banco ou deploy.
+Use o contrato handoff para registrar objetivo, fase, arquivos, testes, evidências, dúvidas e próximo passo. Valide o handoff com `resume`. Codex, Claude Code e Cursor consultam o mesmo núcleo; suas permissões e autenticação são próprias. Handoff não transfere autorização de merge, push, banco ou deploy.

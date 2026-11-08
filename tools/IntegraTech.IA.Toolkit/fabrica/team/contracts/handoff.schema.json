@@ -5,7 +5,7 @@
   "properties": {
     "schema_version": { "const": 1 },
     "task_id": { "type": "string", "minLength": 1 },
-    "provider": { "type": "string", "enum": ["codex", "claude"] },
+    "provider": { "type": "string", "enum": ["codex", "claude", "cursor"] },
     "objective": { "type": "string", "minLength": 1 },
     "phase": { "type": "string", "enum": ["toolkit", "discovery", "design", "business"] },
     "files": { "type": "array", "items": { "type": "string" } },

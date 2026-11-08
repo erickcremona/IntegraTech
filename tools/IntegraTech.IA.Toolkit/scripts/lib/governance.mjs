@@ -2,6 +2,7 @@ import { readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { createHash } from 'node:crypto';
 import { contained, assertNoLinks } from './paths.mjs';
+import { inspectTechnologyDecision } from './technology-decision.mjs';
 import { validateContract } from './contracts.mjs';
 
 export const factoryRoot = new URL('../../fabrica/', import.meta.url);
@@ -32,6 +33,12 @@ export function precheck(repo, phase) {
     const context = validateContract('business-context', JSON.parse(contextText));
     assertMeaningful(context);
     if (phase === 'design') return result(true, 'Contexto estruturado válido; desenho ainda exige validação humana.');
+    if (state.technology_decision_path) {
+      const decision = JSON.parse(read(state.technology_decision_path));
+      const technology = inspectTechnologyDecision({ decision, context, repo, requireApproval: true });
+      const identity = JSON.parse(read('project.json'));
+      if (!technology.generator_supported || technology.selection.presentation !== identity.presentation) throw new Error('decisão tecnológica diverge do projeto');
+    }
     if (state.plan_gate !== 'approved') throw new Error('plano pendente');
     const planText = read(state.plan_path);
     const plan = validateContract('business-plan', JSON.parse(planText));
