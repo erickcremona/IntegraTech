@@ -10,7 +10,7 @@ O loop não executa a implementação, não valida um candidato em cópia isolad
 
 - `npm test`: 87/87 testes passaram na base atualizada de `main`, incluindo Cursor, domínio, adoção e os 8 testes de `task-loop.mjs`.
 - `npm run verify`: passou nos 24 critérios. Incluiu baseline, 87 testes, 8 avaliações locais, secret scan, build/ciclo da solução, testes/build/ciclo dos projetos Worker, API e Console gerados e consistência/build/ciclo das adoções API e Console. Um arquivo binário foi ignorado pela varredura.
-- `npm run toolkit -- doctor`: Codex e Claude indisponíveis neste ambiente; Cursor suporta somente sessão nativa, sem dispatcher/automação de revisão. Autenticação e isolamento efetivo não foram verificados.
+- Sessão Codex nativa: disponível nesta execução. `npm run toolkit -- doctor` consulta o executável CLI externo e não detecta a sessão Codex que está conduzindo este trabalho; o resultado anterior do diagnóstico não deve ser interpretado como indisponibilidade do Codex. Claude CLI não foi detectado. Cursor oferece sessão nativa, sem dispatcher/automação de revisão. Autenticação do executor e isolamento efetivo não foram verificados.
 - `npm run toolkit -- eval --mode local`: 8/8 casos passaram. O resultado não comprova comportamento do modelo nem desenvolvimento ponta a ponta.
 - Avaliação com modelo real não executada. O plano exige opt-in explícito; nenhuma chamada `--live` foi feita.
 
@@ -23,4 +23,4 @@ O loop não executa a implementação, não valida um candidato em cópia isolad
 5. Criar evals determinísticas do ciclo completo e medições comparativas. Evals com modelo real continuam separadas e exigem autorização explícita.
 6. Repetir a suíte integral e `npm run verify` após as correções; executar revisão independente antes de habilitar qualquer executor automático.
 
-O executor automático permanece desabilitado. A disponibilidade do CLI Codex, sem autenticação e isolamento demonstrados, não satisfaz o gate de habilitação por provedor.
+O executor automático permanece desabilitado. A sessão Codex disponível permite trabalho assistido nesta execução, mas não demonstra autenticação verificável pelo runtime, isolamento do candidato nem execução de validação confinada; esses controles continuam como gates separados para habilitação por provedor.
