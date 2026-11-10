@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, rmSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, rmSync, existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { startTask, inspectTask, advanceTask, recoverTask } from '../scripts/lib/task-loop.mjs';
@@ -112,6 +112,39 @@ test('recovery refuses live writers and clears a confirmed dead transition lock'
     assert.throws(() => recoverTask({ repo, id: started.id }), /não confirmado/);
     writeFileSync(lock, JSON.stringify({ id: started.id, pid: 2147483647 }));
     assert.equal(recoverTask({ repo, id: started.id }).revision, 1);
+  } finally { rmSync(repo, { recursive: true, force: true }); }
+});
+
+test('recovery clears an interrupted task creation before allowing an idempotent retry', () => {
+  const repo = fixture();
+  try {
+    const root = join(repo, 'qa-artifacts', 'loops');
+    mkdirSync(join(root, 'loop-1'), { recursive: true });
+    writeFileSync(join(root, 'loop-1', 'partial.tmp'), 'partial');
+    writeFileSync(join(root, 'loop-1.lock'), JSON.stringify({ id: 'loop-1', pid: 2147483647, stage: 'creating' }));
+
+    const recovered = recoverTask({ repo, id: 'loop-1' });
+
+    assert.equal(recovered.status, 'recovered');
+    assert.equal(recovered.stage, 'creation');
+    assert.equal(existsSync(join(root, 'loop-1.lock')), false);
+    assert.equal(existsSync(join(root, 'loop-1')), false);
+    const started = startTask({ repo, delegation: JSON.parse(readFileSync(join(repo, 'task.json'))), phase: 'toolkit', provider: 'codex' });
+    assert.equal(started.revision, 1);
+  } finally { rmSync(repo, { recursive: true, force: true }); }
+});
+
+test('recovery keeps an incomplete creation lock when its writer cannot be identified', () => {
+  const repo = fixture();
+  try {
+    const root = join(repo, 'qa-artifacts', 'loops');
+    mkdirSync(join(root, 'loop-1'), { recursive: true });
+    writeFileSync(join(root, 'loop-1', 'partial.tmp'), 'partial');
+    writeFileSync(join(root, 'loop-1.lock'), '{"id":"loop-1","pid":');
+
+    assert.throws(() => recoverTask({ repo, id: 'loop-1' }), /lock inválido/);
+    assert.equal(existsSync(join(root, 'loop-1.lock')), true);
+    assert.equal(existsSync(join(root, 'loop-1', 'partial.tmp')), true);
   } finally { rmSync(repo, { recursive: true, force: true }); }
 });
 

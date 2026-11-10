@@ -1,4 +1,4 @@
-import { readFileSync, mkdirSync, existsSync, writeFileSync, unlinkSync, readdirSync, lstatSync } from 'node:fs';
+import { readFileSync, mkdirSync, existsSync, writeFileSync, unlinkSync, readdirSync, lstatSync, rmSync } from 'node:fs';
 import { resolve, join, relative, isAbsolute } from 'node:path';
 import { createHash } from 'node:crypto';
 import { validateContract, validateAgainstSchema, loadSchema } from './contracts.mjs';
@@ -129,15 +129,36 @@ export function advanceTask({ repo, id, expectedRevision, event }) {
 export function recoverTask({ repo, id }) {
   const paths = taskPaths(repo, id);
   const transitionLock = contained(paths.root, `${id}.transition.lock`);
-  if (!existsSync(transitionLock)) return inspectTask({ repo, id });
-  const lock = JSON.parse(readFileSync(transitionLock, 'utf8'));
-  if (lock.id !== id || !Number.isInteger(lock.pid) || lock.pid < 1) throw new Error('lock inválido');
-  try {
-    process.kill(lock.pid, 0);
-    throw new Error('processo da transição ainda ativo');
-  } catch (error) {
-    if (error.code !== 'ESRCH') throw new Error('encerramento da transição não confirmado');
+  const creationLock = paths.lock;
+  const recoverDeadLock = (lockPath, stage) => {
+    let lock;
+    try { lock = JSON.parse(readFileSync(lockPath, 'utf8')); }
+    catch { throw new Error('lock inválido'); }
+    if (lock.id !== id || !Number.isInteger(lock.pid) || lock.pid < 1) throw new Error('lock inválido');
+    try {
+      process.kill(lock.pid, 0);
+      throw new Error(`processo da ${stage} ainda ativo`);
+    } catch (error) {
+      if (error.code !== 'ESRCH') throw new Error(`encerramento da ${stage} não confirmado`);
+    }
+    return lock;
+  };
+  if (existsSync(transitionLock)) {
+    recoverDeadLock(transitionLock, 'transição');
+    unlinkSync(transitionLock);
+    return inspectTask({ repo, id });
   }
-  unlinkSync(transitionLock);
-  return inspectTask({ repo, id });
+  if (!existsSync(creationLock)) return inspectTask({ repo, id });
+  recoverDeadLock(creationLock, 'criação');
+  if (existsSync(paths.state)) {
+    const state = inspectTask({ repo, id });
+    unlinkSync(creationLock);
+    return state;
+  }
+  if (existsSync(paths.dir)) {
+    assertNoLinks(paths.dir);
+    rmSync(paths.dir, { recursive: true });
+  }
+  unlinkSync(creationLock);
+  return { id, status: 'recovered', stage: 'creation' };
 }

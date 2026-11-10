@@ -10,6 +10,7 @@ export const toolkitRoot = fileURLToPath(new URL('../../', import.meta.url));
 export const repoRoot = resolve(toolkitRoot, '../..');
 const prefix = 'tools/IntegraTech.IA.Toolkit/';
 const digest = text => createHash('sha256').update(text).digest('hex');
+const normalizeLineEndings = text => text.replace(/\r\n/g, '\n');
 function tree(path, output, repoPrefix) {
   for (const entry of readdirSync(path, { withFileTypes: true })) {
     const full = join(path, entry.name);
@@ -87,7 +88,7 @@ export function validateInstalled(root, provider) {
   for (const [name, text] of expectedFiles(provider)) {
     const target = contained(root, name);
     if (!existsSync(target)) issues.push(`ausente: ${name}`);
-    else if (readFileSync(target, 'utf8') !== text) issues.push(`deriva: ${name}`);
+    else if (normalizeLineEndings(readFileSync(target, 'utf8')) !== normalizeLineEndings(text)) issues.push(`deriva: ${name}`);
   }
   return issues;
 }

@@ -62,6 +62,13 @@ test('Cursor: instalação é repetível, aditiva e valida a seleção instalada
   assert.equal(readFileSync(join(repo, '.cursor/rules/integratech.mdc'), 'utf8'), 'customização do usuário');
   assert.ok(validateInstalled(repo).some(issue => issue.includes('.cursor/rules/integratech.mdc')));
 });
+test('Cursor: valida arquivo com finais de linha Windows equivalentes', () => {
+  const repo = temp('cursor-crlf-');
+  install(repo, 'all');
+  const rulePath = join(repo, '.cursor/rules/integratech.mdc');
+  writeFileSync(rulePath, readFileSync(rulePath, 'utf8').replace(/\n/g, '\r\n'));
+  assert.deepEqual(validateInstalled(repo, 'all'), []);
+});
 test('Cursor: conflitos e links são detectados antes de escrever', () => {
   const repo = temp('cursor-conflict-');
   mkdirSync(join(repo, '.cursor/rules'), { recursive: true });
