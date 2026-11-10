@@ -163,6 +163,7 @@
     "tools/IntegraTech.IA.Toolkit/scripts/lib/isolated-validation.mjs",
     "tools/IntegraTech.IA.Toolkit/tests/engineering-loop.test.mjs",
     "tools/IntegraTech.IA.Toolkit/tests/isolated-validation.test.mjs",
-    "docs/inicio/loop-engenharia.md"
+    "docs/inicio/loop-engenharia.md",
+    "docs/inicio/fluxo-toolkit.md"
   ]
 }

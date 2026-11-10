@@ -2,6 +2,8 @@
 
 Núcleo comum para Codex, Claude Code e Cursor. [Uso no Cursor](../../docs/inicio/cursor.md). Requer Node.js >=22 e, para o produto, SDK .NET 8. A implementação ocorre na sessão nativa; o dispatcher automatiza exclusivamente revisões independentes, como na arquitetura de referência.
 
+[Orientação ao usuário e fluxo completo](../../docs/inicio/fluxo-toolkit.md). Este manual detalha a operação direta; o README principal apresenta o uso pela conversa. Mudanças de comportamento devem atualizar ambos, os guias afetados e o mapa mental quando o fluxo mudar.
+
 ## Uso a partir da raiz
 
 Adoção na cópia atual: `onboarding` identifica somente os dados ausentes; `adopt-project --name Nome --context-file PATH --technology-file DECISAO --dry-run` simula e o mesmo comando sem --dry-run aplica a identidade e o contexto, preservando a pasta raiz e o Git. Consulte [adoção guiada](../../docs/inicio/adotar-projeto.md). A operação exige baseline sem conflitos e bloqueia remotos canônicos. `restore-adoption --journal PATH` ou o recover.mjs do backup permite recuperação protegida por hashes.

@@ -61,6 +61,12 @@ test('gerador: identidades, três apresentações e provedores independentes', a
     assert.equal((await main(['precheck', '--phase', 'business'])).status, 'blocked');
     assert.equal((await main(['precheck', '--phase', 'discovery'])).status, 'ready');
     assert.ok(!readFileSync(join(target, 'README.md'), 'utf8').includes('erickcremona'));
+    const userReadme = readFileSync(join(target, 'README.md'), 'utf8');
+    assert.ok(userReadme.includes('[Fluxo de uso do toolkit](docs/inicio/fluxo-toolkit.md)'));
+    assert.ok(existsSync(join(target, 'docs/inicio/fluxo-toolkit.md')));
+    assert.ok(!userReadme.includes('O problema de negócio ainda não foi definido.'));
+    assert.ok(userReadme.includes('references/business-context.json'));
+    assert.ok(userReadme.includes('loop-engenharia.md'));
     if (provider === 'codex') {
       writeFileSync(join(target, 'references/business-context.json'), JSON.stringify({ problem: 'Contexto privado do projeto anterior' }));
       const child = mkdtempSync(join(tmpdir(), 'model-regenerated-'));

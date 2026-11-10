@@ -42,3 +42,8 @@ Para preencher/manter o índice, encaminhe a traceability-maintainer (rota trace
 ## Loop assistido
 
 Para tarefas autorizadas, siga docs/inicio/loop-engenharia.md. Use candidato explícito, oráculos originais congelados, validação isolada por perfil e revisões de código/segurança vinculadas ao digest. Consulte delivery_valid em loop-status antes de concluir. Candidato obsoleto, ausência de progresso, orçamento esgotado, isolamento indisponível ou revisão interrompida sem término dos descendentes comprovado bloqueiam. Não remova registros/locks nem repita revisões do mesmo candidato. Implementação automática continua desabilitada; testes/simulações locais não habilitam provedores.
+
+
+## Orientação ao usuário sempre atualizada
+
+Mudanças no funcionamento, fluxo, comandos, estados, provedores, capacidades ou limites do toolkit exigem atualizar README.md e docs/inicio/fluxo-toolkit.md e os manuais afetados na mesma entrega. Revise o mapa mental do README quando houver mudança material no fluxo. Quando afetar projetos criados/adotados, atualize também o README gerado e o manifesto que transporta o guia; preserve personalizações dos projetos existentes. A revisão final deve conferir exemplos e links e registrar documentação atualizada ou justificar ausência de impacto. No modelo, revise/regere o baseline dos arquivos controlados e execute os checks aplicáveis antes de concluir. Não declarar a documentação atualizada apenas pela presença dos arquivos.
