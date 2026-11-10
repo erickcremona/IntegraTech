@@ -77,7 +77,7 @@ test('especialista: interrupção abrupta permite recuperação explícita por j
   f.save('.scratch/update.json', input);
   const script = `import fs from 'node:fs'; import {syncBuiltinESMExports} from 'node:module';
     const {prepareSpecialist}=await import(process.argv[1]);const {researchRequest}=await import(process.argv[2]);
-    const original=fs.renameSync; fs.renameSync=(from,to)=>{original(from,to);if(String(to).endsWith('/SKILL.md'))process.exit(23);};syncBuiltinESMExports();
+    const original=fs.renameSync; fs.renameSync=(from,to)=>{original(from,to);if(String(to).split(String.fromCharCode(92)).join('/').endsWith('/SKILL.md'))process.exit(23);};syncBuiltinESMExports();
     prepareSpecialist({repo:process.argv[3],preparation:JSON.parse(fs.readFileSync(process.argv[3]+'/.scratch/update.json')),request:researchRequest});`;
   const result = spawnSync(process.execPath, ['--input-type=module', '-e', script, new URL('../scripts/lib/domain-workflow.mjs', import.meta.url).href, new URL('./domain-fixture.mjs', import.meta.url).href, f.repo]);
   assert.equal(result.status, 23);

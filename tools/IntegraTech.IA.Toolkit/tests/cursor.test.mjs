@@ -5,10 +5,12 @@ import assert from 'node:assert/strict';
 import { mkdtempSync, readFileSync, writeFileSync, existsSync, mkdirSync, symlinkSync, readdirSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { fileURLToPath, pathToFileURL } from 'node:url';
+import { pathToFileURL } from 'node:url';
 import { execFileSync } from 'node:child_process';
 import { install, providerFiles, validateInstalled, repoRoot } from '../scripts/lib/installer.mjs';
 import { catalog } from '../scripts/lib/governance.mjs';
+import { main } from '../scripts/toolkit.mjs';
+import { researchRequest } from './domain-fixture.mjs';
 
 const read = path => JSON.parse(readFileSync(path, 'utf8'));
 const temp = label => mkdtempSync(join(tmpdir(), label));
@@ -130,14 +132,13 @@ test('Cursor: handoff aceita origem Cursor sem habilitar dispatcher nem avaliaç
   assert.deepEqual(readdirSync(repo), []);
 });
 const isModel = read(join(repoRoot, 'project.json')).is_model;
-test('Cursor: CLI real cria e adota com escolha explícita e recuperação', { skip: !isModel }, async () => {
-  const cli = fileURLToPath(new URL('../scripts/toolkit.mjs', import.meta.url));
+test('Cursor: CLI cria e adota com escolha explícita e recuperação', { skip: !isModel }, async () => {
   const transport = cliResearchFixture();
-  const run = args => JSON.parse(execFileSync(process.execPath, [cli, ...args], { encoding: 'utf8', env: transport.env }));
+  const run = args => main(args, { researchRequest });
   const inputs = temp('cursor-cli-inputs-');
   const inputArgs = transport.prepare(inputs);
   const created = temp('cursor-cli-create-');
-  assert.equal(run(['create-project', '--name', 'ViaCursor', '--target', created, '--provider', 'cursor', '--presentation', 'api', '--repo', inputs, ...inputArgs]).status, 'created');
+  assert.equal((await run(['create-project', '--name', 'ViaCursor', '--target', created, '--provider', 'cursor', '--presentation', 'api', '--repo', inputs, ...inputArgs])).status, 'created');
   const generatedCli = join(created, 'tools/ViaCursor.IA.Toolkit/scripts/toolkit.mjs');
   const checked = JSON.parse(execFileSync(process.execPath, [generatedCli, 'validate'], { encoding: 'utf8' }));
   assert.equal(checked.status, 'valid');
@@ -153,15 +154,15 @@ test('Cursor: CLI real cria e adota com escolha explícita e recuperação', { s
     writeFileSync(join(repo, 'personal.txt'), 'arquivo pessoal');
     const adoptionInputs = transport.prepare(repo);
     const args = ['adopt-project', '--repo', repo, '--name', 'ProdutoCursor', ...adoptionInputs, '--provider', provider, '--presentation', 'api'];
-    assert.equal(run([...args, '--dry-run']).status, 'planned');
+    assert.equal((await run([...args, '--dry-run'])).status, 'planned');
     assert.equal(read(join(repo, 'project.json')).is_model, true);
-    const result = run(args);
+    const result = await run(args);
     assert.equal(result.status, 'adopted');
     assert.equal(read(join(repo, 'project.json')).provider, provider);
     const ownCli = join(repo, 'tools/ProdutoCursor.IA.Toolkit/scripts/toolkit.mjs');
     assert.equal(JSON.parse(execFileSync(process.execPath, [ownCli, 'validate'], { encoding: 'utf8' })).status, 'valid');
     assert.equal(readFileSync(join(repo, 'personal.txt'), 'utf8'), 'arquivo pessoal');
-    assert.equal(run(['restore-adoption', '--journal', result.journal]).status, 'restored');
+    assert.equal((await run(['restore-adoption', '--journal', result.journal])).status, 'restored');
     assert.equal(read(join(repo, 'project.json')).is_model, true);
   }
 });

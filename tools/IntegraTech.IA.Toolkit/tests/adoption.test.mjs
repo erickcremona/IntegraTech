@@ -47,6 +47,8 @@ test('adoção: simula sem escrita e converte nome/contexto na mesma pasta', opt
   assert.deepEqual(readFileSync(join(f.repo, '.git/config')), gitConfig);
   const { main } = await import(pathToFileURL(join(f.repo, 'tools/MensagensCliente.IA.Toolkit/scripts/toolkit.mjs')));
   assert.equal((await main(['validate'])).status, 'valid');
+  assert.equal(existsSync(join(f.repo, 'tools/MensagensCliente.IA.Toolkit/scripts/lib/task-loop.mjs')), true);
+  assert.equal(existsSync(join(f.repo, 'tools/MensagensCliente.IA.Toolkit/scripts/lib/verify-report.mjs')), true);
   assert.equal((await main(['precheck', '--phase', 'business'])).status, 'blocked');
   assert.throws(() => f.adoptProject(args), /real|adotado/i);
 });

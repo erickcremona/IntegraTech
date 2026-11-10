@@ -18,6 +18,7 @@ import { checkPolicy } from './lib/policy.mjs';
 import { inspectRun, closeInterruptedRun } from './lib/runs.mjs';
 import { evaluateLocal, evaluateProtocol } from './lib/evaluations.mjs';
 import { scanRepository } from './lib/secret-scan.mjs';
+import { startTask, inspectTask, advanceTask, recoverTask } from './lib/task-loop.mjs';
 
 const help = `IntegraTech Toolkit — Node.js >=22
   help
@@ -25,6 +26,10 @@ const help = `IntegraTech Toolkit — Node.js >=22
   policy-check --action review|implement|adopt|discover|design --agent PAPEL --phase FASE [--repo PATH]
   eval --mode local|protocol [--provider codex|claude] [--trials 1..3] [--live]
   run-state --id RUN_ID [--repo PATH]
+  loop-start --task PATH --phase FASE --provider codex|claude|cursor [--repo PATH]
+  loop-status --id RUN_ID [--repo PATH]
+  loop-recover --id RUN_ID [--repo PATH]
+  loop-advance --id RUN_ID --revision N --event gate_checked [--repo PATH]
   close-interrupted-run --id RUN_ID [--repo PATH]
   secret-scan [--repo PATH]
   research-collect --context-file PATH --preparation-file PATH --output PATH
@@ -48,7 +53,7 @@ const help = `IntegraTech Toolkit — Node.js >=22
   hash --file PATH
   install --provider codex|claude|cursor|both|all [--target PATH] [--dry-run]
   validate [--provider codex|claude|cursor|both|all] [--repo PATH]
-  contract --kind delegation|return|review|handoff|business-context|business-plan|approval|technology-decision|domain-preparation|domain-consultation|domain-coherence --file PATH
+  contract --kind delegation|return|review|handoff|business-context|business-plan|approval|technology-decision|domain-preparation|domain-consultation|domain-coherence|task-run --file PATH
   dispatch --provider codex|claude --task PATH --files PATH --phase toolkit|discovery|design|business [--repo PATH] [--timeout 120000]
   resume --file PATH
 
@@ -58,7 +63,7 @@ Codex/Claude Code/Cursor com os adaptadores selecionados e permissões vigentes.
 Automação de revisão e avaliações externas: somente Codex/Claude. Sem fallback.
 resume valida e mostra handoff; não executa ações nem transfere autorização.`;
 
-export async function main(argv) {
+export async function main(argv, services = {}) {
   const [command = 'help', ...args] = argv;
   const options = {};
   for (let i = 0; i < args.length; i++) {
@@ -77,7 +82,9 @@ export async function main(argv) {
     'research-collect': ['context-file', 'preparation-file', 'output'], 'specialist-check': ['context-file', 'preparation-file'], 'specialist-prepare': ['repo', 'preparation-file'], 'specialist-status': ['repo'], 'consultation-record': ['repo', 'file'], 'consultation-check': ['repo', 'file'], 'coherence-snapshot': ['repo'], 'coherence-run': ['repo'], 'coherence-check': ['repo', 'report-file'], 'coherence-status': ['repo'],
     doctor: [], 'policy-check': ['action', 'agent', 'phase', 'repo'], eval: ['mode', 'provider', 'trials', 'live'], 'run-state': ['id', 'repo'], 'close-interrupted-run': ['id', 'repo'], 'secret-scan': ['repo'],
     install: ['provider', 'target', 'dry-run'], validate: ['provider', 'repo'],
-    contract: ['kind', 'file'], dispatch: ['provider', 'task', 'files', 'phase', 'repo', 'timeout'], resume: ['file']
+    contract: ['kind', 'file'], dispatch: ['provider', 'task', 'files', 'phase', 'repo', 'timeout'], resume: ['file'],
+    'loop-start': ['task', 'phase', 'provider', 'repo'], 'loop-status': ['id', 'repo'],
+    'loop-advance': ['id', 'revision', 'event', 'repo'], 'loop-recover': ['id', 'repo']
   };
   if (!Object.hasOwn(allowed, command) || Object.keys(options).some(key => !allowed[command].includes(key))) throw new Error('comando/opção desconhecido');
   const read = path => JSON.parse(readFileSync(resolve(path), 'utf8'));
@@ -102,6 +109,12 @@ export async function main(argv) {
     case 'policy-check': return checkPolicy({ repo: resolve(options.repo ?? repoRoot), action: options.action, agent: options.agent, phase: options.phase });
     case 'eval': if (options.mode === 'local') return evaluateLocal(); if (options.mode === 'protocol') return evaluateProtocol({ provider: options.provider, live: options.live ?? false, trials: options.trials ? Number(options.trials) : 1 }); throw new Error('modo de avaliação inválido');
     case 'run-state': return inspectRun(resolve(options.repo ?? repoRoot), options.id);
+    case 'loop-start': return startTask({ repo: resolve(options.repo ?? repoRoot), delegation: read(options.task), phase: options.phase, provider: options.provider });
+    case 'loop-status': return inspectTask({ repo: resolve(options.repo ?? repoRoot), id: options.id });
+    case 'loop-recover': return recoverTask({ repo: resolve(options.repo ?? repoRoot), id: options.id });
+    case 'loop-advance':
+      if (!/^\d+$/.test(options.revision ?? '') || options.event !== 'gate_checked') throw new Error('transição inválida');
+      return advanceTask({ repo: resolve(options.repo ?? repoRoot), id: options.id, expectedRevision: Number(options.revision), event: { type: options.event } });
     case 'close-interrupted-run': return closeInterruptedRun(resolve(options.repo ?? repoRoot), options.id);
     case 'secret-scan': return scanRepository(resolve(options.repo ?? repoRoot));
     case 'research-collect': {
@@ -135,10 +148,10 @@ export async function main(argv) {
       return inspectTechnologyDecision({ context, decision: readDecision(options['decision-file']), repo: resolve(options.repo ?? repoRoot) });
     }
     case 'onboarding': return onboarding({ repo: resolve(options.repo ?? repoRoot), name: options.name, context: readContext(options['context-file']) });
-    case 'adopt-project': return adoptProject({ provider: options.provider, repo: resolve(options.repo ?? repoRoot), name: options.name, context: readContext(options['context-file']), presentation: options.presentation, technologyDecision: readDecision(options['technology-file']), preparation: readDecision(options['preparation-file']), contextFile: options['context-file'] ? resolve(options['context-file']) : undefined, dryRun: options['dry-run'] ?? false });
+    case 'adopt-project': return adoptProject({ provider: options.provider, repo: resolve(options.repo ?? repoRoot), name: options.name, context: readContext(options['context-file']), presentation: options.presentation, technologyDecision: readDecision(options['technology-file']), preparation: readDecision(options['preparation-file']), researchRequest: services.researchRequest, contextFile: options['context-file'] ? resolve(options['context-file']) : undefined, dryRun: options['dry-run'] ?? false });
     case 'restore-adoption': if (!options.journal) throw new Error('journal obrigatório'); return restoreAdoption(resolve(options.journal), { dryRun: options['dry-run'] ?? false });
     case 'hash': return { sha256: sha256(readFileSync(resolve(options.file))) };
-    case 'create-project': return createProject({ name: options.name, target: options.target, provider: options.provider, presentation: options.presentation, context: readContext(options['context-file']), technologyDecision: readDecision(options['technology-file']), preparation: readDecision(options['preparation-file']), decisionRepo: resolve(options.repo ?? repoRoot), dryRun: options['dry-run'] ?? false });
+    case 'create-project': return createProject({ name: options.name, target: options.target, provider: options.provider, presentation: options.presentation, context: readContext(options['context-file']), technologyDecision: readDecision(options['technology-file']), preparation: readDecision(options['preparation-file']), researchRequest: services.researchRequest, decisionRepo: resolve(options.repo ?? repoRoot), dryRun: options['dry-run'] ?? false });
     case 'precheck': return precheck(resolve(options.repo ?? repoRoot), options.phase);
     case 'route': return route(options.category);
     case 'providers': return Promise.all(['codex', 'claude', 'cursor'].map(provider => checkProvider(provider)));
@@ -148,7 +161,7 @@ export async function main(argv) {
     case 'validate': {
       const currentRoot = resolve(options.repo ?? repoRoot);
       const errors = validateInstalled(currentRoot, options.provider);
-      for (const kind of ['delegation', 'return', 'review', 'handoff', 'business-context', 'business-plan', 'approval', 'technology-decision', 'domain-preparation', 'domain-consultation', 'domain-coherence']) assertSupported(loadSchema(kind));
+      for (const kind of ['delegation', 'return', 'review', 'handoff', 'business-context', 'business-plan', 'approval', 'technology-decision', 'domain-preparation', 'domain-consultation', 'domain-coherence', 'task-run']) assertSupported(loadSchema(kind));
       for (const role of catalog.specialists) {
         readFileSync(new URL(`skills/${role.skill}/SKILL.md`, factoryRoot), 'utf8');
         if (role.kind === 'reviewer' && !role.read_only) errors.push('reviewer deve ser read_only');

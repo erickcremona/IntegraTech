@@ -3,6 +3,7 @@
     { "category": "discovery", "expected": "business-analyst" },
     { "category": "worker", "expected": "application-engineer" },
     { "category": "application", "expected": "application-engineer" },
+    { "category": "integration-analysis", "expected": "integration-analyst" },
     { "category": "integration", "expected": "application-engineer" },
     { "category": "qa", "expected": "qa-engineer" },
     { "category": "toolkit", "expected": "platform-engineer" },

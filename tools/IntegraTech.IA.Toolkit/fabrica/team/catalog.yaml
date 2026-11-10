@@ -16,6 +16,7 @@
     "discovery": "business-analyst",
     "worker": "application-engineer",
     "application": "application-engineer",
+    "integration-analysis": "integration-analyst",
     "integration": "application-engineer",
     "qa": "qa-engineer",
     "toolkit": "platform-engineer",

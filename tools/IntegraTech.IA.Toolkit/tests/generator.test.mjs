@@ -53,6 +53,9 @@ test('gerador: identidades, três apresentações e provedores independentes', a
     assert.equal(existsSync(join(target, 'AGENTS.md')), provider !== 'claude');
     assert.equal(existsSync(join(target, 'CLAUDE.md')), provider !== 'codex');
     const toolkit = join(target, `tools/${name}.IA.Toolkit`);
+    assert.ok(existsSync(join(toolkit, 'scripts/lib/task-loop.mjs')));
+    assert.ok(existsSync(join(toolkit, 'scripts/lib/verify-report.mjs')));
+    assert.ok(existsSync(join(toolkit, 'fabrica/team/contracts/task-run.schema.json')));
     const { main } = await import(pathToFileURL(join(toolkit, 'scripts/toolkit.mjs')));
     assert.equal((await main(['validate'])).status, 'valid');
     assert.equal((await main(['precheck', '--phase', 'business'])).status, 'blocked');

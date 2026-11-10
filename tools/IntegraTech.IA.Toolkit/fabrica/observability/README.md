@@ -1,3 +1,5 @@
 # Observabilidade da fábrica
 
 Os resultados de processo e parecer são distintos: completed comprova término e contrato válido, enquanto verdict registra o parecer. Bloqueios nunca representam aprovação. O relatório de validação registra disponibilidade e execução real por provedor, sem stdout/stderr brutos ou credenciais.
+
+O loop durável grava uma revisão e eventos sanitizados em `qa-artifacts/loops/<task_id>/state.json`. `task_id` é chave idempotente: conteúdo de delegação divergente não pode reutilizar a mesma chave. A observação de snapshot cobre os arquivos de leitura/escrita declarados e a política. `snapshot_matches=false` invalida a transição. O registro fica no workspace local e não é autenticado contra uma pessoa/processo que possa editar essa pasta; o estado não é evidência resistente a adulteração. O contrato só admite os estados que o runtime realmente produz. Ainda não há artefatos observados de validação/revisão integrados ao estado nem `ready_for_delivery`. Veja `docs/validacao/loop-fabrica-2026-11-09.md` para resultados e limitações do incremento.

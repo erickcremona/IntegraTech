@@ -17,6 +17,7 @@ export function checkPolicy({ repo, action, agent, phase }) {
     const role = agent === 'cto' ? { kind: 'cto', read_only: false } : catalog.specialists.find(role => role.name === agent);
     if (!role || !policy.actions[action].includes(role.kind)) return result(false, 'role_not_allowed');
     if (action === 'implement' && (role.read_only || phase !== 'business')) return result(false, 'write_not_allowed');
+    if (action === 'implement_toolkit' && (role.name !== 'platform-engineer' || phase !== 'toolkit')) return result(false, 'toolkit_write_not_allowed');
     if (action === 'review' && !role.read_only) return result(false, 'review_must_be_read_only');
     if (action === 'adopt') {
       const project = JSON.parse(readFileSync(contained(repo, 'project.json'), 'utf8'));

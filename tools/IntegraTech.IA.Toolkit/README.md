@@ -20,9 +20,14 @@ npm run toolkit -- precheck --phase business
 npm run toolkit -- providers
 npm run toolkit -- route --category worker
 npm run toolkit -- install --provider both --dry-run
+node tools/IntegraTech.IA.Toolkit/scripts/toolkit.mjs loop-start --task delegation.json --phase toolkit --provider codex
+node tools/IntegraTech.IA.Toolkit/scripts/toolkit.mjs loop-status --id TASK_RUN_ID
+node tools/IntegraTech.IA.Toolkit/scripts/toolkit.mjs loop-advance --id TASK_RUN_ID --revision 1 --event gate_checked
 ```
 
 Fases: toolkit (manutenção técnica), discovery (contexto incompleto permitido), design (contexto válido) e business (contexto/plano/aceite vinculados por hashes). Os comandos de instalação/validação aceitam cursor ou all; a adoção também aceita --provider para selecionar os adaptadores explicitamente. Sem seleção explícita, validate usa a última seleção do manifesto local ou project.provider. O precheck retorna código 2 enquanto os requisitos da fase estiverem pendentes. `ready` permite a fase; não autoriza ações externas. A validação não autentica o aprovador. Os arquivos .yaml usam sintaxe JSON, subconjunto válido de YAML, para não exigir parser adicional.
+
+O loop durável persiste estado e histórico em `qa-artifacts/loops`, que permanece ignorado pelo Git. `loop-start` valida delegação e cria o estado em espera; repetir o mesmo `task_id` com a mesma delegação retorna o registro existente, enquanto reutilizá-lo com outro conteúdo é rejeitado. `loop-advance --event gate_checked` reconsulta a política local e o precheck. O chamador não pode declarar aprovação. `loop-status` compara o snapshot de arquivos autorizados. `loop-recover` só remove lock quando confirma o encerramento do processo; se não puder comprovar, mantém o bloqueio. Esse incremento não executa implementação, testes isolados ou revisão vinculada ao snapshot e não produz `ready_for_delivery`; consulte [a evidência do loop](../../docs/validacao/loop-fabrica-2026-11-09.md) antes de tratá-lo como ciclo de engenharia completo.
 
 ## Instalação e manutenção
 

@@ -4,6 +4,7 @@
   "actions": {
     "review": ["reviewer"],
     "implement": ["executor"],
+    "implement_toolkit": ["executor"],
     "adopt": ["cto"],
     "discover": ["executor", "cto"],
     "design": ["executor", "cto"]
