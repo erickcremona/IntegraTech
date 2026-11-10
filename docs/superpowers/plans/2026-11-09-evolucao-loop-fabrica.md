@@ -1,5 +1,7 @@
 # Plano de implementação do loop de engenharia da fábrica
 
+Estado corrente: veja docs/superpowers/plans/2026-11-10-fechamento-loop.md e docs/validacao/2026-11-10-fechamento-loop.md. O registro de 2026-11-09 abaixo é histórico; itens que combinam implementação com pilotos reais/Windows não são concluídos apenas por testes locais.
+
 > **Para execução:** usar `superpowers:executing-plans` ou `superpowers:subagent-driven-development` após o aceite do desenho. Marcar cada etapa mediante evidência.
 
 **Objetivo.** Fazer a fábrica conduzir uma tarefa autorizada da implementação à revisão final, corrigir falhas dentro de limites explícitos e retomar com segurança em outra sessão.
@@ -121,7 +123,7 @@ flowchart LR
 
 ### 3. Ajustar catálogo, skills e controles dos provedores
 
-- [ ] Em `catalog.yaml` e `routing-scenarios.yaml`, adicionar `integration-analysis` para `integration-analyst`, mantendo a rota existente para implementação aprovada. Fazer `integratech-aplicacao` carregar `integratech-worker` apenas na apresentação Worker. Atualizar governança e skills canônicas com gatilhos de uso, entrada, saída, como reagir a falhas e limites de escrita. Cobrir análise sem escrita, implementação autorizada e projetos API ou Console que não ativam a skill Worker. Regenerar Codex e Claude pelo instalador e validar instalação e geração de projetos.
+- [x] Em `catalog.yaml` e `routing-scenarios.yaml`, adicionar `integration-analysis` para `integration-analyst`, mantendo a rota existente para implementação aprovada. Fazer `integratech-aplicacao` carregar `integratech-worker` apenas na apresentação Worker. Atualizar governança e skills canônicas com gatilhos de uso, entrada, saída, como reagir a falhas e limites de escrita. Cobrir análise sem escrita, implementação autorizada e projetos API ou Console que não ativam a skill Worker. Regenerar Codex e Claude pelo instalador e validar instalação e geração de projetos.
 - [ ] Definir contrato interno `executeAttempt({ task, workspace, deadline, capabilities })` para piloto de execução automática. Prover cópia isolada e descartável, ambiente de subprocesso explícito, sem diretórios pessoais montados, credenciais de sistemas, plugins ou MCP desnecessários. Separar a conexão de inferência do ambiente que executa código. O sandbox do candidato fica sem rede por padrão. Confirmar com canários de leitura fora do escopo, escrita fora do workspace, execução de ferramenta proibida, saída de rede e acesso aos registros. Inspecionar o diff antes de incorporar alterações. A habilitação depende dessas provas para a combinação de provedor, versão e sistema operacional usada no piloto.
 - [ ] Habilitar o piloto por provedor e por tarefa aprovada. Registrar versão, capacidades verificadas e motivo do bloqueio. Revisor continua em execução independente, somente leitura. Provedor incompatível interrompe a automação.
 
@@ -150,3 +152,8 @@ flowchart LR
 3. **Loop automático demonstrado por provedor** com isolamento observado, critérios de aceite cumpridos e métricas comparáveis.
 
 Rollback da automação consiste em desativar o executor do provedor, confirmar o fim da execução e reconciliar efeitos pendentes. A sessão nativa continua a partir da última revisão válida do estado após revalidar candidato e autorização. Preservar histórico, snapshots e pareceres para diagnóstico.
+
+
+## Continuação — 2026-11-10
+
+O loop assistido foi expandido conforme docs/superpowers/plans/2026-11-10-fechamento-loop.md: candidatos, oráculos congelados, validação isolada por perfil, revisões vinculadas, limites de correção e handoff explícito. O checklist histórico acima inclui critérios de piloto real/Windows e medições ainda não cumpridos; não marcar esses conjuntos como completos a partir das simulações. Relatório corrente: docs/validacao/2026-11-10-fechamento-loop.md.

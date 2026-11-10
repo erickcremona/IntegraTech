@@ -81,3 +81,21 @@ test('dispatcher: apaga saída bruta e respeita ownership de leitura', async () 
   assert.equal(outsideOwnership.status, 'blocked');
   assert.match(outsideOwnership.reason, /ownership/i);
 });
+
+test('dispatcher binds the exact package to expected hashes and rejects mutation during review', async () => {
+  const { dispatch } = await import(new URL('scripts/lib/dispatcher.mjs', toolkit));
+  const { createHash } = await import('node:crypto');
+  const { repo, task, review } = fixture();
+  const hash = value => createHash('sha256').update(value).digest('hex');
+  const candidate = { sha256: hash('candidate'), hashes: { 'README.md': hash('base neutra') }, removed: [] };
+  const options = { repo, task, candidate, provider: 'codex', phase: 'toolkit', files: ['README.md'], probe: async () => ({ status: 'available' }) };
+  const good = await dispatch({ ...options, runner: async () => ({ code: 0, stdout: JSON.stringify(review) }) });
+  assert.equal(good.candidate_sha256, candidate.sha256);
+  assert.equal(typeof good.package_sha256, 'string');
+  const stale = await dispatch({ ...options, runner: async () => { writeFileSync(join(repo, 'README.md'), 'modified during review'); return { code: 0, stdout: JSON.stringify(review) }; } });
+  assert.equal(stale.status, 'blocked');
+  let called = false;
+  const mismatched = await dispatch({ ...options, runner: async () => { called = true; return { code: 0, stdout: JSON.stringify(review) }; } });
+  assert.equal(mismatched.status, 'blocked');
+  assert.equal(called, false);
+});

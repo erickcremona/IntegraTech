@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "description": "Lista controlada; mudanças exigem revisão. Somente texto do modelo, sem estado pessoal.",
+  "description": "Lista controlada; mudan\u00e7as exigem revis\u00e3o. Somente texto do modelo, sem estado pessoal.",
   "files": [
     ".agents/skills/integratech-rastreabilidade/SKILL.md",
     ".claude/agents/traceability-maintainer.md",
@@ -156,6 +156,13 @@
     "tools/IntegraTech.IA.Toolkit/tests/providers.test.mjs",
     "tools/IntegraTech.IA.Toolkit/tests/reliability.test.mjs",
     "tools/IntegraTech.IA.Toolkit/tests/technology-fixture.mjs",
-    "tools/IntegraTech.IA.Toolkit/tests/technology.test.mjs"
+    "tools/IntegraTech.IA.Toolkit/tests/technology.test.mjs",
+    "tools/IntegraTech.IA.Toolkit/fabrica/validation-profiles.json",
+    "tools/IntegraTech.IA.Toolkit/scripts/lib/candidate.mjs",
+    "tools/IntegraTech.IA.Toolkit/scripts/lib/engineering-loop.mjs",
+    "tools/IntegraTech.IA.Toolkit/scripts/lib/isolated-validation.mjs",
+    "tools/IntegraTech.IA.Toolkit/tests/engineering-loop.test.mjs",
+    "tools/IntegraTech.IA.Toolkit/tests/isolated-validation.test.mjs",
+    "docs/inicio/loop-engenharia.md"
   ]
 }

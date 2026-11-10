@@ -5,18 +5,19 @@ import { validateContract, validateAgainstSchema, loadSchema } from './contracts
 import { precheck, sha256 } from './governance.mjs';
 import { checkPolicy } from './policy.mjs';
 import { contained, assertNoLinks } from './paths.mjs';
+import { inventory, fingerprint, generatedOutput } from './candidate.mjs';
 import { atomicFileWrite } from './adoption-recovery.mjs';
 
 const safeId = value => typeof value === 'string' && /^[A-Za-z0-9_-]{1,80}$/.test(value);
 const digest = value => createHash('sha256').update(value).digest('hex');
-function taskPaths(repo, id) {
+export function taskPaths(repo, id) {
   if (!safeId(id)) throw new Error('identificador inválido');
   const root = resolve(repo, 'qa-artifacts/loops');
   assertNoLinks(root);
   const dir = contained(root, id);
-  return { root, dir, state: join(dir, 'state.json'), lock: contained(root, `${id}.lock`) };
+  return { root, dir, state: contained(dir, 'state.json'), lock: contained(root, `${id}.lock`) };
 }
-function snapshot(repo, delegation) {
+export function snapshot(repo, delegation) {
   const files = new Set(['project.json', 'references/project-state.json', 'references/business-context.json']);
   for (const path of [...delegation.file_ownership.read, ...delegation.file_ownership.write]) {
     const full = path === '.' ? resolve(repo) : contained(repo, path);
@@ -29,7 +30,8 @@ function snapshot(repo, delegation) {
         const stat = lstatSync(current);
         if (stat.isDirectory()) {
           for (const child of readdirSync(current).sort()) {
-            if (['.git', 'node_modules', 'qa-artifacts', 'runtime-publish', '.superpowers', 'bin', 'obj'].includes(child)) continue;
+            if (['.git', 'node_modules', 'qa-artifacts', 'runtime-publish', '.superpowers'].includes(child)) continue;
+            if (lstatSync(join(current, child)).isDirectory() && generatedOutput(current, child)) continue;
             visit(join(current, child), join(currentRel, child));
           }
         } else if (stat.isFile()) files.add(currentRel);
@@ -44,7 +46,7 @@ function snapshot(repo, delegation) {
   });
   return digest(JSON.stringify({ entries, policy: sha256(readFileSync(new URL('../../fabrica/policy.json', import.meta.url), 'utf8')) }));
 }
-function persist(paths, state) {
+export function persist(paths, state) {
   atomicFileWrite(paths.state, JSON.stringify(state, null, 2) + '\n');
 }
 
@@ -67,13 +69,23 @@ export function startTask({ repo, delegation, phase, provider }) {
       return inspectTask({ repo, id });
     }
     mkdirSync(paths.dir);
+    const baselineFiles = inventory(repo);
+    const oracleFiles = baselineFiles.filter(item => /(^|\/)tests?\//.test(item.path) || /\.(?:test|spec)\.(?:mjs|cjs|js)$/.test(item.path));
+    for (const file of oracleFiles) {
+      const target = contained(join(paths.dir, 'oracles'), file.path);
+      mkdirSync(resolve(target, '..'), { recursive: true });
+      const bytes = readFileSync(contained(repo, file.path));
+      if (fingerprint(bytes) !== file.sha256) throw new Error('oráculo alterado durante captura');
+      writeFileSync(target, bytes, { flag: 'wx' });
+    }
+    if (fingerprint(inventory(repo)) !== fingerprint(baselineFiles)) throw new Error('insumos alterados durante criação');
     const state = {
       schema_version: 1, id, task_id: delegation.task_id, provider, phase,
       assigned_agent: delegation.assigned_agent, human_gate: delegation.human_gate,
       ownership: delegation.file_ownership,
       status: 'awaiting_gate', revision: 1,
       attempts: 0, correction_count: 0, snapshot: snapshot(repo, delegation),
-      delegation_sha256: digest(JSON.stringify(delegation)), events: [
+      delegation_sha256: digest(JSON.stringify(delegation)), baseline_files: baselineFiles, oracle_files: oracleFiles, delegation, events: [
         { revision: 1, type: 'task_created', at: new Date().toISOString() }
       ]
     };
@@ -102,6 +114,7 @@ export function advanceTask({ repo, id, expectedRevision, event }) {
     const state = inspectTask({ repo, id });
     if (state.revision !== expectedRevision) throw new Error('revisão divergente');
     if (!state.snapshot_matches) throw new Error('snapshot divergente');
+    if (state.engineering) throw new Error('use os comandos de engenharia para o candidato');
     if (event?.type !== 'gate_checked') throw new Error('transição não suportada');
     const decision = state.phase === 'toolkit'
       ? checkPolicy({ repo, action: 'implement_toolkit', agent: state.assigned_agent, phase: state.phase })
@@ -144,7 +157,22 @@ export function recoverTask({ repo, id }) {
     return lock;
   };
   if (existsSync(transitionLock)) {
-    recoverDeadLock(transitionLock, 'transição');
+    const lock = recoverDeadLock(transitionLock, 'transição');
+    const state = inspectTask({ repo, id });
+    if (state.engineering?.operation) {
+      if (state.engineering.operation.kind === 'review') throw new Error('revisão interrompida: encerramento dos descendentes não comprovado; bloqueio preservado');
+      if (state.engineering.operation.pid !== lock.pid || !['validating', 'reviewing'].includes(state.status)) throw new Error('operação interrompida divergente');
+      const started = Date.parse(state.engineering.operation.started_at);
+      if (!Number.isFinite(started)) throw new Error('operação interrompida inválida');
+      state.engineering.spent_ms += Math.min(600000, Math.max(0, Date.now() - started));
+      state.status = state.engineering.operation.kind === 'validation' ? 'validation_blocked' : 'review_blocked';
+      delete state.engineering.operation;
+      delete state.snapshot_matches;
+      state.revision++;
+      state.events.push({ revision: state.revision, type: 'operation_interrupted', at: new Date().toISOString() });
+      validateAgainstSchema(loadSchema('task-run'), state);
+      persist(paths, state);
+    }
     unlinkSync(transitionLock);
     return inspectTask({ repo, id });
   }

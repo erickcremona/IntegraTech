@@ -20,6 +20,7 @@ import { evaluateLocal, evaluateProtocol } from './lib/evaluations.mjs';
 import { syncGraph } from './lib/traceability-sync.mjs';
 import { validateGraph, graphImpact } from './lib/traceability-graph.mjs';
 import { scanRepository } from './lib/secret-scan.mjs';
+import { acceptCandidate, validateCandidate, reviewCandidate, engineeringStatus, handoffTask } from './lib/engineering-loop.mjs';
 import { startTask, inspectTask, advanceTask, recoverTask } from './lib/task-loop.mjs';
 
 const help = `IntegraTech Toolkit — Node.js >=22
@@ -32,6 +33,10 @@ const help = `IntegraTech Toolkit — Node.js >=22
   eval --mode local|protocol [--provider codex|claude] [--trials 1..3] [--live]
   run-state --id RUN_ID [--repo PATH]
   loop-start --task PATH --phase FASE --provider codex|claude|cursor [--repo PATH]
+  loop-candidate --id RUN_ID --revision N --profile node-tests-v1|dotnet-offline-v1 [--repo PATH]
+  loop-validate --id RUN_ID --revision N [--repo PATH]
+  loop-handoff --id RUN_ID --revision N --provider codex|claude|cursor [--repo PATH]
+  loop-review --id RUN_ID --revision N [--files a,b] [--repo PATH]
   loop-status --id RUN_ID [--repo PATH]
   loop-recover --id RUN_ID [--repo PATH]
   loop-advance --id RUN_ID --revision N --event gate_checked [--repo PATH]
@@ -95,6 +100,7 @@ export async function main(argv, services = {}) {
     doctor: [], 'policy-check': ['action', 'agent', 'phase', 'repo'], eval: ['mode', 'provider', 'trials', 'live'], 'run-state': ['id', 'repo'], 'close-interrupted-run': ['id', 'repo'], 'secret-scan': ['repo'],
     install: ['provider', 'target', 'dry-run'], validate: ['provider', 'repo'],
     contract: ['kind', 'file'], dispatch: ['provider', 'task', 'files', 'phase', 'repo', 'timeout'], resume: ['file'],
+    'loop-handoff': ['id', 'revision', 'provider', 'repo'], 'loop-candidate': ['id', 'revision', 'profile', 'repo'], 'loop-validate': ['id', 'revision', 'repo'], 'loop-review': ['id', 'revision', 'files', 'repo'],
     'loop-start': ['task', 'phase', 'provider', 'repo'], 'loop-status': ['id', 'repo'],
     'loop-advance': ['id', 'revision', 'event', 'repo'], 'loop-recover': ['id', 'repo']
   };
@@ -128,7 +134,18 @@ export async function main(argv, services = {}) {
     case 'eval': if (options.mode === 'local') return evaluateLocal(); if (options.mode === 'protocol') return evaluateProtocol({ provider: options.provider, live: options.live ?? false, trials: options.trials ? Number(options.trials) : 1 }); throw new Error('modo de avaliação inválido');
     case 'run-state': return inspectRun(resolve(options.repo ?? repoRoot), options.id);
     case 'loop-start': return withTraceability(startTask({ repo: resolve(options.repo ?? repoRoot), delegation: read(options.task), phase: options.phase, provider: options.provider }));
-    case 'loop-status': return inspectTask({ repo: resolve(options.repo ?? repoRoot), id: options.id });
+    case 'loop-status': return engineeringStatus({ repo: resolve(options.repo ?? repoRoot), id: options.id });
+    case 'loop-handoff':
+    case 'loop-candidate':
+    case 'loop-validate':
+    case 'loop-review': {
+      if (!/^[1-9]\d*$/.test(options.revision ?? '')) throw new Error('revisão inválida');
+      const input = { repo: resolve(options.repo ?? repoRoot), id: options.id, expectedRevision: Number(options.revision) };
+      if (command === 'loop-handoff') return handoffTask({ ...input, provider: options.provider });
+      if (command === 'loop-candidate') return acceptCandidate({ ...input, profile: options.profile });
+      if (command === 'loop-validate') return validateCandidate(input);
+      return reviewCandidate({ ...input, files: options.files?.split(',') });
+    }
     case 'loop-recover': return recoverTask({ repo: resolve(options.repo ?? repoRoot), id: options.id });
     case 'loop-advance':
       if (!/^\d+$/.test(options.revision ?? '') || options.event !== 'gate_checked') throw new Error('transição inválida');

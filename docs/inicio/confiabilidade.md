@@ -55,3 +55,6 @@ Uma verificação local aprovada comprova os alvos executados, não funcionament
 A pesquisa obrigatória precisa alcançar as fontes escolhidas com HTTPS e confiança TLS preservados. Um bloqueio da política de rede requer liberação dos domínios ou seleção justificada de fontes oficiais alternativas disponíveis; não simule recibos nem desabilite verificações. Uma coleta HTTP real valida a aquisição/revalidação da fonte, não a qualidade de uma análise completa do negócio.
 
 No repositório-modelo, contexto e plano pendentes bloqueiam design/business corretamente. O grafo vazio no modelo também é esperado: a sincronização preenche relações explícitas em projetos reais e aponta vínculos que ainda precisam de revisão antes de afirmar rastreabilidade. Cursor editor, Claude autenticado, Windows/PowerShell e execução independente com provedores exigem validação nos ambientes em que forem utilizados. Código validado apenas no working tree ainda precisa de commit e envio para ficar disponível na main remota.
+
+
+O loop assistido agora vincula candidato, oráculos originais, perfil, validação e revisões. Consulte [loop de engenharia](loop-engenharia.md). Sem namespace Linux comprovado, a validação bloqueia. Testes de protocolo/simulações não comprovam execução isolada real nem desempenho dos provedores.
