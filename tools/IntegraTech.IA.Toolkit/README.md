@@ -64,3 +64,9 @@ Revisor não executa testes: avalia os arquivos e resultados fornecidos. Ausênc
 Contratos delegation/return/review são adaptados da referência. Handoff registra provedor, objetivo, fase, arquivos, validações, evidências, pendências, gate e próximo passo. Para implementação nativa, o CTO preenche esse mesmo contrato manualmente ao trocar de provedor. `resume` valida e exibe; não executa ações.
 
 O validador implementa somente as keywords usadas nos contratos versionados e rejeita keywords novas não suportadas. Não é um motor completo de JSON Schema. Retornos completed exigem testes/evidências e ausência de pendências.
+
+## Grafo de rastreabilidade
+
+Use `graph validate [--repo PATH] [--file RELATIVE]` e `graph impact --id ID [--repo PATH] [--file RELATIVE]`. O arquivo padrão é references/traceability-graph.json. [Formato e limites](../../docs/inicio/grafo-rastreabilidade.md). Consultas somente leitura; JSON Pointer e SHA-256 opcionais relacionam arquivos existentes sem duplicar seus conteúdos. Grafo inválido/vazio retorna código 2. Isso não substitui especialista, plano, aceites, task-loop, testes ou revisão global.
+
+Preenchimento automático: `graph sync --dry-run` inspeciona e `graph sync` aplica inclusões explícitas; fontes alteradas retornam needs_review até reconhecimento com --accept-changes. O agente traceability-maintainer (rota traceability) preserva vínculos manuais e separa sugestões. Precheck/loop-start/loop-advance/specialist-status/coherence-run expõem a sincronização em traceability, sem mudar os gates existentes.

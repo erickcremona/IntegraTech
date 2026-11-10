@@ -59,3 +59,7 @@ Use `npm run verify` para a verificação reproduzível também usada no CI. Con
 [Operação do toolkit](tools/IntegraTech.IA.Toolkit/README.md) · [Arquitetura](docs/arquitetura/base.md) · [Retomada](references/README.md).
 
 Documentos em docs/superpowers e docs/validacao registram a manutenção deste modelo e são excluídos da geração. Avisos legais são preservados em THIRD-PARTY-NOTICES.md. A base é .NET; o domínio e a apresentação são configuráveis.
+
+## Rastreabilidade e impacto
+
+O toolkit oferece um [grafo de rastreabilidade em JSON](docs/inicio/grafo-rastreabilidade.md) para conectar os documentos existentes de contexto, requisitos, decisões, componentes, tarefas, testes e aceites. Use `npm run toolkit -- graph validate` e `npm run toolkit -- graph impact --id ID`. O agente traceability-maintainer e `graph sync --dry-run`/`graph sync` preenchem relações explícitas dos documentos. O modelo permanece vazio e cada projeto recebe índice inicial próprio, sem executar tarefas nem substituir os gates de aprovação.

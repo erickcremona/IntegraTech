@@ -8,6 +8,7 @@ import { specialistFiles } from './domain-specialist.mjs';
 import { verifyResearch, verifyTechnologySources } from './domain-research.mjs';
 import { normalizeInitialContext } from './business-context.mjs';
 import { selectedProviders, providerLabel } from './provider-selection.mjs';
+import { initialTraceability } from './traceability-sync.mjs';
 import { providerFiles } from './installer.mjs';
 
 const sourceRoot = fileURLToPath(new URL('../../../../', import.meta.url));
@@ -70,6 +71,8 @@ export function prepareProject({ name, provider = 'both', presentation, source =
   finalState.specialist_path = 'references/domain-specialist.json';
   finalState.workflow_status = 'materialized';
   files.set('references/project-state.json', JSON.stringify(finalState, null, 2) + '\n');
+  files.set('references/traceability-graph.json', JSON.stringify({ schema_version: 1, nodes: [], edges: [] }, null, 2) + '\n');
+  files.set('references/traceability-graph.json', JSON.stringify(initialTraceability(files), null, 2) + '\n');
   return files;
 }
 export function createProject({ name, target, provider = 'both', presentation, dryRun = false, context, technologyDecision, preparation, researchRequest, decisionRepo = sourceRoot }) {

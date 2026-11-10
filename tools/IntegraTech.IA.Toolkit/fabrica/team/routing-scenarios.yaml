@@ -1,18 +1,64 @@
 {
   "scenarios": [
-    { "category": "discovery", "expected": "business-analyst" },
-    { "category": "worker", "expected": "application-engineer" },
-    { "category": "application", "expected": "application-engineer" },
-    { "category": "integration-analysis", "expected": "integration-analyst" },
-    { "category": "integration", "expected": "application-engineer" },
-    { "category": "qa", "expected": "qa-engineer" },
-    { "category": "toolkit", "expected": "platform-engineer" },
-    { "category": "platform", "expected": "platform-engineer" },
-    { "category": "security", "expected": "security-reviewer" },
-    { "category": "data", "expected": "data-migration-reviewer" },
-    { "category": "review", "expected": "code-reviewer" },
-    { "category": "deploy-production", "expected": "blocked" },
-    { "category": "unknown", "expected": "blocked" },
-    { "category": "", "expected": "blocked" }
+    {
+      "category": "discovery",
+      "expected": "business-analyst"
+    },
+    {
+      "category": "worker",
+      "expected": "application-engineer"
+    },
+    {
+      "category": "application",
+      "expected": "application-engineer"
+    },
+    {
+      "category": "integration-analysis",
+      "expected": "integration-analyst"
+    },
+    {
+      "category": "integration",
+      "expected": "application-engineer"
+    },
+    {
+      "category": "qa",
+      "expected": "qa-engineer"
+    },
+    {
+      "category": "toolkit",
+      "expected": "platform-engineer"
+    },
+    {
+      "category": "platform",
+      "expected": "platform-engineer"
+    },
+    {
+      "category": "security",
+      "expected": "security-reviewer"
+    },
+    {
+      "category": "data",
+      "expected": "data-migration-reviewer"
+    },
+    {
+      "category": "review",
+      "expected": "code-reviewer"
+    },
+    {
+      "category": "deploy-production",
+      "expected": "blocked"
+    },
+    {
+      "category": "unknown",
+      "expected": "blocked"
+    },
+    {
+      "category": "",
+      "expected": "blocked"
+    },
+    {
+      "category": "traceability",
+      "expected": "traceability-maintainer"
+    }
   ]
 }

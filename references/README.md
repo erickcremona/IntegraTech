@@ -7,3 +7,7 @@
 5. Ao alternar Codex/Claude Code, confira handoff, arquivos e autorização atuais.
 
 Novos projetos não herdam resultados, contexto, evidências ou aprovações do modelo. Integrações, persistência e autenticação só entram quando necessárias ao problema.
+
+Rastreabilidade: mantenha traceability-graph.json como índice dos documentos existentes; consulte graph impact antes de mudar itens registrados e graph validate após atualizar vínculos. Índice vazio não valida cobertura nem autoriza tarefas. Veja docs/inicio/grafo-rastreabilidade.md.
+
+Preenchimento: o agente traceability-maintainer usa graph sync --dry-run/graph sync. Revise needs_review e aprovações afetadas antes de reconhecer atualizações de fontes; inferências ficam em propostas separadas.

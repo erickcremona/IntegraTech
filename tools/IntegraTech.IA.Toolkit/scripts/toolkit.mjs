@@ -17,12 +17,17 @@ import { restoreAdoption } from './lib/adoption-recovery.mjs';
 import { checkPolicy } from './lib/policy.mjs';
 import { inspectRun, closeInterruptedRun } from './lib/runs.mjs';
 import { evaluateLocal, evaluateProtocol } from './lib/evaluations.mjs';
+import { syncGraph } from './lib/traceability-sync.mjs';
+import { validateGraph, graphImpact } from './lib/traceability-graph.mjs';
 import { scanRepository } from './lib/secret-scan.mjs';
 import { startTask, inspectTask, advanceTask, recoverTask } from './lib/task-loop.mjs';
 
 const help = `IntegraTech Toolkit — Node.js >=22
   help
   doctor
+  graph sync [--repo PATH] [--file RELATIVE] [--dry-run] [--accept-changes]
+  graph validate [--repo PATH] [--file RELATIVE]
+  graph impact --id ID [--repo PATH] [--file RELATIVE]
   policy-check --action review|implement|adopt|discover|design --agent PAPEL --phase FASE [--repo PATH]
   eval --mode local|protocol [--provider codex|claude] [--trials 1..3] [--live]
   run-state --id RUN_ID [--repo PATH]
@@ -53,7 +58,7 @@ const help = `IntegraTech Toolkit — Node.js >=22
   hash --file PATH
   install --provider codex|claude|cursor|both|all [--target PATH] [--dry-run]
   validate [--provider codex|claude|cursor|both|all] [--repo PATH]
-  contract --kind delegation|return|review|handoff|business-context|business-plan|approval|technology-decision|domain-preparation|domain-consultation|domain-coherence|task-run --file PATH
+  contract --kind delegation|return|review|handoff|business-context|business-plan|approval|technology-decision|domain-preparation|domain-consultation|domain-coherence|task-run|traceability-graph --file PATH
   dispatch --provider codex|claude --task PATH --files PATH --phase toolkit|discovery|design|business [--repo PATH] [--timeout 120000]
   resume --file PATH
 
@@ -64,19 +69,26 @@ Automação de revisão e avaliações externas: somente Codex/Claude. Sem fallb
 resume valida e mostra handoff; não executa ações nem transfere autorização.`;
 
 export async function main(argv, services = {}) {
-  const [command = 'help', ...args] = argv;
+  let [command = 'help', ...args] = argv;
+  if (command === 'graph') {
+    const [operation, ...flags] = args;
+    if (!['validate', 'impact', 'sync'].includes(operation)) throw new Error('operação de grafo inválida');
+    command = `graph-${operation}`; args = flags;
+  }
   const options = {};
   for (let i = 0; i < args.length; i++) {
     if (!/^--[a-z-]+$/.test(args[i])) throw new Error('argumento inválido');
     const name = args[i].slice(2);
     if (Object.hasOwn(options, name)) throw new Error('argumento duplicado');
-    if (['dry-run', 'live'].includes(name)) options[name] = true;
+    if (['dry-run', 'live', 'accept-changes'].includes(name)) options[name] = true;
     else {
       if (!args[i + 1] || args[i + 1].startsWith('--')) throw new Error('valor de argumento ausente');
       options[name] = args[++i];
     }
   }
   const allowed = {
+    'graph-sync': ['repo', 'file', 'dry-run', 'accept-changes'],
+    'graph-validate': ['repo', 'file'], 'graph-impact': ['repo', 'file', 'id'],
     help: [], 'create-project': ['repo', 'name', 'target', 'provider', 'presentation', 'dry-run', 'context-file', 'technology-file', 'preparation-file'], precheck: ['repo', 'phase'], route: ['category'], providers: [], hash: ['file'],
     onboarding: ['repo', 'name', 'context-file'], 'adopt-project': ['repo', 'name', 'context-file', 'dry-run', 'presentation', 'technology-file', 'provider', 'preparation-file'], 'technology-check': ['repo', 'context-file', 'decision-file'], 'restore-adoption': ['journal', 'dry-run'],
     'research-collect': ['context-file', 'preparation-file', 'output'], 'specialist-check': ['context-file', 'preparation-file'], 'specialist-prepare': ['repo', 'preparation-file'], 'specialist-status': ['repo'], 'consultation-record': ['repo', 'file'], 'consultation-check': ['repo', 'file'], 'coherence-snapshot': ['repo'], 'coherence-run': ['repo'], 'coherence-check': ['repo', 'report-file'], 'coherence-status': ['repo'],
@@ -103,18 +115,24 @@ export async function main(argv, services = {}) {
       return JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(data));
     } catch { throw new Error('Não foi possível ler a decisão tecnológica como JSON válido.'); }
   };
+  const automatic = ['precheck', 'loop-start', 'loop-advance', 'specialist-status', 'coherence-run'].includes(command)
+    ? syncGraph({ repo: resolve(options.repo ?? repoRoot) }) : undefined;
+  const withTraceability = result => automatic ? { ...result, traceability: automatic } : result;
   switch (command) {
+    case 'graph-sync': return syncGraph({ repo: resolve(options.repo ?? repoRoot), file: options.file, dryRun: options['dry-run'] ?? false, acceptChanges: options['accept-changes'] ?? false });
+    case 'graph-validate': return validateGraph({ repo: resolve(options.repo ?? repoRoot), file: options.file });
+    case 'graph-impact': if (!options.id) throw new Error('id obrigatório'); return graphImpact({ repo: resolve(options.repo ?? repoRoot), file: options.file, id: options.id });
     case 'help': return help;
     case 'doctor': return diagnoseProviders();
     case 'policy-check': return checkPolicy({ repo: resolve(options.repo ?? repoRoot), action: options.action, agent: options.agent, phase: options.phase });
     case 'eval': if (options.mode === 'local') return evaluateLocal(); if (options.mode === 'protocol') return evaluateProtocol({ provider: options.provider, live: options.live ?? false, trials: options.trials ? Number(options.trials) : 1 }); throw new Error('modo de avaliação inválido');
     case 'run-state': return inspectRun(resolve(options.repo ?? repoRoot), options.id);
-    case 'loop-start': return startTask({ repo: resolve(options.repo ?? repoRoot), delegation: read(options.task), phase: options.phase, provider: options.provider });
+    case 'loop-start': return withTraceability(startTask({ repo: resolve(options.repo ?? repoRoot), delegation: read(options.task), phase: options.phase, provider: options.provider }));
     case 'loop-status': return inspectTask({ repo: resolve(options.repo ?? repoRoot), id: options.id });
     case 'loop-recover': return recoverTask({ repo: resolve(options.repo ?? repoRoot), id: options.id });
     case 'loop-advance':
       if (!/^\d+$/.test(options.revision ?? '') || options.event !== 'gate_checked') throw new Error('transição inválida');
-      return advanceTask({ repo: resolve(options.repo ?? repoRoot), id: options.id, expectedRevision: Number(options.revision), event: { type: options.event } });
+      return withTraceability(advanceTask({ repo: resolve(options.repo ?? repoRoot), id: options.id, expectedRevision: Number(options.revision), event: { type: options.event } }));
     case 'close-interrupted-run': return closeInterruptedRun(resolve(options.repo ?? repoRoot), options.id);
     case 'secret-scan': return scanRepository(resolve(options.repo ?? repoRoot));
     case 'research-collect': {
@@ -132,11 +150,11 @@ export async function main(argv, services = {}) {
       verifyResearch({ context, preparation }); return checked;
     }
     case 'specialist-prepare': return prepareSpecialist({ repo: resolve(options.repo ?? repoRoot), preparation: readDecision(options['preparation-file']) });
-    case 'specialist-status': return inspectSpecialist(resolve(options.repo ?? repoRoot));
+    case 'specialist-status': return withTraceability(inspectSpecialist(resolve(options.repo ?? repoRoot)));
     case 'consultation-record': return recordConsultation({ repo: resolve(options.repo ?? repoRoot), record: read(options.file) });
     case 'consultation-check': return inspectConsultation(resolve(options.repo ?? repoRoot), read(options.file));
     case 'coherence-snapshot': return { snapshot_sha256: repositorySnapshot(resolve(options.repo ?? repoRoot)) };
-    case 'coherence-run': return runCoherenceChecks({ repo: resolve(options.repo ?? repoRoot) });
+    case 'coherence-run': return withTraceability(runCoherenceChecks({ repo: resolve(options.repo ?? repoRoot) }));
     case 'coherence-check': return completeCoherence({ repo: resolve(options.repo ?? repoRoot), report: read(options['report-file']) });
     case 'coherence-status': {
       const repo = resolve(options.repo ?? repoRoot); return inspectCoherence({ repo, report: readDocument(repo, 'references/domain-coherence.json') });
@@ -152,7 +170,7 @@ export async function main(argv, services = {}) {
     case 'restore-adoption': if (!options.journal) throw new Error('journal obrigatório'); return restoreAdoption(resolve(options.journal), { dryRun: options['dry-run'] ?? false });
     case 'hash': return { sha256: sha256(readFileSync(resolve(options.file))) };
     case 'create-project': return createProject({ name: options.name, target: options.target, provider: options.provider, presentation: options.presentation, context: readContext(options['context-file']), technologyDecision: readDecision(options['technology-file']), preparation: readDecision(options['preparation-file']), researchRequest: services.researchRequest, decisionRepo: resolve(options.repo ?? repoRoot), dryRun: options['dry-run'] ?? false });
-    case 'precheck': return precheck(resolve(options.repo ?? repoRoot), options.phase);
+    case 'precheck': return withTraceability(precheck(resolve(options.repo ?? repoRoot), options.phase));
     case 'route': return route(options.category);
     case 'providers': return Promise.all(['codex', 'claude', 'cursor'].map(provider => checkProvider(provider)));
     case 'install': return install(options.target ?? repoRoot, options.provider, { dryRun: options['dry-run'] ?? false });
@@ -161,7 +179,7 @@ export async function main(argv, services = {}) {
     case 'validate': {
       const currentRoot = resolve(options.repo ?? repoRoot);
       const errors = validateInstalled(currentRoot, options.provider);
-      for (const kind of ['delegation', 'return', 'review', 'handoff', 'business-context', 'business-plan', 'approval', 'technology-decision', 'domain-preparation', 'domain-consultation', 'domain-coherence', 'task-run']) assertSupported(loadSchema(kind));
+      for (const kind of ['delegation', 'return', 'review', 'handoff', 'business-context', 'business-plan', 'approval', 'technology-decision', 'domain-preparation', 'domain-consultation', 'domain-coherence', 'task-run', 'traceability-graph']) assertSupported(loadSchema(kind));
       for (const role of catalog.specialists) {
         readFileSync(new URL(`skills/${role.skill}/SKILL.md`, factoryRoot), 'utf8');
         if (role.kind === 'reviewer' && !role.read_only) errors.push('reviewer deve ser read_only');
@@ -177,7 +195,7 @@ if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1]
   try {
     const result = await main(process.argv.slice(2));
     console.log(typeof result === 'string' ? result : JSON.stringify(result, null, 2));
-    if (['blocked', 'failed', 'needs_input'].includes(result?.status) || result?.failed > 0) process.exitCode = 2;
+    if (['blocked', 'failed', 'needs_input', 'empty', 'needs_review'].includes(result?.status) || result?.failed > 0) process.exitCode = 2;
   } catch (error) {
     // Adoption errors identify controlled conflicts/recovery paths, never print file contents.
     if (['adopt-project', 'restore-adoption', 'create-project', 'research-collect', 'specialist-check', 'specialist-prepare', 'specialist-status', 'consultation-record', 'consultation-check', 'coherence-check', 'coherence-status', 'coherence-run'].includes(process.argv[2])) console.error(error instanceof SyntaxError ? 'Documento da operação inválido.' : error.message);

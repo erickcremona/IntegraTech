@@ -16,6 +16,8 @@ export function checkPolicy({ repo, action, agent, phase }) {
     if (!Object.hasOwn(policy.actions, action)) return result(false, 'action_not_supported');
     const role = agent === 'cto' ? { kind: 'cto', read_only: false } : catalog.specialists.find(role => role.name === agent);
     if (!role || !policy.actions[action].includes(role.kind)) return result(false, 'role_not_allowed');
+    if (action === 'maintain_traceability') return result(['cto', 'traceability-maintainer'].includes(agent) && ['toolkit', 'discovery', 'design', 'business'].includes(phase), 'traceability_index_only');
+    if (action === 'implement' && role.name === 'traceability-maintainer') return result(false, 'traceability_has_no_business_write');
     if (action === 'implement' && (role.read_only || phase !== 'business')) return result(false, 'write_not_allowed');
     if (action === 'implement_toolkit' && (role.name !== 'platform-engineer' || phase !== 'toolkit')) return result(false, 'toolkit_write_not_allowed');
     if (action === 'review' && !role.read_only) return result(false, 'review_must_be_read_only');

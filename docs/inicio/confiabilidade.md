@@ -2,7 +2,7 @@
 
 ## Verificação reproduzível e CI
 
-`npm run verify` executa baseline (somente no modelo), suíte do toolkit, consistência, sete avaliações locais, padrões de segredos, build/ciclo da solução e geração/build/ciclo de Worker/API/Console (somente no modelo). Requer Git, Node e .NET instalados. É o comando usado em .github/workflows/validate.yml.
+`npm run verify` executa baseline (somente no modelo), suíte do toolkit, consistência dos adaptadores, avaliações locais, padrões de segredos e build/ciclo da solução. No modelo, também executa geração/consistência/suítes do toolkit/build/ciclo de Worker/API/Console e adoção/consistência/build/ciclo de API/Console. As fontes externas da geração de teste são simuladas por fixtures explícitas; isso não comprova pesquisa de domínio real nem execução de modelos de IA. Requer Git, Node e .NET instalados. É o comando usado em .github/workflows/validate.yml.
 
 O CI usa ações oficiais fixadas por SHA, conteúdo read-only, checkout sem persistir credenciais e nenhum secret de modelo. Não faz deploy nem chama modelos reais. Uma execução local não comprova que o workflow remoto passou; confira GitHub Actions.
 
@@ -47,3 +47,11 @@ run-state confere o snapshot atual e nunca reexecuta uma ação. Mudanças nos i
 Cada despacho tem uma tentativa e um orçamento total de tempo configurável, por padrão 120 segundos. O limite inclui diagnóstico do provedor e processo; encerramento do processo pode acrescentar latência. Os dados não estabelecem limite financeiro: quando a CLI não informa consumo, não se inventa custo nem se promete teto de cobrança.
 
 Esses registros cobrem o dispatcher de revisão. Eles não são uma máquina de execução automática de todas as ações da sessão nativa. Mantenha handoff/planos para implementação e confirmação humana para efeitos externos. Guarde os registros localmente, com acesso restrito, pelo período necessário ao projeto; revisão/remoção de registros é manutenção explícita, sem limpeza destrutiva automática.
+
+## Escopo de prontidão operacional
+
+Uma verificação local aprovada comprova os alvos executados, não funcionamento integral de serviços externos. Confira `doctor` para as capacidades de cada CLI; available significa flags/versão compatíveis, não autenticação, modelo disponível ou isolamento efetivo. A sessão nativa Codex atual pode funcionar mesmo quando subprocessos independentes não foram validados. Avaliações com modelos reais continuam exigindo solicitação explícita.
+
+A pesquisa obrigatória precisa alcançar as fontes escolhidas com HTTPS e confiança TLS preservados. Um bloqueio da política de rede requer liberação dos domínios ou seleção justificada de fontes oficiais alternativas disponíveis; não simule recibos nem desabilite verificações. Uma coleta HTTP real valida a aquisição/revalidação da fonte, não a qualidade de uma análise completa do negócio.
+
+No repositório-modelo, contexto e plano pendentes bloqueiam design/business corretamente. O grafo vazio no modelo também é esperado: a sincronização preenche relações explícitas em projetos reais e aponta vínculos que ainda precisam de revisão antes de afirmar rastreabilidade. Cursor editor, Claude autenticado, Windows/PowerShell e execução independente com provedores exigem validação nos ambientes em que forem utilizados. Código validado apenas no working tree ainda precisa de commit e envio para ficar disponível na main remota.
