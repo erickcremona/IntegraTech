@@ -1,5 +1,5 @@
-import {assessSystemDesign} from './lib/system-design.mjs';
 #!/usr/bin/env node
+import {assessSystemDesign} from './lib/system-design.mjs';
 import {assessArchitecture,inspectArchitectureDecision,architectureDigest} from './lib/architecture-decision.mjs';
 import {architectureSourceSnapshot,architectureRead} from './lib/architecture-inspection.mjs';
 import {reviewArchitecture,completeArchitecture} from './lib/architecture-workflow.mjs';
@@ -40,7 +40,6 @@ const help = `IntegraTech Toolkit — Node.js >=22
   help
   system-design-assess --context-file PATH --specification-file PATH
   architecture-assess --context-file PATH [--requirements-file PATH] [--repo PATH]
-  system-design-assess --context-file PATH --specification-file PATH
   architecture-check --context-file PATH --technology-file PATH --decision-file PATH [--repo PATH]
   architecture-hash --decision-file PATH
   architecture-status [--repo PATH] [--project ID]
@@ -183,7 +182,10 @@ export async function main(argv, services = {}) {
     ? syncGraph({ repo: resolve(options.repo ?? repoRoot) }) : undefined;
   const withTraceability = result => ({...result,...(automatic?{traceability:automatic}:{}),...(selection?{project_id:selection.id}:{})});
   switch (command) {
-    case 'system-design-assess': return assessSystemDesign({context:readContext(options['context-file']),specification:readDecision(options['specification-file'])});
+    case 'system-design-assess': {
+      if(!options['context-file']||!options['specification-file'])throw new Error('context-file e specification-file são obrigatórios.');
+      return assessSystemDesign({context:readContext(options['context-file']),specification:readDecision(options['specification-file']),contextHash:sha256(readFileSync(resolve(options['context-file'])))});
+    }
     case 'architecture-assess': return assessArchitecture({context:readContext(options['context-file']),requirements:readDecision(options['requirements-file']),repo:resolve(options.repo??repoRoot)});
     case 'architecture-check': return inspectArchitectureDecision({repo:resolve(options.repo??repoRoot),context:readContext(options['context-file']),technologyDecision:readDecision(options['technology-file']),decision:readDecision(options['decision-file']),requireApproval:true});
     case 'architecture-hash': return {decision_sha256:architectureDigest(readDecision(options['decision-file']))};

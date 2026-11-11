@@ -40,3 +40,14 @@ test('CLI: tecnologia informa pesquisa pendente e valida recomendação sem gera
   assert.equal(checked.generator_supported, false);
   assert.equal(checked.selection.stack, 'static-web');
 });
+
+test('CLI: system-design-assess recusa especificação vinculada a outro contexto', async () => {
+  const { fingerprint } = await import('../scripts/lib/candidate.mjs');
+  const repo = mkdtempSync(join(tmpdir(), 'system-design-cli-'));
+  const contextFile = join(repo, 'context.json'), specificationFile = join(repo, 'specification.json');
+  const context = { problem: 'Contexto atual' };
+  writeFileSync(contextFile, JSON.stringify(context));
+  writeFileSync(specificationFile, JSON.stringify({ schema_version: 1, context_sha256: fingerprint({ problem: 'Outro contexto' }), requirements: [{ id: 'req-1', description: 'Preservar o histórico.', scenarios: [{ id: 'scenario-1', given: 'Uma solicitação', when: 'É acompanhada', then: 'O histórico permanece disponível' }] }] }));
+  await assert.rejects(main(['system-design-assess', '--context-file', contextFile, '--specification-file', specificationFile]), /contexto e especificação divergentes/i);
+  await assert.rejects(main(['system-design-assess', '--context-file', contextFile]), /obrigatórios/i);
+});

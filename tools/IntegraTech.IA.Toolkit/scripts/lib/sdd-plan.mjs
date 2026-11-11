@@ -1,7 +1,7 @@
 import {inspectSystemDesign} from './system-design.mjs';
 import {architectureCurrent,architectureEstablished} from './architecture-inspection.mjs';
 import {sourceRoot,sourceFile,sourceBinding} from './project-locations.mjs';
-import { readFileSync, lstatSync } from 'node:fs';
+import { readFileSync, lstatSync, existsSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { posix } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -68,7 +68,8 @@ export function inspectSDDPlan({ repo, plan, contextHash }) {
   const specification = validateAgainstSchema(schema('functional-spec'), spec.value);
   const design = validateAgainstSchema(schema('technical-design'), technical.value);
   meaningful(specification); meaningful(design);
-  const state=JSON.parse(readFileSync(contained(repo,'references/project-state.json'),'utf8'));
+  const statePath=contained(repo,'references/project-state.json');
+  const state=existsSync(statePath)?JSON.parse(readFileSync(statePath,'utf8')):{};
   const hasSystemSignals=specification.requirements.some(r=>Array.isArray(r.system_design_signals)&&r.system_design_signals.length>0);
   if(state.system_design_mode==='contextual-v1'||Object.hasOwn(design,'system_design')||hasSystemSignals)inspectSystemDesign({repo,context,specification,technicalDesign:design,contextHash,specificationHash:spec.sha256,required:state.system_design_mode==='contextual-v1'||hasSystemSignals});
   if (plan.specification_sha256 !== spec.sha256 || plan.design_sha256 !== technical.sha256)
