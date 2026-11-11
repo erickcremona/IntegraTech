@@ -197,6 +197,7 @@
     "tools/IntegraTech.IA.Toolkit/tests/ux-quality.test.mjs",
     "tools/IntegraTech.IA.Toolkit/fabrica/ui/experience-quality.md",
     "tools/IntegraTech.IA.Toolkit/scripts/lib/product-entry.mjs",
-    "tools/IntegraTech.IA.Toolkit/fabrica/toolkit-manual.md"
+    "tools/IntegraTech.IA.Toolkit/fabrica/toolkit-manual.md",
+    "AUTHORS.md"
   ]
 }

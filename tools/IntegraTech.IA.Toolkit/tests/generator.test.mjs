@@ -63,6 +63,10 @@ test('gerador: identidades, três apresentações e provedores independentes', a
     assert.ok(!readFileSync(join(target, 'README.md'), 'utf8').includes('erickcremona'));
     const entrance=readFileSync(join(target,'README.md'),'utf8');
     assert.ok(entrance.includes(fullContext.problem));
+    assert.ok(entrance.includes('Erick Cremona'));
+    assert.ok(entrance.includes('https://www.linkedin.com/in/erick-cremona-6983a1383/'));
+    assert.ok(readFileSync(join(target,'AUTHORS.md'),'utf8').includes('IntegraTech'));
+    assert.ok(entrance.includes('Não atribui a autoria'));
     assert.ok(entrance.includes('Próximo passo'));
     assert.ok(readFileSync(join(target,'references/README.md'),'utf8').includes(name));
     const entry=readFileSync(join(target,provider==='claude'?'CLAUDE.md':'AGENTS.md'),'utf8');
@@ -85,6 +89,7 @@ test('gerador: identidades, três apresentações e provedores independentes', a
       assert.ok(existsSync(join(child, '.claude/agents/business-analyst.md')));
       assert.ok(!readFileSync(join(child, 'SOLUTION_CONTEXT.md'), 'utf8').includes('Contexto privado'));
       assert.ok(!readFileSync(join(child,'tools/CopiaLimpa.IA.Toolkit/README.md'),'utf8').includes('Contexto privado'));
+      assert.equal(readFileSync(join(child,'AUTHORS.md'),'utf8'),readFileSync(join(target,'AUTHORS.md'),'utf8'));
     }
   }
 });

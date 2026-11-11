@@ -45,7 +45,7 @@ export function prepareProject({ name, provider = 'both', presentation, source =
     if (skill) sourceSkills.push([skill[1], text]);
     const destination = renderHost(path);
     if (files.has(destination)) throw new Error('colisão de arquivos');
-    files.set(destination, path === 'THIRD-PARTY-NOTICES.md' ? text : /\.(?:sln|csproj)$/.test(path) || path.endsWith('/project-template.json') ? renderHost(text) : render(text));
+    files.set(destination, ['THIRD-PARTY-NOTICES.md','AUTHORS.md'].includes(path) ? text : /\.(?:sln|csproj)$/.test(path) || path.endsWith('/project-template.json') ? renderHost(text) : render(text));
   }
   const rolesPath = manifest.files.find(path => path.endsWith('/fabrica/team/catalog.yaml'));
   const roles = JSON.parse(readFileSync(contained(source, rolesPath), 'utf8')).specialists;
@@ -78,7 +78,7 @@ export function prepareProject({ name, provider = 'both', presentation, source =
   files.set('references/project-state.json', JSON.stringify(finalState, null, 2) + '\n');
   files.set('references/traceability-graph.json', JSON.stringify({ schema_version: 1, nodes: [], edges: [] }, null, 2) + '\n');
   files.set('references/traceability-graph.json', JSON.stringify(initialTraceability(files), null, 2) + '\n');
-  for(const [path,text] of productDocuments({name,context:normalizeInitialContext(context),preparation,presentation,decision:JSON.parse(files.get('references/technology-decision.json')),toolkitManual:files.get(`tools/${name}.IA.Toolkit/fabrica/toolkit-manual.md`)})) files.set(path,text);
+  for(const [path,text] of productDocuments({name,context:normalizeInitialContext(context),preparation,presentation,decision:JSON.parse(files.get('references/technology-decision.json')),authorship:files.get('AUTHORS.md'),toolkitManual:files.get(`tools/${name}.IA.Toolkit/fabrica/toolkit-manual.md`)})) files.set(path,text);
   return files;
 }
 export function createProject({ name, target, provider = 'both', presentation, dryRun = false, context, technologyDecision, preparation, researchRequest, decisionRepo = sourceRoot }) {

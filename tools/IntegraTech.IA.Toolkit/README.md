@@ -79,3 +79,8 @@ Preenchimento automático: `graph sync --dry-run` inspeciona e `graph sync` apli
 Use ui-capabilities, ui-prepare --dry-run/ui-prepare e ui-status em projeto real com seleção estruturada aprovada. create/adopt preparam a especialização sem frontend quando a UI foi declarada. ui-generate --dry-run/ui-generate exige gates de negócio e preserva customizações. Somente React/Vite possui gerador neste incremento; Next/Vue/Angular/Blazor/MAUI têm orientação específica. ui-recover reconcilia preparação interrompida após comprovar escritor encerrado.
 
 ui-validate bloqueia a execução isolada não disponível; ui-validate --local executa diagnóstico explícito de build/browser com dependências já preparadas. Esse relatório nunca promove delivery_valid. UI exige revisão UX adicional e evidências isoladas específicas no loop; Node/.NET genéricos não bastam. [Guia completo](../../docs/inicio/interfaces.md).
+
+
+## Autoria da ferramenta
+
+Criado por **[Erick Cremona](https://www.linkedin.com/in/erick-cremona-6983a1383/)**. Consulte [AUTHORS.md](../../AUTHORS.md) para distinguir a autoria da ferramenta da autoria de cada produto.

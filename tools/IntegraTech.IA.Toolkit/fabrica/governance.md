@@ -69,3 +69,6 @@ Após a escolha de frontend, proponha uma interface visual moderna adequada ao c
 ## Apresentação de produto real
 
 Após criação/adoção, README, SOLUTION_CONTEXT, retomada e entrada da fábrica devem apresentar o produto, seus fatos, decisões e próximo passo. Entradas nativas dos provedores devem continuar o projeto real, sem oferecer onboarding como fluxo ativo. Manuais genéricos são referência secundária. Atualize os resumos com a evolução e confira o estado autoritativo em project-state.json; não alegue funcionalidades prontas a partir da base gerada. Nunca reaplicar adoção em produto real ou reescrever documentos personalizados apenas para atualizar a apresentação. Novos produtos não herdam o manual contextual ou fatos privados do produto de origem.
+
+
+Autoria: preserve AUTHORS.md e THIRD-PARTY-NOTICES.md ao criar/adotar e gerar descendentes. O crédito do criador da ferramenta não é renomeado para o produto e não atribui a Erick Cremona a autoria de produtos derivados. Créditos nos documentos de entrada ficam em posição secundária, preservando o foco no produto. Não alterar licenças para incluir essa assinatura.

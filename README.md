@@ -108,3 +108,8 @@ Quem mantém o toolkit deve revisar o baseline dos arquivos controlados após at
 [Guia completo de uso](docs/inicio/fluxo-toolkit.md) · [Operação do toolkit](tools/IntegraTech.IA.Toolkit/README.md) · [Arquitetura](docs/arquitetura/base.md) · [Retomada](references/README.md).
 
 Documentos em `docs/superpowers` e `docs/validacao` registram a manutenção do modelo e são excluídos da geração. Avisos legais são preservados em `THIRD-PARTY-NOTICES.md`.
+
+
+## Autoria
+
+Criado por **[Erick Cremona](https://www.linkedin.com/in/erick-cremona-6983a1383/)**. [Registro de autoria da ferramenta](AUTHORS.md).
