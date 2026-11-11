@@ -50,6 +50,10 @@ export function validateContract(kind, value, expectedTaskId) {
   check(schema, value);
   if (expectedTaskId && value.task_id !== expectedTaskId) throw new Error('task_id divergente');
   if (kind === 'review') {
+    if(value.review_type==='ux_accessibility'&&['approved','approved_with_findings'].includes(value.verdict)){
+      const criteria=['task_clarity','visual_hierarchy','visual_identity','interaction_states','responsive_behavior','accessibility','performance'];
+      if(!Array.isArray(value.ux_assessment)||new Set(value.ux_assessment.map(item=>item.criterion)).size!==criteria.length||criteria.some(criterion=>!value.ux_assessment.some(item=>item.criterion===criterion&&item.score>=4&&item.score<=5&&item.evidence.every(text=>text.trim().length>0))))throw new Error('aprovação UX exige avaliação completa, evidências e mínimo 4/5 em cada dimensão');
+    }
     if (value.verdict === 'approved' && value.findings.length) throw new Error('approved exige ausência de achados');
     if (value.verdict === 'approved_with_findings' && value.findings.some(f => ['blocker', 'high'].includes(f.severity)))
       throw new Error('achado alto/bloqueador exige changes_required ou blocked');

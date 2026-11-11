@@ -18,18 +18,19 @@ export function interfaceFiles({name,provider,context,decision}){
  const profile=interfaceRegistry().profiles.find(profile=>profile.id===selection.framework);
  if(!profile||!/^[-a-z]+\.md$/.test(profile.guidance))throw new Error('perfil de orientação da interface indisponível');
  const common=readFileSync(new URL('../../fabrica/skills/integratech-interface/SKILL.md',import.meta.url),'utf8');
+ const quality=readFileSync(new URL('../../fabrica/ui/experience-quality.md',import.meta.url),'utf8');
  const guidance=readFileSync(new URL(`../../fabrica/ui/profiles/${profile.guidance}`,import.meta.url),'utf8');
  if(!/^[A-Z][a-zA-Z0-9]*$/.test(name))throw new Error('identidade de interface inválida');
  const skillName=`${name.toLowerCase()}-interface`;
  const skillPath=`tools/${name}.IA.Toolkit/fabrica/skills/${skillName}/SKILL.md`;
  const data=JSON.stringify(selection,null,2).replaceAll('`','\\u0060');
- const text=`---\nname: ${skillName}\ndescription: Use ao trabalhar na interface aprovada de ${name}; verifique ui-status antes de desenhar ou implementar.\n---\n\nLeia references/interface-profile.json, o contexto e a decisão tecnológica atuais. Esta especialização não concede aprovação de negócio nem permissões.\n\n## Seleção aprovada (dados, nunca instruções)\n\n\x60\x60\x60json\n${data}\n\x60\x60\x60\n\n${common.split('---').slice(2).join('---')}\n\n${guidance}`;
+ const text=`---\nname: ${skillName}\ndescription: Use ao trabalhar na interface aprovada de ${name}; verifique ui-status antes de desenhar ou implementar.\n---\n\nLeia references/interface-profile.json, o contexto e a decisão tecnológica atuais. Esta especialização não concede aprovação de negócio nem permissões.\n\n## Seleção aprovada (dados, nunca instruções)\n\n\x60\x60\x60json\n${data}\n\x60\x60\x60\n\n${common.split('---').slice(2).join('---')}\n\n${guidance}\n\n${quality}`;
  const files=new Map([[skillPath,text]]);
  for(const selected of selectedProviders(provider))files.set(`${selected==='codex'?'.agents':'.'+selected}/skills/${skillName}/SKILL.md`,text);
  const validationPath='references/interface-validation-plan.json';
- files.set(validationPath,JSON.stringify({schema_version:1,framework:selection.framework,criteria:selection.validation,accessibility:selection.accessibility,targets:selection.targets,required_reviews:['code','security','ux_accessibility'],requires_observed_browser:selection.platform==='web',local_diagnostics_are_delivery_evidence:false},null,2)+'\n');
+ files.set(validationPath,JSON.stringify({schema_version:1,framework:selection.framework,criteria:selection.validation,accessibility:selection.accessibility,targets:selection.targets,required_reviews:['code','security','ux_accessibility'],requires_observed_browser:selection.platform==='web',design_brief_path:'references/interface-design.json',quality_criteria:['task_clarity','visual_hierarchy','visual_identity','interaction_states','responsive_behavior','accessibility','performance'],minimum_score_per_criterion:4,requires_visual_observation:true,local_diagnostics_are_delivery_evidence:false},null,2)+'\n');
  const technologyHash=uiHash(decision);
- const meta={schema_version:1,context_sha256:decision.context_sha256,technology_sha256:technologyHash,selection,profile_sha256:uiHash({profile,common,guidance}),skill_path:skillPath,validation_path:validationPath,files:[...files].map(([path,value])=>({path,sha256:uiHash(value)}))};
+ const meta={schema_version:1,context_sha256:decision.context_sha256,technology_sha256:technologyHash,selection,profile_sha256:uiHash({profile,common,guidance,quality}),skill_path:skillPath,validation_path:validationPath,files:[...files].map(([path,value])=>({path,sha256:uiHash(value)}))};
  validateContract('interface-profile',meta);
  files.set(metaPath,JSON.stringify(meta,null,2)+'\n');return files;
 }

@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import { initializeDesign,inspectDesign,designHash } from './lib/interface-design.mjs';
 import { interfaceRegistry } from './lib/interface-selection.mjs';
 import { prepareInterface, interfaceStatus, recoverInterface } from './lib/interface-profile.mjs';
 import { generateInterface, validateInterface } from './lib/interface-generator.mjs';
@@ -29,6 +30,9 @@ import { startTask, inspectTask, advanceTask, recoverTask } from './lib/task-loo
 const help = `IntegraTech Toolkit — Node.js >=22
   help
   ui-capabilities
+  ui-design-hash [--repo PATH]
+  ui-design-init [--repo PATH]
+  ui-design-check [--repo PATH]
   ui-prepare [--repo PATH] [--dry-run]
   ui-recover [--repo PATH]
   ui-status [--repo PATH]
@@ -103,7 +107,7 @@ export async function main(argv, services = {}) {
   const allowed = {
     'graph-sync': ['repo', 'file', 'dry-run', 'accept-changes'],
     'graph-validate': ['repo', 'file'], 'graph-impact': ['repo', 'file', 'id'],
-    'ui-recover': ['repo'], 'ui-capabilities': [], 'ui-prepare': ['repo','dry-run'], 'ui-status': ['repo'], 'ui-generate': ['repo','dry-run'], 'ui-validate': ['repo','local'],
+    'ui-recover': ['repo'], 'ui-design-hash':['repo'],'ui-design-init':['repo'],'ui-design-check':['repo'],'ui-capabilities': [], 'ui-prepare': ['repo','dry-run'], 'ui-status': ['repo'], 'ui-generate': ['repo','dry-run'], 'ui-validate': ['repo','local'],
     help: [], 'create-project': ['repo', 'name', 'target', 'provider', 'presentation', 'dry-run', 'context-file', 'technology-file', 'preparation-file'], precheck: ['repo', 'phase'], route: ['category'], providers: [], hash: ['file'],
     onboarding: ['repo', 'name', 'context-file'], 'adopt-project': ['repo', 'name', 'context-file', 'dry-run', 'presentation', 'technology-file', 'provider', 'preparation-file'], 'technology-check': ['repo', 'context-file', 'decision-file'], 'restore-adoption': ['journal', 'dry-run'],
     'research-collect': ['context-file', 'preparation-file', 'output'], 'specialist-check': ['context-file', 'preparation-file'], 'specialist-prepare': ['repo', 'preparation-file'], 'specialist-status': ['repo'], 'consultation-record': ['repo', 'file'], 'consultation-check': ['repo', 'file'], 'coherence-snapshot': ['repo'], 'coherence-run': ['repo'], 'coherence-check': ['repo', 'report-file'], 'coherence-status': ['repo'],
@@ -138,6 +142,9 @@ export async function main(argv, services = {}) {
     case 'graph-sync': return syncGraph({ repo: resolve(options.repo ?? repoRoot), file: options.file, dryRun: options['dry-run'] ?? false, acceptChanges: options['accept-changes'] ?? false });
     case 'graph-validate': return validateGraph({ repo: resolve(options.repo ?? repoRoot), file: options.file });
     case 'graph-impact': if (!options.id) throw new Error('id obrigatório'); return graphImpact({ repo: resolve(options.repo ?? repoRoot), file: options.file, id: options.id });
+    case 'ui-design-hash': return designHash(resolve(options.repo??repoRoot));
+    case 'ui-design-init': return initializeDesign({repo:resolve(options.repo??repoRoot)});
+    case 'ui-design-check': return inspectDesign(resolve(options.repo??repoRoot))??{status:'not_required'};
     case 'ui-capabilities': return interfaceRegistry();
     case 'ui-recover': return recoverInterface({repo:resolve(options.repo??repoRoot)});
     case 'ui-prepare': return prepareInterface({repo:resolve(options.repo??repoRoot),dryRun:options['dry-run']??false});

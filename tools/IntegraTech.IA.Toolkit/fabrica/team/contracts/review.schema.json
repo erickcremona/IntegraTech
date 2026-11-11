@@ -4,29 +4,135 @@
   "title": "IntegraTech Agent Review v1",
   "type": "object",
   "additionalProperties": false,
-  "required": ["schema_version", "task_id", "review_type", "verdict", "findings", "residual_risk"],
+  "required": [
+    "schema_version",
+    "task_id",
+    "review_type",
+    "verdict",
+    "findings",
+    "residual_risk"
+  ],
   "properties": {
-    "schema_version": { "const": 1 },
-    "task_id": { "type": "string", "minLength": 1 },
-    "review_type": { "type": "string", "enum": ["code", "security", "data", "ux_accessibility"] },
-    "verdict": { "type": "string", "enum": ["approved", "approved_with_findings", "changes_required", "blocked"] },
+    "schema_version": {
+      "const": 1
+    },
+    "task_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "review_type": {
+      "type": "string",
+      "enum": [
+        "code",
+        "security",
+        "data",
+        "ux_accessibility"
+      ]
+    },
+    "verdict": {
+      "type": "string",
+      "enum": [
+        "approved",
+        "approved_with_findings",
+        "changes_required",
+        "blocked"
+      ]
+    },
     "findings": {
       "type": "array",
       "items": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["severity", "title", "evidence", "path", "line", "impact", "recommendation"],
+        "required": [
+          "severity",
+          "title",
+          "evidence",
+          "path",
+          "line",
+          "impact",
+          "recommendation"
+        ],
         "properties": {
-          "severity": { "type": "string", "enum": ["blocker", "high", "medium", "low"] },
-          "title": { "type": "string", "minLength": 1 },
-          "evidence": { "type": "string", "minLength": 1 },
-          "path": { "type": "string", "minLength": 1 },
-          "line": { "type": ["integer", "null"], "minimum": 1 },
-          "impact": { "type": "string", "minLength": 1 },
-          "recommendation": { "type": "string", "minLength": 1 }
+          "severity": {
+            "type": "string",
+            "enum": [
+              "blocker",
+              "high",
+              "medium",
+              "low"
+            ]
+          },
+          "title": {
+            "type": "string",
+            "minLength": 1
+          },
+          "evidence": {
+            "type": "string",
+            "minLength": 1
+          },
+          "path": {
+            "type": "string",
+            "minLength": 1
+          },
+          "line": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "minimum": 1
+          },
+          "impact": {
+            "type": "string",
+            "minLength": 1
+          },
+          "recommendation": {
+            "type": "string",
+            "minLength": 1
+          }
         }
       }
     },
-    "residual_risk": { "type": "string" }
+    "residual_risk": {
+      "type": "string"
+    },
+    "ux_assessment": {
+      "type": "array",
+      "minItems": 7,
+      "maxItems": 7,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "criterion",
+          "score",
+          "evidence"
+        ],
+        "properties": {
+          "criterion": {
+            "enum": [
+              "task_clarity",
+              "visual_hierarchy",
+              "visual_identity",
+              "interaction_states",
+              "responsive_behavior",
+              "accessibility",
+              "performance"
+            ]
+          },
+          "score": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "evidence": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        }
+      }
+    }
   }
 }

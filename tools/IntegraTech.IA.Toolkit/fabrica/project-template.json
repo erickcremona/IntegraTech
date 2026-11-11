@@ -192,6 +192,9 @@
     "tools/IntegraTech.IA.Toolkit/scripts/lib/ui-templates.mjs",
     "tools/IntegraTech.IA.Toolkit/tests/interface.test.mjs",
     "tools/IntegraTech.IA.Toolkit/tests/ui-templates.test.mjs",
-    "docs/inicio/interfaces.md"
+    "docs/inicio/interfaces.md",
+    "tools/IntegraTech.IA.Toolkit/scripts/lib/interface-design.mjs",
+    "tools/IntegraTech.IA.Toolkit/tests/ux-quality.test.mjs",
+    "tools/IntegraTech.IA.Toolkit/fabrica/ui/experience-quality.md"
   ]
 }

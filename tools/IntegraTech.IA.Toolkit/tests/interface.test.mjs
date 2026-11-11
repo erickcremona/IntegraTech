@@ -1,4 +1,5 @@
 import test from 'node:test';
+import {designDigest} from '../scripts/lib/interface-design.mjs';
 import { createHash } from 'node:crypto';
 import assert from 'node:assert/strict';
 import { mkdtempSync, mkdirSync, readFileSync, writeFileSync, existsSync, rmSync } from 'node:fs';
@@ -107,6 +108,12 @@ function approveBusiness(repo){
  save('references/business-plan.json',plan);save('references/approval.md','O usuário aprovou o plano nesta fixture de teste.');
  save('references/approval.json',{schema_version:1,decision:'approved',context_sha256:plan.context_sha256,plan_sha256:hash(readFileSync(join(repo,'references/business-plan.json'))),approved_by:'Responsável pelo projeto',approved_at:'2026-11-11T00:00:00Z',source_reference:'references/approval.md'});
  save('references/project-state.json',{...state,scope_status:'defined',plan_gate:'approved',plan_path:'references/business-plan.json',approval_path:'references/approval.json'});
+ const design=JSON.parse(readFileSync(join(repo,'references/interface-design.json')));
+ save('references/ux-prototype.html','<!doctype html><main>Protótipo sintético do teste de contrato</main>');
+ Object.assign(design,{status:'approved',experience_goals:['Fluxo compreensível para atendentes'],references:[{url:'https://designsystem.digital.gov/',accessed_at:'2026-11-10',analysis:'Fixture de análise de hierarquia e legibilidade',application:'Fixture de aplicação ao formulário'}],visual_direction:Object.fromEntries(['principles','typography','layout','color','spacing','components','motion'].map(key=>[key,['Direção específica revisada nesta fixture']])),journeys:[{task:'Registrar solicitação',steps:['Abrir formulário','Confirmar dados'],states:['Vazio','Erro','Sucesso'],acceptance:['Atendente consegue concluir']}],responsive_rules:['Adaptar navegação ao mobile'],content_guidelines:['Texto claro e específico'],validation_plan:['Revisar protótipo e testar tarefas'],prototypes:[{path:'references/ux-prototype.html',sha256:hash(readFileSync(join(repo,'references/ux-prototype.html'))),description:'Mockup de fixture, não prova de qualidade visual'}],approval_reference:'references/ux-design-approval.json'});
+ save('references/ux-approval.md','Fixture: usuário aprovou explicitamente esta direção e protótipo de UX.');
+ save('references/ux-design-approval.json',{schema_version:1,kind:'ux_design',decision:'approved',design_sha256:designDigest(design),approved_by:'Responsável pelo design',approved_at:'2026-11-11T00:00:00Z',source_reference:'references/ux-approval.md'});
+ save('references/interface-design.json',design);
 }
 
 
@@ -198,4 +205,17 @@ test('approved UI roots cover Angular inline TS and native MAUI CSharp even with
    assert.equal(validated.status,'validation_blocked');
   }finally{rmSync(repo,{recursive:true,force:true});}
  }
+});
+
+test('product UX brief requires actual direction, journeys, prototype and human reference; changes invalidate it',async()=>{
+ const design=await import('../scripts/lib/interface-design.mjs');const repo=fixture();
+ try{
+  assert.equal(design.initializeDesign({repo}).status,'exists');
+  assert.throws(()=>design.inspectDesign(repo),/design|UX/);
+  approveBusiness(repo);
+  assert.equal(design.inspectDesign(repo).status,'approved');
+  const path=join(repo,'references/interface-design.json');const original=readFileSync(path,'utf8');const changed=JSON.parse(original);changed.visual_direction.color=['Nova direção sem novo aceite'];writeFileSync(path,JSON.stringify(changed));assert.throws(()=>design.inspectDesign(repo),/aceite UX/);writeFileSync(path,original);
+  writeFileSync(join(repo,'references/ux-prototype.html'),'changed prototype');
+  assert.throws(()=>design.inspectDesign(repo),/protótipo|evidência/);
+ }finally{rmSync(repo,{recursive:true,force:true});}
 });

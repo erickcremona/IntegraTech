@@ -1,3 +1,4 @@
+import { inspectDesign } from './interface-design.mjs';
 import { existsSync, readFileSync, writeFileSync, unlinkSync } from 'node:fs';
 import { resolve, relative, isAbsolute } from 'node:path';
 import { inventory, fingerprint, changes, owns } from './candidate.mjs';
@@ -21,6 +22,7 @@ function requiredReviewTypes(repo,state,changed){
  }
  const meta=inspectInterface(repo);
  const affectsUI=state.assigned_agent==='ui-engineer'||changed.some(path=>owns(meta.selection.source_roots,path));
+ if(affectsUI)inspectDesign(repo);
  return affectsUI?[...baseReviewTypes,'ux_accessibility']:[...baseReviewTypes];
 }
 function gate(repo, state) {

@@ -54,11 +54,13 @@ A aprovação técnica da base e a aprovação do plano de negócio são decisõ
 
 ## Interfaces modernas conforme o contexto
 
-Quando o projeto precisa de interface, o toolkit registra sua tecnologia separadamente do backend e prepara **ui-engineer**, uma skill especializada e os adaptadores dos provedores selecionados. A orientação contempla identidade visual, componentes, estados, responsividade, acessibilidade e desempenho.
+Quando o projeto precisa de interface, o toolkit registra sua tecnologia separadamente do backend e prepara **ui-engineer**, uma skill especializada e os adaptadores dos provedores selecionados. O desenho parte do público, tarefas e jornadas: pesquisa referências reais com fontes/datas, propõe uma direção visual contextual e define hierarquia, tipografia, grid, tokens, conteúdo, estados e uso mobile. A meta é qualidade competitiva para o produto; um scaffold ou uma estética da moda não comprovam esse resultado.
 
-Há perfis de orientação para React/Vite, Next, Vue, Angular, Blazor e MAUI. O primeiro gerador testado é uma referência React/Vite; outros perfis não são substituídos por ele. A preparação acontece após a decisão técnica aprovada; gerar frontend exige também plano/aceite de negócio. Sem UI no contexto, o projeto continua sem frontend.
+O agente registra o desenho em `references/interface-design.json` com `ui-design-init`, prototipa na tecnologia escolhida, inspeciona o resultado renderizado em browser/ferramenta nativa e refina a composição e a interação a partir de crítica visual e observações de uso. O aceite humano efetivo do desenho e `ui-design-check` são exigidos antes do candidato de UI, vinculados ao contexto, decisão e perfil atuais. O comando inicia/valida registros; não cria pesquisa, protótipo ou aprovação automaticamente.
 
-A referência React passou por build e browser com teclado e axe. Diagnóstico local não comprova entrega isolada: UI no loop exige evidência específica e revisão adicional de UX/acessibilidade; a entrega permanece bloqueada enquanto o executor isolado de UI estiver indisponível. [Capacidades, fluxo e comandos de interface](docs/inicio/interfaces.md).
+Há perfis de orientação para React/Vite, Next, Vue, Angular, Blazor e MAUI. O primeiro gerador testado é uma referência técnica neutra React/Vite, que exige desenho e refinamento próprios; outros perfis não são substituídos por ele. O fluxo de desenho não fornece novos renderizadores. A preparação acontece após a decisão técnica aprovada; gerar frontend exige também plano/aceite de negócio. Sem UI no contexto, o projeto continua sem frontend.
+
+A referência React passou por build e browser com teclado e axe. A revisão independente de UX/acessibilidade exige evidência visual efetivamente inspecionada e sete critérios com notas de 1 a 5, todos >=4: clareza da tarefa, hierarquia, identidade, estados, responsividade, acessibilidade e desempenho. Notas não certificam liderança de mercado ou WCAG; o dispatcher somente textual bloqueia julgamento visual sem acesso suficiente. Diagnóstico local não comprova entrega isolada: a entrega de UI permanece bloqueada enquanto o executor isolado específico estiver indisponível. [Capacidades, fluxo e comandos de interface](docs/inicio/interfaces.md).
 
 ## Como o toolkit acompanha e valida
 

@@ -1,3 +1,4 @@
+import { designDraft,designPath } from './interface-design.mjs';
 import { interfaceFiles } from './interface-profile.mjs';
 import { readFileSync, writeFileSync, mkdirSync, existsSync, readdirSync, statSync, mkdtempSync, rmSync, rmdirSync, renameSync } from 'node:fs';
 import { resolve, relative, isAbsolute, dirname } from 'node:path';
@@ -69,7 +70,10 @@ export function prepareProject({ name, provider = 'both', presentation, source =
   for (const [path, text] of specialistFiles({ name, provider, context, preparation })) files.set(path, text);
   if (files.has('references/technology-decision.json')) for (const [path,text] of interfaceFiles({name,provider,context,decision:JSON.parse(files.get('references/technology-decision.json'))})) files.set(path,text);
   const finalState = JSON.parse(files.get('references/project-state.json'));
-  if (files.has('references/interface-profile.json')) finalState.interface_profile_path = 'references/interface-profile.json';
+  if (files.has('references/interface-profile.json')) {
+    finalState.interface_profile_path = 'references/interface-profile.json';
+    files.set(designPath,JSON.stringify(designDraft(JSON.parse(files.get(finalState.interface_profile_path)),context),null,2)+'\n');
+  }
   finalState.specialist_path = 'references/domain-specialist.json';
   if (finalState.interface_profile_path) files.set('README.md',files.get('README.md')+'\n## Interface selecionada\n\nA especialização aprovada está em references/interface-profile.json. Consulte [interfaces conforme a tecnologia](docs/inicio/interfaces.md); preparação não instala frontend nem aprova negócio.\n');
   finalState.workflow_status = 'materialized';

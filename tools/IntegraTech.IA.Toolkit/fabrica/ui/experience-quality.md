@@ -1,0 +1,60 @@
+# Qualidade da experiência de interface
+
+Este guia orienta desenho e revisão em qualquer frontend escolhido. A meta é uma experiência moderna e competitiva para o público do produto: tarefas claras, identidade coerente, interação confiável e uso confortável nos dispositivos reais. Um scaffold demonstra capacidade técnica; qualidade de produto exige pesquisa, desenho contextual e observação do resultado renderizado. Nem a presença deste documento nem uma nota de revisão comprovam liderança de mercado.
+
+## Antes da composição
+
+Leia contexto, consulta do especialista de domínio, decisão tecnológica e perfil de interface. Registre no desenho:
+
+- Público e condições de uso: experiência, frequência, dispositivos, ambiente, necessidades de acesso e restrições conhecidas.
+- Tarefas prioritárias e jornadas: objetivo, entrada, passos, decisão principal, sucesso e recuperação. Diferencie fatos, hipóteses e perguntas abertas.
+- Conteúdo realista: dados representativos, rótulos do domínio, volumes, textos longos, localização e informações necessárias para decidir. Placeholders não validam compreensão.
+- Critérios observáveis: o que a pessoa deve conseguir concluir, em quais dispositivos, e quais limites de acessibilidade e desempenho serão avaliados.
+
+Pesquise referências reais comparáveis por público, tarefa ou modelo de interação, além da documentação da tecnologia. Registre URL, data de acesso, fluxo/tela efetivamente observado, por que funciona e o que não se aplica ao produto. Uma landing page atraente pode não informar um fluxo operacional complexo. Observe arquitetura da informação, densidade, hierarquia, conteúdo, feedback e comportamento mobile. Analise princípios e limitações; não copie identidade, telas ou padrões sem avaliar seu contexto. Pesquisa indisponível deve ser declarada, sem simular consultas ou achados.
+
+## Direção visual e comportamento
+
+Proponha uma direção reconhecível e explique como atende às tarefas e à marca. Preserve um design system existente quando adequado; documente adaptações. Defina:
+
+- Tipografia com papéis e escala legíveis, comprimento de linha e contraste entre títulos, conteúdo e metadados.
+- Grid, largura de conteúdo, alinhamentos, espaçamento e densidade para leitura e ação; prioridade visual consistente com a prioridade da tarefa.
+- Cores/tokens semânticos, contraste, superfícies, foco, bordas e variantes de componentes; significado não depende só de cor.
+- Iconografia e imagens com função e tratamento coerentes, nomes acessíveis e alternativas quando necessárias.
+- Conteúdo e microcopy que explicam ação, consequência, progresso e recuperação; erros ajudam a corrigir e ações destrutivas deixam o efeito claro.
+- Motion que comunica relação, mudança de estado ou orientação, com duração proporcional e alternativa reduced motion. Efeito decorativo não pode atrasar a tarefa.
+
+Dashboard, grade de cards, gradiente, glassmorphism, dark mode ou fonte da moda não constituem uma direção por si. Escolha composição, densidade e expressividade pelo contexto: um serviço público, um produto editorial e uma ferramenta operacional podem exigir soluções diferentes e igualmente cuidadas.
+
+Desenhe caminhos felizes e estados aplicáveis: carregamento inicial e parcial, vazio inicial e sem resultados, erro recuperável e indisponibilidade, sucesso, validação, permissão negada, conteúdo extenso e operação em andamento. Preserve entradas quando houver falha e ofereça próximo passo claro. Em mobile, repense ordem, navegação, entrada de dados, toque, teclado virtual e ações persistentes para concluir a jornada; reduzir a largura do desktop não basta.
+
+## Registro, protótipo e refinamento
+
+1. Use `ui-design-init` para iniciar o rascunho de `references/interface-design.json`. Preencha os campos do contrato com o contexto atual, referências consultadas, jornadas, direção, estados, critérios e evidências. O comando não pesquisa, desenha ou aprova por conta própria.
+2. Produza um protótipo renderizável das jornadas prioritárias na stack aprovada, com conteúdo representativo e estados que permitam avaliar decisões. Registre as hipóteses que o protótipo pretende verificar.
+3. Abra o resultado em browser ou ferramenta nativa disponível e autorizada. Inspecione desktop e dispositivos/viewport representativos, incluindo mobile, conteúdo longo, zoom, foco e teclado. Capture evidências identificáveis por revisão do protótipo, jornada, estado e viewport/dispositivo. Build e testes de strings não demonstram aparência.
+4. Faça crítica visual explícita: onde a atenção chega, qual ação parece principal, onde há ruído, inconsistência, densidade ou texto confuso. Observe a execução das tarefas e registre passos, hesitações, erros e recuperação. Uma inspeção por especialista é uma observação de especialista; só alegue pesquisa com usuários se ela ocorreu e houver método e participantes documentados sem dados pessoais.
+5. Refine hierarquia, composição, conteúdo e interação a partir dos problemas observados. Renderize e inspecione novamente os pontos alterados e jornadas afetadas. Registre problemas, alterações e resultados; não transforme uma captura única em prova de um ciclo de refinamento.
+6. Apresente o desenho e evidências para o aceite humano aplicável. Registre o aceite efetivamente recebido e execute `ui-design-check` antes de registrar candidato de UI. Contexto, decisão ou perfil alterados exigem reavaliar o registro e as evidências afetadas. A validação estrutural não autentica o aprovador nem substitui a análise visual.
+
+O desenho é um gate adicional ao plano/aceite de negócio. `ui-generate` continua fornecendo uma referência técnica neutra; seu uso não aprova o desenho ou o produto. O toolkit não fornece novos renderizadores por este fluxo: use ferramentas realmente disponíveis para a stack, com suas permissões e limites. Ausência de browser/ferramenta nativa ou evidência visual suficiente bloqueia a conclusão que depende dessa observação.
+
+## Critérios da revisão independente
+
+A revisão `ux_accessibility` usa os sete critérios abaixo. Para `approved`, o contrato exige `ux_assessment`, com exatamente uma entrada por critério, `score` inteiro de 1 a 5 e `evidence` como lista de strings verificáveis. Todos devem atingir pelo menos 4; uma média não compensa falha localizada.
+
+| Critério | O que precisa ser observado e fundamentado |
+|---|---|
+| `task_clarity` | Público e tarefa principal orientam navegação, rótulos, conteúdo, passos, conclusão e recuperação; observações da jornada sustentam o parecer. |
+| `visual_hierarchy` | Prioridade, tipografia, grid, alinhamento, espaçamento e densidade tornam leitura e ação claras em telas e estados representativos. |
+| `visual_identity` | A direção aprovada tem expressão contextual e coerente; tokens, componentes, imagens e conteúdo formam um sistema, com relação justificada às referências. |
+| `interaction_states` | Ações e transições têm feedback compreensível; estados aplicáveis, formulários, prevenção/recuperação de erros e motion foram observados. |
+| `responsive_behavior` | Jornadas prioritárias podem ser concluídas em desktop e mobile relevantes, com toque, teclado, conteúdo e navegação adequados. |
+| `accessibility` | Evidências automáticas e manuais adequadas ao escopo cobrem semântica, nomes, contraste, teclado/foco, zoom e recursos da plataforma; limites são explícitos. |
+| `performance` | Método, ambiente, orçamento e medições relevantes sustentam carregamento, resposta às ações e estabilidade visual; não há inferência por aparência ou build. |
+
+Notas: **1** = falha grave que impede uso; **2** = problemas importantes; **3** = funcional, com fraquezas relevantes; **4** = critérios atendidos com evidência suficiente e sem fraqueza material pendente; **5** = execução especialmente cuidadosa e consistente no escopo observado, sustentada por evidências. Evidência insuficiente exige `blocked`; não atribua 4 por falta de problema conhecido. As notas não certificam WCAG, superioridade sobre concorrentes ou resultados reais de negócio.
+
+Cada evidência deve permitir localizar o artefato e entender a observação, por exemplo: captura do candidato e viewport, estado/jornada observado, relatório de interação, medição e seu ambiente. Um caminho de screenshot não significa que o revisor viu a imagem. O dispatcher textual precisa bloquear julgamento visual quando não tiver acesso efetivo às imagens ou ao protótipo. Não invente capturas, consultas, observações, métricas ou aceites.
+
+Achados da revisão identificam jornada/estado, impacto, gravidade, evidência, correção esperada e o que precisa ser reobservado. O implementador refina; o revisor independente reavalia o candidato e as evidências correspondentes. Testes de componentes, Playwright/axe, screenshots e inspeção manual se complementam. Nenhum deles sozinho comprova usabilidade ou conformidade integral.
