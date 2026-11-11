@@ -1,5 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { inspectInterface } from './interface-profile.mjs';
 import { catalog, precheck, factoryRoot } from './governance.mjs';
 import { contained } from './paths.mjs';
 export function policyConfig() {
@@ -18,6 +19,7 @@ export function checkPolicy({ repo, action, agent, phase }) {
     if (!role || !policy.actions[action].includes(role.kind)) return result(false, 'role_not_allowed');
     if (action === 'maintain_traceability') return result(['cto', 'traceability-maintainer'].includes(agent) && ['toolkit', 'discovery', 'design', 'business'].includes(phase), 'traceability_index_only');
     if (action === 'implement' && role.name === 'traceability-maintainer') return result(false, 'traceability_has_no_business_write');
+    if (action === 'implement' && role.name === 'ui-engineer' && !inspectInterface(repo)) return result(false, 'interface_profile_required');
     if (action === 'implement' && (role.read_only || phase !== 'business')) return result(false, 'write_not_allowed');
     if (action === 'implement_toolkit' && (role.name !== 'platform-engineer' || phase !== 'toolkit')) return result(false, 'toolkit_write_not_allowed');
     if (action === 'review' && !role.read_only) return result(false, 'review_must_be_read_only');

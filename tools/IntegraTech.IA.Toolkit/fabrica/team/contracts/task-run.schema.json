@@ -385,12 +385,13 @@
         "required_reviews": {
           "type": "array",
           "minItems": 2,
-          "maxItems": 2,
+          "maxItems": 3,
           "items": {
             "type": "string",
             "enum": [
               "code",
-              "security"
+              "security",
+              "ux_accessibility"
             ]
           }
         },
@@ -404,7 +405,8 @@
                 "type": "string",
                 "enum": [
                   "code",
-                  "security"
+                  "security",
+                  "ux_accessibility"
                 ]
               },
               "run_id": {

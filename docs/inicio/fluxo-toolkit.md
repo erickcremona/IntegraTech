@@ -24,6 +24,8 @@ Worker é opcional: permanece apenas para processamento em segundo plano justifi
 
 Com a decisão aprovada, o toolkit pode personalizar sua cópia na mesma pasta ou gerar em outra pasta vazia. Preserva customizações e apresenta conflitos; o repositório canônico continua reutilizável. Consulte [adoção](adotar-projeto.md), [decisão tecnológica](decisao-tecnologica.md) e [especialista de domínio](especialista-dominio.md).
 
+Se houver interface, o agente registra plataforma/framework/versão e escolhas visuais separadamente do backend. Após o aceite técnico, prepara a especialização de UI; não instala dependências nem gera negócio nessa etapa. Perfis e capacidades são explícitos: orientação de uma stack não implica gerador disponível. Veja [interfaces conforme a tecnologia](interfaces.md).
+
 ## 3. Revise o plano antes de implementar
 
 O contexto registrado serve de base ao desenho, às funcionalidades, às fases e aos critérios de aceite. O especialista é consultado por funcionalidade. Você deve conseguir entender o que será entregue, o que fica fora, como será validado e quais dúvidas permanecem.

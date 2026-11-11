@@ -72,3 +72,10 @@ O validador implementa somente as keywords usadas nos contratos versionados e re
 Use `graph validate [--repo PATH] [--file RELATIVE]` e `graph impact --id ID [--repo PATH] [--file RELATIVE]`. O arquivo padrão é references/traceability-graph.json. [Formato e limites](../../docs/inicio/grafo-rastreabilidade.md). Consultas somente leitura; JSON Pointer e SHA-256 opcionais relacionam arquivos existentes sem duplicar seus conteúdos. Grafo inválido/vazio retorna código 2. Isso não substitui especialista, plano, aceites, task-loop, testes ou revisão global.
 
 Preenchimento automático: `graph sync --dry-run` inspeciona e `graph sync` aplica inclusões explícitas; fontes alteradas retornam needs_review até reconhecimento com --accept-changes. O agente traceability-maintainer (rota traceability) preserva vínculos manuais e separa sugestões. Precheck/loop-start/loop-advance/specialist-status/coherence-run expõem a sincronização em traceability, sem mudar os gates existentes.
+
+
+## Interfaces contextuais
+
+Use ui-capabilities, ui-prepare --dry-run/ui-prepare e ui-status em projeto real com seleção estruturada aprovada. create/adopt preparam a especialização sem frontend quando a UI foi declarada. ui-generate --dry-run/ui-generate exige gates de negócio e preserva customizações. Somente React/Vite possui gerador neste incremento; Next/Vue/Angular/Blazor/MAUI têm orientação específica. ui-recover reconcilia preparação interrompida após comprovar escritor encerrado.
+
+ui-validate bloqueia a execução isolada não disponível; ui-validate --local executa diagnóstico explícito de build/browser com dependências já preparadas. Esse relatório nunca promove delivery_valid. UI exige revisão UX adicional e evidências isoladas específicas no loop; Node/.NET genéricos não bastam. [Guia completo](../../docs/inicio/interfaces.md).

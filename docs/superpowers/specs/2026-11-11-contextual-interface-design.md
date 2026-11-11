@@ -1,0 +1,9 @@
+# Interfaces orientadas pelo contexto
+
+Implementar a proposta pesquisada em docs/analises/2026-11-10-interfaces-contextuais.md. A seleção de UI é estruturada e opcional em cada alternativa tecnológica, independente do backend; ausência não infere UI. Um agente ui-engineer usa skill comum e orientação por stack; revisor ux_accessibility é independente. Perfis React/Vite, Next, Vue, Angular, Blazor e MAUI fornecem orientação; somente React/Vite recebe gerador de referência neste incremento, sem virar default. Versões e ferramentas não verificadas são explicitamente distintas de suporte de orientação.
+
+A preparação é automática em create/adopt quando a alternativa aprovada contém interface e também pode ser executada explicitamente em projeto real. Gera metadata/skill especializados, adaptadores e plano de validação; não implementa negócio nem instala dependências. Hashes vinculam contexto, decisão e arquivos gerados; alterações manuais bloqueiam substituição. UI none não cria arquivos frontend. A geração do frontend de referência exige ação explícita autorizada após gates de negócio e preserva arquivos existentes. Projetos descendentes recebem somente sua própria seleção.
+
+Perfis com gerador ausente retornam bloqueio específico; não substituir a stack. O exemplo React usa componentes semânticos, estados de interação e CSS responsivo, sem domínio fictício ou fonte externa. Validação build/browser em cópia temporária é evidência de desenvolvimento; entrega pelo loop continua exigindo isolamento comprovado e snapshots. Não reutilizar diagnóstico local como aprovação isolada. Interface implica revisão UX adicional fixada no candidato, preservando código/segurança. Sem browser ou sandbox capaz, bloquear a evidência dependente.
+
+Atualizar guias, README, mapa mental, manifesto, adaptadores e baseline. Não publicar, enviar remoto ou instalar plugins arbitrários.

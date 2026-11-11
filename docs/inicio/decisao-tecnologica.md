@@ -37,6 +37,10 @@ Para outras stacks, use `presentation: none` quando não houver apresentação e
 
 Escolha `worker` quando houver processamento em segundo plano que justifique um serviço com esse ciclo de vida. Uma API ou aplicação web não precisa ganhar um worker separado automaticamente. Execuções pontuais podem usar console. UI, banco, autenticação, mensageria e implantação são decisões separadas, não dependências obrigatórias do toolkit.
 
+## Interface independente do backend
+
+Se o contexto exigir interface, registre a propriedade estruturada `interface` na alternativa aprovada: raízes de código da UI, plataforma, framework/versão exata, renderização, biblioteca de componentes, estilos/design system, dispositivos, acessibilidade, validações e URLs consultadas. As fontes também devem integrar source_urls da alternativa e a preparação pesquisada. O agente prepara os dados; não exigir JSON manual do usuário. Ausência ou none não infere UI a partir de API ou technologies. Criação/adoção preparam a especialização após aceite técnico, sem instalar frontend. Consulte [interfaces](interfaces.md) para perfis, gerador React/Vite, bloqueios e validação.
+
 ## Materialização e limpeza
 
 Na cópia do desenvolvedor:

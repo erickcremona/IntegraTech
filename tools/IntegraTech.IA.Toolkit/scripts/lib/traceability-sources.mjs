@@ -49,6 +49,16 @@ export function deriveTraceability(read) {
       const selected=decision.options.findIndex(o=>o.id===decision.selected_option);
       if(selected<0)fail('selected_option_missing');
       const decisionNode=node('decision',technologyPath,`/options/${selected}`,`option:${decision.selected_option}`);link(contextNode,decisionNode);
+      if(state.interface_profile_path){
+        const profileDocument=json(state.interface_profile_path,true);const profile=profileDocument.value;check('interface-profile',profile);
+        if(profile.context_sha256!==decision.context_sha256||profile.technology_sha256!==traceDigest(JSON.stringify(decision)))fail('interface_decision_mismatch');
+        const interfaceNode=node('decision',state.interface_profile_path,'/selection');link(decisionNode,interfaceNode);
+        const frontend=json('references/interface-frontend.json');
+        if(frontend){
+          if(frontend.value.profile_sha256!==profile.profile_sha256||frontend.value.technology_sha256!==profile.technology_sha256)suggestions.push({code:'interface_frontend_revalidation_needed'});
+          else for(const file of frontend.value.files??[])if(typeof file.path==='string'&&/\.(?:tsx|jsx|vue|razor|xaml|css|html)$/.test(file.path))link(interfaceNode,node('component',file.path));
+        }
+      }
       if(decision.approval.status==='approved'){
         const reference=decision.approval.source_reference;if(!reference)fail('approval_reference_missing');read(reference);
         link(decisionNode,node('approval',reference),'approved_by');

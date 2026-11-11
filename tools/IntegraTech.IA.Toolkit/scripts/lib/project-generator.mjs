@@ -1,3 +1,4 @@
+import { interfaceFiles } from './interface-profile.mjs';
 import { readFileSync, writeFileSync, mkdirSync, existsSync, readdirSync, statSync, mkdtempSync, rmSync, rmdirSync, renameSync } from 'node:fs';
 import { resolve, relative, isAbsolute, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -66,8 +67,11 @@ export function prepareProject({ name, provider = 'both', presentation, source =
     files.set('references/project-state.json', JSON.stringify(state, null, 2) + '\n');
   }
   for (const [path, text] of specialistFiles({ name, provider, context, preparation })) files.set(path, text);
+  if (files.has('references/technology-decision.json')) for (const [path,text] of interfaceFiles({name,provider,context,decision:JSON.parse(files.get('references/technology-decision.json'))})) files.set(path,text);
   const finalState = JSON.parse(files.get('references/project-state.json'));
+  if (files.has('references/interface-profile.json')) finalState.interface_profile_path = 'references/interface-profile.json';
   finalState.specialist_path = 'references/domain-specialist.json';
+  if (finalState.interface_profile_path) files.set('README.md',files.get('README.md')+'\n## Interface selecionada\n\nA especialização aprovada está em references/interface-profile.json. Consulte [interfaces conforme a tecnologia](docs/inicio/interfaces.md); preparação não instala frontend nem aprova negócio.\n');
   finalState.workflow_status = 'materialized';
   files.set('references/project-state.json', JSON.stringify(finalState, null, 2) + '\n');
   files.set('references/traceability-graph.json', JSON.stringify({ schema_version: 1, nodes: [], edges: [] }, null, 2) + '\n');

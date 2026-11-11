@@ -59,6 +59,14 @@
     {
       "category": "traceability",
       "expected": "traceability-maintainer"
+    },
+    {
+      "category": "interface",
+      "expected": "ui-engineer"
+    },
+    {
+      "category": "ux-review",
+      "expected": "ux-accessibility-reviewer"
     }
   ]
 }

@@ -2,6 +2,7 @@ import { createHash } from 'node:crypto';
 import { readFileSync, statSync } from 'node:fs';
 import { normalizeInitialContext } from './business-context.mjs';
 import { validateContract } from './contracts.mjs';
+import { inspectInterfaceSelection } from './interface-selection.mjs';
 import { contained, assertSanitized } from './paths.mjs';
 
 export const technologyContextHash = context => createHash('sha256').update(JSON.stringify(normalizeInitialContext(context))).digest('hex');
@@ -38,6 +39,10 @@ export function inspectTechnologyDecision({ decision, context, repo, requireAppr
     for (const url of option.source_urls) if (!sources.has(httpsUrl(url))) throw new Error('fonte da alternativa não registrada');
   }
   if (!selection.source_urls.some(url => sources.get(httpsUrl(url)) === 'consulted')) throw new Error('pesquisa indisponível para a seleção; não há evidência consultada');
+  for (const option of decision.options) {
+    inspectInterfaceSelection(option.interface, sources);
+    if (option.interface?.source_urls?.some(url=>!option.source_urls.includes(url))) throw new Error('pesquisa de interface deve integrar as fontes da alternativa');
+  }
   if (requireApproval && decision.approval.status !== 'approved') throw new Error('decisão tecnológica exige aprovação');
   if (decision.approval.status === 'approved') {
     if (!repo || !decision.approval.source_reference) throw new Error('aceite exige referência local');
@@ -47,7 +52,7 @@ export function inspectTechnologyDecision({ decision, context, repo, requireAppr
     if (!evidence.trim()) throw new Error('aceite vazio');
     assertSanitized(evidence);
   }
-  return { status: decision.approval.status === 'approved' ? 'approved' : 'proposed', selection, generator_supported: selection.stack === 'dotnet' && models.includes(selection.presentation), context_sha256: decision.context_sha256 };
+  return { interface: inspectInterfaceSelection(selection.interface, sources), status: decision.approval.status === 'approved' ? 'approved' : 'proposed', selection, generator_supported: selection.stack === 'dotnet' && models.includes(selection.presentation), context_sha256: decision.context_sha256 };
 }
 export function selectionForGeneration({ decision, context, repo, presentation }) {
   if (decision !== undefined) {

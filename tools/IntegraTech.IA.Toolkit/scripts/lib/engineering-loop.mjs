@@ -7,11 +7,22 @@ import { precheck } from './governance.mjs';
 import { checkPolicy } from './policy.mjs';
 import { dispatch } from './dispatcher.mjs';
 import { contained, assertNoLinks, assertSanitized } from './paths.mjs';
+import { inspectInterface } from './interface-profile.mjs';
 import { validateIsolated } from './isolated-validation.mjs';
 
 const limits = Object.freeze({ attempts: 3, corrections: 2, active_ms: 600000 });
 const profiles = ['node-tests-v1', 'dotnet-offline-v1'];
-const reviewTypes = Object.freeze(['code', 'security']);
+const baseReviewTypes = Object.freeze(['code', 'security']);
+function requiredReviewTypes(repo,state,changed){
+ const registered=existsSync(contained(repo,'references/interface-profile.json'));
+ if(!registered){
+  if(state.assigned_agent==='ui-engineer')throw new Error('agente UI exige especialização aprovada');
+  return [...baseReviewTypes];
+ }
+ const meta=inspectInterface(repo);
+ const affectsUI=state.assigned_agent==='ui-engineer'||changed.some(path=>owns(meta.selection.source_roots,path));
+ return affectsUI?[...baseReviewTypes,'ux_accessibility']:[...baseReviewTypes];
+}
 function gate(repo, state) {
   validateContract('delegation', state.delegation);
   if (fingerprint(state.delegation) !== state.delegation_sha256 || state.delegation.task_id !== state.id)
@@ -66,7 +77,7 @@ export function acceptCandidate({ repo, id, expectedRevision, profile }) {
     state.engineering = {
       version: 1, profile, profile_sha256: fingerprint(readFileSync(new URL('../../fabrica/validation-profiles.json', import.meta.url))),
       candidate_sha256: candidateHash, files, changed_files: changed,
-      required_reviews: [...reviewTypes], reviews: [], review_attempts: [], validation: null,
+      required_reviews: requiredReviewTypes(repo,state,changed), reviews: [], review_attempts: [], validation: null,
       history: [...(state.engineering?.history ?? []), candidateHash],
       spent_ms: state.engineering?.spent_ms ?? 0, automatic_executor: false
     };
@@ -75,14 +86,19 @@ export function acceptCandidate({ repo, id, expectedRevision, profile }) {
     return save(repo, state, 'candidate_accepted');
   } finally { release(); }
 }
-function validValidation(value, profile) {
+function uiValidationChecks(repo,state){
+ if(!state.engineering.required_reviews.includes('ux_accessibility'))return [];
+ const meta=inspectInterface(repo);
+ return meta.selection.platform==='web'?['ui_build','ui_browser','ui_accessibility']:['ui_build','ui_native'];
+}
+function validValidation(value, profile, extraChecks=[]) {
   return value?.status === 'passed' && value.isolation === 'verified'
     && Array.isArray(value.checks) && value.checks.length > 0 && value.checks.every(check => check.code === 0)
-    && ['inventory', 'frozen_oracles', 'isolation_canaries', profile].every(id => value.checks.some(check => check.id === id && check.code === 0))
+    && ['inventory', 'frozen_oracles', 'isolation_canaries', profile,...extraChecks].every(id => value.checks.some(check => check.id === id && check.code === 0))
     && value.environment && typeof value.environment.platform === 'string' && typeof value.environment.runtime === 'string';
 }
-function sanitizeValidation(result, profile) {
-  const status = validValidation(result, profile) ? 'passed' : result?.status === 'failed' && result.isolation === 'verified' ? 'failed' : 'blocked';
+function sanitizeValidation(result, profile, extraChecks=[]) {
+  const status = validValidation(result, profile, extraChecks) ? 'passed' : result?.status === 'failed' && result.isolation === 'verified' ? 'failed' : 'blocked';
   const checks = Array.isArray(result?.checks) ? result.checks.slice(0, 50).map(item => ({ id: /^[a-z0-9_-]{1,80}$/.test(item.id) ? item.id : 'criterion', code: Number.isInteger(item.code) ? item.code : null })) : [];
   return { status, reason_code: typeof result?.reason_code === 'string' && /^[a-z0-9_]{1,100}$/.test(result.reason_code) ? result.reason_code : status === 'blocked' ? 'validation_unavailable_or_candidate_changed' : 'criteria_observed', isolation: result?.isolation === 'verified' ? 'verified' : 'unverified', checks,
     environment: { platform: typeof result?.environment?.platform === 'string' && /^[a-zA-Z0-9._-]{1,100}$/.test(result.environment.platform) ? result.environment.platform : 'unknown', runtime: typeof result?.environment?.runtime === 'string' && /^[a-zA-Z0-9._-]{1,100}$/.test(result.environment.runtime) ? result.environment.runtime : 'unknown' } };
@@ -96,6 +112,7 @@ export async function validateCandidate({ repo, id, expectedRevision, validator 
     if (state.attempts >= limits.attempts) throw new Error('orçamento de tentativas esgotado');
     if (fingerprint(readFileSync(new URL('../../fabrica/validation-profiles.json', import.meta.url))) !== state.engineering.profile_sha256) throw new Error('perfil alterado');
     const timeoutMs = remaining(state);
+    const extraChecks=uiValidationChecks(repo,state);
     state.status = 'validating'; state.attempts++;
     state.engineering.operation = { kind: 'validation', started_at: new Date().toISOString(), pid: process.pid };
     save(repo, state, 'validation_started');
@@ -109,7 +126,7 @@ export async function validateCandidate({ repo, id, expectedRevision, validator 
     } catch { observed = { status: 'blocked' }; }
     state.engineering.spent_ms += Math.ceil(performance.now() - started);
     delete state.engineering.operation;
-    const evidence = sanitizeValidation(observed, state.engineering.profile);
+    const evidence = sanitizeValidation(observed, state.engineering.profile, extraChecks);
     state.engineering.validation = { ...evidence, candidate_sha256: state.engineering.candidate_sha256, oracle_sha256: fingerprint(state.oracle_files ?? []), profile_sha256: state.engineering.profile_sha256 };
     state.status = evidence.status === 'passed' ? 'review_pending' : evidence.status === 'failed' ? 'correction_pending' : 'validation_blocked';
     return save(repo, state, 'validation_finished');
@@ -121,6 +138,8 @@ export async function reviewCandidate({ repo, id, expectedRevision, dispatcher =
     const state = load(repo, id, expectedRevision);
     if (!['review_pending', 'review_blocked'].includes(state.status) || state.engineering.validation?.status !== 'passed') throw new Error('validação observada exigida');
     if (!current(repo, state) || !inspectTask({ repo, id }).snapshot_matches) throw new Error('parecer ou candidato obsoleto');
+    const reviewTypes=requiredReviewTypes(repo,state,state.engineering.changed_files);
+    if (JSON.stringify(reviewTypes)!==JSON.stringify(state.engineering.required_reviews)) throw new Error('tipos de revisão divergentes');
     const files = [...new Set(requestedFiles ?? state.engineering.changed_files)].sort();
     if (state.engineering.changed_files.some(path => !files.includes(path)) || files.some(path => !owns([...state.ownership.read, ...state.ownership.write], path)))
       throw new Error('pacote deve cobrir todas as alterações e respeitar ownership');
@@ -139,7 +158,7 @@ export async function reviewCandidate({ repo, id, expectedRevision, dispatcher =
     const started = performance.now();
     try {
       for (const type of reviewTypes) {
-        const task = { ...state.delegation, task_id: `review-${fingerprint({ id, candidate: state.engineering.candidate_sha256, type }).slice(0, 32)}`, assigned_agent: type === 'code' ? 'code-reviewer' : 'security-reviewer', file_ownership: { read: files, write: [] } };
+        const task = { ...state.delegation, task_id: `review-${fingerprint({ id, candidate: state.engineering.candidate_sha256, type }).slice(0, 32)}`, assigned_agent: type === 'code' ? 'code-reviewer' : type === 'security' ? 'security-reviewer' : 'ux-accessibility-reviewer', file_ownership: { read: files, write: [] } };
         const timeLeft = limits.active_ms - state.engineering.spent_ms - Math.ceil(performance.now() - started);
         if (timeLeft < 100) throw new Error('orçamento esgotado');
         state.engineering.review_attempts.push({ type, task_id: task.task_id, candidate_sha256: state.engineering.candidate_sha256 });
@@ -173,12 +192,13 @@ export function engineeringStatus({ repo, id }) {
     gate(repo, state);
     deliveryValid = state.status === 'ready_for_delivery' && state.snapshot_matches && current(repo, state)
       && state.engineering.validation.status === 'passed'
-      && validValidation(state.engineering.validation, state.engineering.profile)
+      && validValidation(state.engineering.validation, state.engineering.profile, uiValidationChecks(repo,state))
       && state.engineering.validation.candidate_sha256 === state.engineering.candidate_sha256
       && state.engineering.validation.oracle_sha256 === fingerprint(state.oracle_files ?? [])
       && (state.oracle_files ?? []).every(item => fingerprint(readFileSync(contained(contained(taskPaths(repo, id).dir, 'oracles'), item.path))) === item.sha256)
       && state.engineering.profile_sha256 === fingerprint(readFileSync(new URL('../../fabrica/validation-profiles.json', import.meta.url)))
-      && reviewTypes.every(type => state.engineering.reviews.some(item => item.type === type && item.verdict === 'approved' && item.candidate_sha256 === state.engineering.candidate_sha256 && fingerprint(readFileSync(contained(repo, item.path))) === item.sha256));
+      && JSON.stringify(requiredReviewTypes(repo,state,state.engineering.changed_files))===JSON.stringify(state.engineering.required_reviews)
+      && state.engineering.required_reviews.every(type => state.engineering.reviews.some(item => item.type === type && item.verdict === 'approved' && item.candidate_sha256 === state.engineering.candidate_sha256 && fingerprint(readFileSync(contained(repo, item.path))) === item.sha256));
   } catch { deliveryValid = false; }
   return { ...state, effective_status: state.status === 'ready_for_delivery' && !deliveryValid ? 'stale' : state.status, delivery_valid: deliveryValid, automatic_executor: false };
 }

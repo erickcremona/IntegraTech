@@ -2,6 +2,7 @@ import { readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { createHash } from 'node:crypto';
 import { contained, assertNoLinks } from './paths.mjs';
+import { inspectInterface } from './interface-profile.mjs';
 import { inspectTechnologyDecision } from './technology-decision.mjs';
 import { inspectSpecialist, inspectConsultation, readDocument } from './domain-workflow.mjs';
 import { validateContract } from './contracts.mjs';
@@ -34,6 +35,12 @@ export function precheck(repo, phase) {
     const context = validateContract('business-context', JSON.parse(contextText));
     assertMeaningful(context);
     inspectSpecialist(repo);
+    let selectedInterface;
+    if (state.technology_decision_path) {
+      const decision = JSON.parse(read(state.technology_decision_path));
+      selectedInterface = decision.options?.find(option=>option.id===decision.selected_option)?.interface;
+    }
+    if (state.interface_profile_path || selectedInterface && selectedInterface.platform!=='none') inspectInterface(repo);
     if (phase === 'design') return result(true, 'Contexto estruturado válido; desenho ainda exige validação humana.');
     if (state.technology_decision_path) {
       const decision = JSON.parse(read(state.technology_decision_path));

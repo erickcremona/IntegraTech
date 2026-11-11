@@ -52,6 +52,14 @@ Na criação/adoção, `all` inclui as três ferramentas; `both`, padrão existe
 
 A aprovação técnica da base e a aprovação do plano de negócio são decisões distintas. Alterações no contexto/plano podem invalidar aceites e evidências anteriores. O agente principal atua como CTO e encaminha o trabalho aos especialistas; você não precisa invocar cada agente manualmente.
 
+## Interfaces modernas conforme o contexto
+
+Quando o projeto precisa de interface, o toolkit registra sua tecnologia separadamente do backend e prepara **ui-engineer**, uma skill especializada e os adaptadores dos provedores selecionados. A orientação contempla identidade visual, componentes, estados, responsividade, acessibilidade e desempenho.
+
+Há perfis de orientação para React/Vite, Next, Vue, Angular, Blazor e MAUI. O primeiro gerador testado é uma referência React/Vite; outros perfis não são substituídos por ele. A preparação acontece após a decisão técnica aprovada; gerar frontend exige também plano/aceite de negócio. Sem UI no contexto, o projeto continua sem frontend.
+
+A referência React passou por build e browser com teclado e axe. Diagnóstico local não comprova entrega isolada: UI no loop exige evidência específica e revisão adicional de UX/acessibilidade; a entrega permanece bloqueada enquanto o executor isolado de UI estiver indisponível. [Capacidades, fluxo e comandos de interface](docs/inicio/interfaces.md).
+
 ## Como o toolkit acompanha e valida
 
 O **grafo de rastreabilidade** relaciona documentos e itens explícitos de contexto, requisitos, decisões, tarefas, componentes, testes, evidências e aceites. O agente de rastreabilidade sincroniza essas relações e separa propostas ambíguas para revisão. Um grafo vazio ou incompleto não comprova cobertura. [Grafo e análise de impacto](docs/inicio/grafo-rastreabilidade.md).

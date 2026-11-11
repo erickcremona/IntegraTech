@@ -1,4 +1,7 @@
 #!/usr/bin/env node
+import { interfaceRegistry } from './lib/interface-selection.mjs';
+import { prepareInterface, interfaceStatus, recoverInterface } from './lib/interface-profile.mjs';
+import { generateInterface, validateInterface } from './lib/interface-generator.mjs';
 import { readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
@@ -25,6 +28,12 @@ import { startTask, inspectTask, advanceTask, recoverTask } from './lib/task-loo
 
 const help = `IntegraTech Toolkit — Node.js >=22
   help
+  ui-capabilities
+  ui-prepare [--repo PATH] [--dry-run]
+  ui-recover [--repo PATH]
+  ui-status [--repo PATH]
+  ui-generate [--repo PATH] [--dry-run]
+  ui-validate [--repo PATH] [--local]
   doctor
   graph sync [--repo PATH] [--file RELATIVE] [--dry-run] [--accept-changes]
   graph validate [--repo PATH] [--file RELATIVE]
@@ -85,7 +94,7 @@ export async function main(argv, services = {}) {
     if (!/^--[a-z-]+$/.test(args[i])) throw new Error('argumento inválido');
     const name = args[i].slice(2);
     if (Object.hasOwn(options, name)) throw new Error('argumento duplicado');
-    if (['dry-run', 'live', 'accept-changes'].includes(name)) options[name] = true;
+    if (['dry-run', 'live', 'accept-changes', 'local'].includes(name)) options[name] = true;
     else {
       if (!args[i + 1] || args[i + 1].startsWith('--')) throw new Error('valor de argumento ausente');
       options[name] = args[++i];
@@ -94,6 +103,7 @@ export async function main(argv, services = {}) {
   const allowed = {
     'graph-sync': ['repo', 'file', 'dry-run', 'accept-changes'],
     'graph-validate': ['repo', 'file'], 'graph-impact': ['repo', 'file', 'id'],
+    'ui-recover': ['repo'], 'ui-capabilities': [], 'ui-prepare': ['repo','dry-run'], 'ui-status': ['repo'], 'ui-generate': ['repo','dry-run'], 'ui-validate': ['repo','local'],
     help: [], 'create-project': ['repo', 'name', 'target', 'provider', 'presentation', 'dry-run', 'context-file', 'technology-file', 'preparation-file'], precheck: ['repo', 'phase'], route: ['category'], providers: [], hash: ['file'],
     onboarding: ['repo', 'name', 'context-file'], 'adopt-project': ['repo', 'name', 'context-file', 'dry-run', 'presentation', 'technology-file', 'provider', 'preparation-file'], 'technology-check': ['repo', 'context-file', 'decision-file'], 'restore-adoption': ['journal', 'dry-run'],
     'research-collect': ['context-file', 'preparation-file', 'output'], 'specialist-check': ['context-file', 'preparation-file'], 'specialist-prepare': ['repo', 'preparation-file'], 'specialist-status': ['repo'], 'consultation-record': ['repo', 'file'], 'consultation-check': ['repo', 'file'], 'coherence-snapshot': ['repo'], 'coherence-run': ['repo'], 'coherence-check': ['repo', 'report-file'], 'coherence-status': ['repo'],
@@ -128,6 +138,12 @@ export async function main(argv, services = {}) {
     case 'graph-sync': return syncGraph({ repo: resolve(options.repo ?? repoRoot), file: options.file, dryRun: options['dry-run'] ?? false, acceptChanges: options['accept-changes'] ?? false });
     case 'graph-validate': return validateGraph({ repo: resolve(options.repo ?? repoRoot), file: options.file });
     case 'graph-impact': if (!options.id) throw new Error('id obrigatório'); return graphImpact({ repo: resolve(options.repo ?? repoRoot), file: options.file, id: options.id });
+    case 'ui-capabilities': return interfaceRegistry();
+    case 'ui-recover': return recoverInterface({repo:resolve(options.repo??repoRoot)});
+    case 'ui-prepare': return prepareInterface({repo:resolve(options.repo??repoRoot),dryRun:options['dry-run']??false});
+    case 'ui-status': return interfaceStatus(resolve(options.repo??repoRoot));
+    case 'ui-generate': return generateInterface({repo:resolve(options.repo??repoRoot),dryRun:options['dry-run']??false});
+    case 'ui-validate': return validateInterface({repo:resolve(options.repo??repoRoot),local:options.local??false});
     case 'help': return help;
     case 'doctor': return diagnoseProviders();
     case 'policy-check': return checkPolicy({ repo: resolve(options.repo ?? repoRoot), action: options.action, agent: options.agent, phase: options.phase });

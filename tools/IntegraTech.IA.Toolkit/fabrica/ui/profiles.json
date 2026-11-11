@@ -1,0 +1,84 @@
+{
+  "schema_version": 1,
+  "profiles": [
+    {
+      "id": "react-vite",
+      "platform": "web",
+      "renderings": [
+        "client"
+      ],
+      "guidance": "react-vite.md",
+      "generator": {
+        "id": "react-vite-v1",
+        "versions": [
+          "19.3.1"
+        ],
+        "component_libraries": [
+          "none"
+        ],
+        "style_strategies": [
+          "css"
+        ],
+        "source_roots": [
+          "frontend"
+        ]
+      }
+    },
+    {
+      "id": "react-next",
+      "platform": "web",
+      "renderings": [
+        "server",
+        "static",
+        "hybrid"
+      ],
+      "guidance": "react-next.md",
+      "generator": null
+    },
+    {
+      "id": "vue",
+      "platform": "web",
+      "renderings": [
+        "client",
+        "server",
+        "static",
+        "hybrid"
+      ],
+      "guidance": "vue.md",
+      "generator": null
+    },
+    {
+      "id": "angular",
+      "platform": "web",
+      "renderings": [
+        "client",
+        "server",
+        "static",
+        "hybrid"
+      ],
+      "guidance": "angular.md",
+      "generator": null
+    },
+    {
+      "id": "blazor",
+      "platform": "web",
+      "renderings": [
+        "static",
+        "server",
+        "webassembly",
+        "auto"
+      ],
+      "guidance": "blazor.md",
+      "generator": null
+    },
+    {
+      "id": "maui",
+      "platform": "native",
+      "renderings": [
+        "native"
+      ],
+      "guidance": "maui.md",
+      "generator": null
+    }
+  ]
+}

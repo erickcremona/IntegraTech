@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "Decisão tecnológica vinculada ao contexto",
+  "title": "Decis\u00e3o tecnol\u00f3gica vinculada ao contexto",
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -87,6 +87,82 @@
             "items": {
               "type": "string",
               "minLength": 1
+            }
+          },
+          "interface": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "platform",
+              "framework"
+            ],
+            "properties": {
+              "platform": {
+                "enum": [
+                  "web",
+                  "native",
+                  "none"
+                ]
+              },
+              "framework": {
+                "type": "string",
+                "minLength": 1
+              },
+              "version": {
+                "type": "string",
+                "minLength": 1
+              },
+              "rendering": {
+                "type": "string",
+                "minLength": 1
+              },
+              "component_library": {
+                "type": "string",
+                "minLength": 1
+              },
+              "style_strategy": {
+                "type": "string",
+                "minLength": 1
+              },
+              "design_system": {
+                "type": "string",
+                "minLength": 1
+              },
+              "targets": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "accessibility": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "validation": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "source_urls": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "source_roots": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              }
             }
           }
         }
