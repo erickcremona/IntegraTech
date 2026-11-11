@@ -217,6 +217,10 @@
     "source_binding_sha256": {
       "type": "string",
       "minLength": 64
+    },
+    "architecture_sha256": {
+      "type": "string",
+      "minLength": 64
     }
   }
 }

@@ -682,6 +682,34 @@
           }
         }
       }
+    },
+    "architecture_oracle_transition": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "path",
+        "original_sha256",
+        "target_sha256",
+        "decision_sha256"
+      ],
+      "properties": {
+        "path": {
+          "type": "string",
+          "minLength": 1
+        },
+        "original_sha256": {
+          "type": "string",
+          "minLength": 64
+        },
+        "target_sha256": {
+          "type": "string",
+          "minLength": 64
+        },
+        "decision_sha256": {
+          "type": "string",
+          "minLength": 64
+        }
+      }
     }
   },
   "allOf": [

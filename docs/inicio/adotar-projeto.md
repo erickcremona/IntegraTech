@@ -14,8 +14,8 @@ O CTO pode preparar um arquivo temporário ignorado, como .scratch/contexto-inic
 
 ```powershell
 npm run toolkit -- onboarding --name MensagensCliente --context-file .scratch/contexto-inicial.json
-npm run toolkit -- adopt-project --name MensagensCliente --context-file .scratch/contexto-inicial.json --preparation-file .scratch/pesquisa.json --technology-file .scratch/decisao-tecnologica.json --dry-run
-npm run toolkit -- adopt-project --name MensagensCliente --context-file .scratch/contexto-inicial.json --preparation-file .scratch/pesquisa.json --technology-file .scratch/decisao-tecnologica.json
+npm run toolkit -- adopt-project --name MensagensCliente --context-file .scratch/contexto-inicial.json --preparation-file .scratch/pesquisa.json --technology-file .scratch/decisao-tecnologica.json --architecture-file .scratch/arquitetura.json --dry-run
+npm run toolkit -- adopt-project --name MensagensCliente --context-file .scratch/contexto-inicial.json --preparation-file .scratch/pesquisa.json --technology-file .scratch/decisao-tecnologica.json --architecture-file .scratch/arquitetura.json
 ```
 
 Use --provider cursor para Cursor isolado ou --provider all para as três ferramentas; sem override, a seleção de project.json é preservada.
@@ -50,3 +50,6 @@ README.md, SOLUTION_CONTEXT.md, references/README.md e o README da fábrica pass
 
 
 Sistema legado externo: quando o usuário informar que o produto já existe, siga [sistemas existentes](sistemas-existentes.md). Solicite o local acessível se faltar, registre o vínculo externo e mantenha o fonte na origem e os registros na gestão separada. Não use adoção do modelo sobre esse sistema.
+
+
+Consulte [arquitetura contextual](arquitetura-contextual.md) para escolher o menor perfil adequado, registrar decisão/aceite e reavaliar evolução. Criação/adoção exigem `--architecture-file PATH`; planos SDD de produtos com arquitetura gerenciada exigem `architecture_sha256`. Migrações dependem de aprovação, fases, compatibilidade, recuperação e entrega validada antes de distribuição.

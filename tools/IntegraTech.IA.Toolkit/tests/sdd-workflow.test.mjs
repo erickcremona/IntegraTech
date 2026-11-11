@@ -347,3 +347,59 @@ for(const [path,content] of [['src/backend.cs','public List<Request> GetRequests
  if(content===null)rmSync(f.disk(path));else f.save(path,content);
  assert.equal(acceptCandidate({repo:f.repo,id:state.id,expectedRevision:state.revision,profile:'node-tests-v1'}).status,'validation_pending');
 });
+
+test('managed architecture binds SDD and blocks an obsolete migration baseline',async t=>{
+ const f=fixture(t);const {architectureDigest,architectureTechnologyHash}=await import('../scripts/lib/architecture-decision.mjs');
+ const {architectureSourceSnapshot}=await import('../scripts/lib/architecture-inspection.mjs');
+ const {generationOptions}=await import('./generation-fixture.mjs');
+ const args=generationOptions({name:'Atendimento',presentation:'worker',context:fullContext,decisionRepo:f.repo});
+ f.save('references/technology-decision.json',args.technologyDecision);
+ const d=args.architectureDecision;d.mode='evolution';d.migration={from_profile:'simple-application',baseline_sha256:architectureSourceSnapshot(f.repo),phases:['register','list'],compatibility:['Preserve owner association'],rollback:['Restore compatible old service and validate ownership'],data_changes:false,irreversible:false};d.approval.decision_sha256=architectureDigest(d);
+ f.save('references/architecture-decision.json',d);f.state.architecture_mode='managed-v1';f.state.architecture_path='references/architecture-decision.json';f.state.technology_decision_path='references/technology-decision.json';f.save('references/project-state.json',f.state);
+ assert.equal(precheck(f.repo,'business').status,'blocked');
+ f.plan.architecture_sha256=architectureDigest(d);f.approval.plan_sha256=f.save(f.state.plan_path,f.plan);f.save(f.state.approval_path,f.approval);
+ assert.equal(precheck(f.repo,'business').status,'ready');
+ f.save('src/request.mjs','export const value = 99;');assert.throws(()=>prepareActionPlan(f),/fonte alterado/);
+});
+
+test('approved two-phase architecture migration preserves regression oracles and requires validated final delivery',async t=>{
+ const f=fixture(t);const {architectureFiles}=await import('../scripts/lib/architecture-profiles.mjs');
+ const {architectureDigest}=await import('../scripts/lib/architecture-decision.mjs');
+ const {architectureSourceSnapshot}=await import('../scripts/lib/architecture-inspection.mjs');
+ const {completeArchitecture,reviewArchitecture}=await import('../scripts/lib/architecture-workflow.mjs');
+ const {generationOptions}=await import('./generation-fixture.mjs');
+ const layout={name:'Atendimento',presentation:'worker',stack:'dotnet'};
+ const from=architectureFiles({...layout,profile:'simple-application'}),target=architectureFiles({...layout,profile:'layered-monolith'});
+ for(const [p,text] of from)f.save(p,text);
+ f.save('Directory.Build.props','<Project><PropertyGroup><TargetFramework>net8.0</TargetFramework><ImplicitUsings>enable</ImplicitUsings><Nullable>enable</Nullable></PropertyGroup></Project>');
+ const args=generationOptions({name:layout.name,presentation:layout.presentation,context:fullContext,decisionRepo:f.repo});f.save('references/technology-decision.json',args.technologyDecision);
+ const program=`tests/${layout.name}.Arquitetura.Tests/Program.cs`,project=`tests/${layout.name}.Arquitetura.Tests/${layout.name}.Arquitetura.Tests.csproj`;
+ const d=args.architectureDecision;d.mode='evolution';d.migration={from_profile:'simple-application',from_modules:[],baseline_sha256:architectureSourceSnapshot(f.repo),phases:['register','list'],compatibility:['Keep host lifecycle and owner regression'],rollback:['Restore simple graph and run owner regression'],data_changes:false,irreversible:false,oracle_transition:{task_id:'list-task',original_sha256:fingerprint(from.get(program)),target_sha256:fingerprint(target.get(program))}};d.approval.decision_sha256=architectureDigest(d);
+ f.save('references/architecture-decision.json',d);Object.assign(f.state,{architecture_mode:'managed-v1',architecture_path:'references/architecture-decision.json',technology_decision_path:'references/technology-decision.json'});f.save('references/project-state.json',f.state);
+ f.plan.architecture_sha256=architectureDigest(d);const switchTask=f.plan.phases[1].tasks[0];Object.assign(switchTask,{owner:'architecture-engineer',read_files:['src','tests','Atendimento.sln'],write_files:['src','tests','Atendimento.sln','docs/architecture.md'],test_paths:[project]});
+ f.approval.plan_sha256=f.save(f.state.plan_path,f.plan);f.save(f.state.approval_path,f.approval);prepareActionPlan(f);
+ assert.throws(()=>completeArchitecture(f),/todas as tarefas/);
+ const start=id=>{let run=startTask({repo:f.repo,delegation:sddDelegation({repo:f.repo,id}),phase:'business',provider:'codex'});for(let i=0;i<2;i++)run=advanceTask({repo:f.repo,id:run.id,expectedRevision:run.revision,event:{type:'gate_checked'}});return run;};
+ let run=start('register-task');f.save('src/request.mjs','export const value = 2;\n');run=acceptCandidate({repo:f.repo,id:run.id,expectedRevision:run.revision,profile:'node-tests-v1'});run=await simulateValidationAndReviews(f,run);completeSDDTask({repo:f.repo,id:'register-task',runId:run.id});
+ run=start('list-task');assert.equal(run.architecture_oracle_transition.original_sha256,fingerprint(from.get(program)));
+ const frozenRoot=join(f.repo,`qa-artifacts/loops/${run.id}/oracles`);assert.equal(readFileSync(join(frozenRoot,program),'utf8'),target.get(program));assert.equal(readFileSync(join(frozenRoot,'src/request.test.mjs'),'utf8'),readFileSync(f.disk('src/request.test.mjs'),'utf8'));
+ for(const [p,text] of target)if(p!==program)f.save(p,text);
+ assert.throws(()=>acceptCandidate({repo:f.repo,id:run.id,expectedRevision:run.revision,profile:'dotnet-offline-v1'}),/atualizar o oráculo/);
+ f.save(program,target.get(program));
+ run=acceptCandidate({repo:f.repo,id:run.id,expectedRevision:run.revision,profile:'dotnet-offline-v1'});
+ // Simulated isolation observations below test protocol only. Native build/run tests cover generated target and oracle transition separately.
+ run=await validateCandidate({repo:f.repo,id:run.id,expectedRevision:run.revision,validator:async({oracles})=>{
+ assert.equal(readFileSync(join(oracles.root,program),'utf8'),target.get(program));return {status:'passed',isolation:'verified',checks:['inventory','frozen_oracles','isolation_canaries','dotnet-offline-v1'].map(id=>({id,code:0})),test_files:[{path:project,sha256:fingerprint(readFileSync(f.disk(project)))}],environment:{platform:'synthetic-test',runtime:'simulated-dotnet'}};
+ }});
+ run=await reviewCandidate({repo:f.repo,id:run.id,expectedRevision:run.revision,dispatcher:async({task,files,candidate})=>{const path=`qa-artifacts/${task.task_id}.json`;f.save(path,{schema_version:1,task_id:task.task_id,review_type:task.assigned_agent==='code-reviewer'?'code':'security',verdict:'approved',findings:[],residual_risk:''});return {status:'completed',verdict:'approved',output:join(f.repo,path),run_id:task.task_id,candidate_sha256:candidate.sha256,package_sha256:fingerprint(files.map(path=>({path,content:candidate.removed.includes(path)?null:readFileSync(f.disk(path),'utf8')})))};}});
+ assert.equal(engineeringStatus({repo:f.repo,id:run.id}).delivery_valid,true);completeSDDTask({repo:f.repo,id:'list-task',runId:run.id});
+ assert.equal(sddStatus(f).status,'completed');const completedArchitecture=completeArchitecture(f);assert.equal(completedArchitecture.status,'completed');assert.equal(completeArchitecture(f).status,'unchanged');
+ const receiptPath=join(f.repo,completedArchitecture.path),originalReceipt=readFileSync(receiptPath,'utf8'),badReceipt=JSON.parse(originalReceipt);delete badReceipt.run_sha256;writeFileSync(receiptPath,JSON.stringify(badReceipt));assert.notEqual(reviewArchitecture(f).status,'consistent');writeFileSync(receiptPath,originalReceipt);const wrongPlanReceipt=JSON.parse(originalReceipt);wrongPlanReceipt.plan_sha256='0'.repeat(64);writeFileSync(receiptPath,JSON.stringify(wrongPlanReceipt));assert.notEqual(reviewArchitecture(f).status,'consistent');writeFileSync(receiptPath,originalReceipt);assert.equal(reviewArchitecture(f).status,'consistent');
+ f.save('src/request.mjs','export const value = 4;\n');assert.notEqual(reviewArchitecture(f).status,'consistent');assert.throws(()=>completeArchitecture(f),/histórico/);
+ f.save('src/request.mjs','export const value = 2;\n');
+ // A completed migration establishes the target; new product work does not repeat old phases/oracle transitions.
+ for(const [i,phase] of f.plan.phases.entries()){phase.id=i?'verify-new':'configure-new';phase.depends_on=i?['configure-new']:[];phase.tasks[0].id=i?'new-verification-task':'new-configuration-task';const path=f.plan.consultation_paths[i];const consultation=JSON.parse(readFileSync(join(f.repo,path),'utf8'));consultation.feature_id=phase.id;f.save(path,consultation);}
+ f.approval.plan_sha256=f.save(f.state.plan_path,f.plan);f.save(f.state.approval_path,f.approval);
+ assert.equal(prepareActionPlan(f).status,'prepared');assert.equal(start('new-configuration-task').status,'implementation_pending');
+
+});

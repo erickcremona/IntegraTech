@@ -1,3 +1,4 @@
+import {architectureCurrent,architectureSourceSnapshot,architectureEstablished} from './architecture-inspection.mjs';
 import {isDeepStrictEqual} from 'node:util';
 import {readFileSync,lstatSync,existsSync,mkdirSync} from 'node:fs';
 import {dirname} from 'node:path';
@@ -18,15 +19,15 @@ export function approvedSDD(repo){
  return {state,plan:plan.value,checked,action,path:`references/action-plans/${action.epoch}.json`};
 }
 export function prepareActionPlan({repo,dryRun=false}){
- const current=approvedSDD(repo);const text=JSON.stringify(current.action,null,2)+'\n';const path=contained(repo,current.path);
+ const current=approvedSDD(repo);const architecture=architectureCurrent(repo);if(architecture?.decision.mode==='evolution'&&!architectureEstablished(repo,architecture.decision)&&!existsSync(contained(repo,current.path))&&architecture.decision.migration.baseline_sha256!==architectureSourceSnapshot(repo))throw new Error('Arquitetura: fonte alterado desde a análise; reavaliar baseline antes da migração');const text=JSON.stringify(current.action,null,2)+'\n';const path=contained(repo,current.path);
  if(existsSync(path)){if(readFileSync(path,'utf8')!==text)throw new Error('plano de ação existente diverge; preserve histórico');return {status:'unchanged',path:current.path};}
  if(dryRun)return {status:'planned',path:current.path,tasks:current.action.tasks};
  mkdirSync(dirname(path),{recursive:true});atomicFileWrite(path,text,{exclusive:true});return {status:'prepared',path:current.path,tasks:current.action.tasks};
 }
 export function actionPlan(repo){const current=approvedSDD(repo);const stored=sddRead(repo,current.path).value;if(JSON.stringify(stored)!==JSON.stringify(current.action))throw new Error('plano de ação alterado ou obsoleto');return current;}
 export function sddDelegation({repo,id}){
- const {action,plan}=actionPlan(repo);const task=action.tasks.find(task=>task.id===id);if(!task)throw new Error('tarefa SDD ausente');
- return {schema_version:1,task_id:`sdd-${action.epoch.slice(0,12)}-${fingerprint(id).slice(0,20)}`,objective:task.deliverables.join('; '),business_context:plan.specification_path,technical_context:plan.design_path,scope:task.write_files,out_of_scope:plan.out_of_scope,assigned_agent:task.owner,supporting_agents:[],required_inputs:[plan.specification_path,plan.design_path],expected_deliverables:task.deliverables,constraints:[],file_ownership:{read:task.read_files,write:task.write_files},risks:plan.risks,acceptance_criteria:plan.phases.find(phase=>phase.id===task.phase_id).acceptance_criteria,validation_commands:task.validation_commands,evidence_required:task.test_paths,deadline_or_priority:'normal',human_gate:'none',sdd:{plan_sha256:action.plan_sha256,task_id:id}};
+ const {action,plan,state}=actionPlan(repo);const task=action.tasks.find(task=>task.id===id);if(!task)throw new Error('tarefa SDD ausente');
+ return {schema_version:1,task_id:`sdd-${action.epoch.slice(0,12)}-${fingerprint(id).slice(0,20)}`,objective:task.deliverables.join('; '),business_context:plan.specification_path,technical_context:plan.design_path,scope:task.write_files,out_of_scope:plan.out_of_scope,assigned_agent:task.owner,supporting_agents:[],required_inputs:[plan.specification_path,plan.design_path,...(state.architecture_path?[state.architecture_path]:[])],expected_deliverables:task.deliverables,constraints:[],file_ownership:{read:task.read_files,write:task.write_files},risks:plan.risks,acceptance_criteria:plan.phases.find(phase=>phase.id===task.phase_id).acceptance_criteria,validation_commands:task.validation_commands,evidence_required:task.test_paths,deadline_or_priority:'normal',human_gate:'none',sdd:{plan_sha256:action.plan_sha256,task_id:id}};
 }
 export function receiptPath(action,id){return `qa-artifacts/sdd/${action.epoch}/${fingerprint(id)}.json`;}
 export function verifyReceipt(repo,action,id,seen=new Set()){
@@ -48,7 +49,10 @@ export function verifyReceipt(repo,action,id,seen=new Set()){
 }
 export function assertSDDTask({repo,delegation,phase,starting=false}){
  if(phase!=='business'||!sddRequired(repo))return;
- const {action}=actionPlan(repo);if(delegation.sdd?.plan_sha256!==action.plan_sha256)throw new Error('tarefa exige vínculo ao plano SDD aprovado');
+ const {action}=actionPlan(repo);
+ const architecture=architectureCurrent(repo);
+ if(starting&&architecture?.decision.mode==='evolution'&&!architectureEstablished(repo,architecture.decision)&&!action.tasks.some(task=>existsSync(contained(repo,`qa-artifacts/loops/${sddDelegation({repo,id:task.id}).task_id}/state.json`)))&&architecture.decision.migration.baseline_sha256!==architectureSourceSnapshot(repo))throw new Error('Arquitetura: baseline alterado antes do início');
+ if(delegation.sdd?.plan_sha256!==action.plan_sha256)throw new Error('tarefa exige vínculo ao plano SDD aprovado');
  const expected=sddDelegation({repo,id:delegation.sdd.task_id});
  if(!isDeepStrictEqual(delegation,expected))throw new Error('delegação diverge da tarefa aprovada no plano SDD');
  for(const dependency of action.tasks.find(task=>task.id===delegation.sdd.task_id).depends_on)verifyReceipt(repo,action,dependency);

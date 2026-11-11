@@ -1,3 +1,4 @@
+import {architectureCurrent} from './architecture-inspection.mjs';
 import {linkedProject} from './project-locations.mjs';
 import {inspectSDDPlan} from './sdd-plan.mjs';
 import { readFileSync, statSync } from 'node:fs';
@@ -53,6 +54,7 @@ export function precheck(repo, phase) {
       const identity = JSON.parse(read('project.json'));
       if (!linked && (!technology.generator_supported || technology.selection.presentation !== identity.presentation)) throw new Error('decisão tecnológica diverge do projeto');
     }
+    architectureCurrent(repo);
     if (state.plan_gate !== 'approved') throw new Error('plano pendente');
     const planText = read(state.plan_path);
     const rawPlan=JSON.parse(planText);
@@ -74,7 +76,7 @@ export function precheck(repo, phase) {
     assertMeaningful(read(approval.source_reference));
     return result(true, 'Contexto, plano e referência de aceite válidos. A estrutura não autentica o aprovador nem autoriza efeitos externos.');
   } catch {
-    return result(false, 'Contexto, especialista, pesquisa, consulta por funcionalidade, plano ou aceite pendente/inválido. Confira documentos e hashes; use specialist-prepare para preparar o domínio.');
+    return result(false, 'Contexto, especialista, pesquisa, consulta por funcionalidade, plano, arquitetura ou aceite pendente/inválido. Confira documentos e hashes; use specialist-prepare para preparar o domínio.');
   }
 }
 export const sha256 = text => createHash('sha256').update(text).digest('hex');

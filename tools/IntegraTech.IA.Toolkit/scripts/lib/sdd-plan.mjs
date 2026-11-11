@@ -1,3 +1,4 @@
+import {architectureCurrent,architectureEstablished} from './architecture-inspection.mjs';
 import {sourceRoot,sourceFile,sourceBinding} from './project-locations.mjs';
 import { readFileSync, lstatSync } from 'node:fs';
 import { createHash } from 'node:crypto';
@@ -49,6 +50,12 @@ export function inspectSDDPlan({ repo, plan, contextHash }) {
   if (Buffer.byteLength(JSON.stringify(plan)) > limit) throw new Error('SDD: plano acima de 256 KiB');
   validateAgainstSchema(schema('business-plan-v2'), plan);
   meaningful(plan);
+  const architecture=architectureCurrent(repo);
+  if(architecture){
+    if(plan.architecture_sha256!==architecture.decision_sha256)throw new Error('SDD: decisão arquitetural ausente ou alterada');
+    if(architecture.decision.mode==='evolution'&&!architectureEstablished(repo,architecture.decision)&&architecture.decision.migration.phases.some(id=>!plan.phases.some(p=>p.id===id)))throw new Error('SDD: fases da migração ausentes');
+    const transition=architecture.decision.migration?.oracle_transition;if(transition&&!architectureEstablished(repo,architecture.decision)&&!plan.phases.flatMap(p=>p.tasks).some(t=>t.id===transition.task_id))throw new Error('SDD: tarefa da transição de oráculo ausente');
+  }
   const binding=sourceBinding(repo);if(binding&&plan.source_binding_sha256!==binding)throw new Error('SDD: plano não vinculado ao fonte externo atual');
   if (!digest(contextHash) || plan.context_sha256 !== contextHash) throw new Error('SDD: contexto do plano divergente');
   if (!digest(plan.specification_sha256) || !digest(plan.design_sha256)) throw new Error('SDD: hash de artefato inválido');

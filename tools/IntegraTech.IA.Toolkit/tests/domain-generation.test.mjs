@@ -1,16 +1,17 @@
+import {createProject as createUnprepared} from '../scripts/lib/project-generator.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdtempSync, readdirSync, mkdirSync, writeFileSync, readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { createProject } from '../scripts/lib/project-generator.mjs';
+import { createProject } from './generation-fixture.mjs';
 import { decisionFor } from './technology-fixture.mjs';
 import { fullContext as context, preparationFor, researchRequest } from './domain-fixture.mjs';
 import fs from 'node:fs';
 import { syncBuiltinESMExports } from 'node:module';
 test('projeto: seleção manual não contorna contexto, pesquisa e decisão', () => {
   const target = mkdtempSync(join(tmpdir(), 'domain-block-'));
-  assert.throws(() => createProject({ name: 'Atendimento', target, presentation: 'api', dryRun: true }), /contexto|pesquisa|decisão/i);
+  assert.throws(() => createUnprepared({ name: 'Atendimento', target, presentation: 'api', dryRun: true }), /contexto|pesquisa|decisão/i);
   assert.deepEqual(readdirSync(target), []);
 });
 test('projeto: rede bloqueada não escreve; sucesso gera especialista e referências', () => {

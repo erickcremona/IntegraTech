@@ -105,6 +105,20 @@
       "read_only": false,
       "skill": "integratech-design-grafico",
       "description": "Cria e refina imagens, infográficos, mapas mentais e animações com composição, legibilidade, identidade e ferramentas compatíveis com o destino."
+    },
+    {
+      "name": "architecture-analyst",
+      "kind": "executor",
+      "read_only": true,
+      "skill": "integratech-planejamento",
+      "description": "Avalia arquitetura pelo contexto e evidências conforme docs/inicio/arquitetura-contextual.md; propõe alternativas e evolução somente com fundamentos, sem editar fonte ou inventar aceite."
+    },
+    {
+      "name": "architecture-engineer",
+      "kind": "executor",
+      "read_only": false,
+      "skill": "integratech-aplicacao",
+      "description": "Implementa somente migração arquitetural aprovada e faseada em SDD conforme docs/inicio/arquitetura-contextual.md; preserva contratos, regressões, ownership e recuperação."
     }
   ],
   "routes": {
@@ -126,6 +140,8 @@
     "deployment": "release-engineer",
     "graphic-design": "graphic-designer",
     "visual-assets": "graphic-designer",
-    "motion-design": "graphic-designer"
+    "motion-design": "graphic-designer",
+    "architecture": "architecture-analyst",
+    "architecture-evolution": "architecture-engineer"
   }
 }

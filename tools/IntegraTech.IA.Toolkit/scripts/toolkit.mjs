@@ -1,4 +1,7 @@
 #!/usr/bin/env node
+import {assessArchitecture,inspectArchitectureDecision,architectureDigest} from './lib/architecture-decision.mjs';
+import {architectureSourceSnapshot,architectureRead} from './lib/architecture-inspection.mjs';
+import {reviewArchitecture,completeArchitecture} from './lib/architecture-workflow.mjs';
 import {routeRequest} from './lib/request-routing.mjs';
 import {initializeRelease,checkRelease,deployRelease} from './lib/release-workflow.mjs';
 import {attachProject,attachedProject,listAttachedProjects} from './lib/project-attachment.mjs';
@@ -34,6 +37,12 @@ import { startTask, inspectTask, advanceTask, recoverTask } from './lib/task-loo
 
 const help = `IntegraTech Toolkit — Node.js >=22
   help
+  architecture-assess --context-file PATH [--requirements-file PATH] [--repo PATH]
+  architecture-check --context-file PATH --technology-file PATH --decision-file PATH [--repo PATH]
+  architecture-hash --decision-file PATH
+  architecture-status [--repo PATH] [--project ID]
+  architecture-baseline [--repo PATH] [--project ID]
+  architecture-complete [--repo PATH] [--project ID]
   release-init --id ID [--repo PATH] [--project ID]
   release-check --id ID [--stage staging|production] [--repo PATH] [--project ID]
   release-deploy --id ID --approval-file PATH [--stage staging|production] [--dry-run] [--repo PATH] [--project ID]
@@ -82,9 +91,9 @@ const help = `IntegraTech Toolkit — Node.js >=22
   coherence-status [--repo PATH]
   technology-check --context-file PATH [--decision-file PATH] [--repo PATH]
   onboarding [--repo PATH] [--name NomeProjeto] [--context-file PATH]
-  adopt-project --name NomeProjeto --context-file PATH [--provider codex|claude|cursor|both|all] --preparation-file PATH --technology-file PATH [--presentation worker|api|console] [--repo PATH] [--dry-run]
+  adopt-project --name NomeProjeto --context-file PATH [--provider codex|claude|cursor|both|all] --preparation-file PATH --technology-file PATH --architecture-file PATH [--presentation worker|api|console] [--repo PATH] [--dry-run]
   restore-adoption --journal PATH [--dry-run]
-  create-project --name NomeProjeto --target PATH [--repo RAIZ_DO_ACEITE] [--provider codex|claude|cursor|both|all] --context-file PATH --preparation-file PATH --technology-file PATH [--presentation worker|api|console] [--dry-run]
+  create-project --name NomeProjeto --target PATH [--repo RAIZ_DO_ACEITE] [--provider codex|claude|cursor|both|all] --context-file PATH --preparation-file PATH --technology-file PATH --architecture-file PATH [--presentation worker|api|console] [--dry-run]
   precheck --phase toolkit|discovery|design|business [--repo PATH]
   route --request "PEDIDO DO USUÁRIO" [--last-asset image|animation|diagram]
   route --category toolkit|worker|integration|qa|security|data|review|discovery|release|deployment|graphic-design|visual-assets|motion-design
@@ -141,7 +150,9 @@ export async function main(argv, services = {}) {
     'loop-start': ['task', 'phase', 'provider', 'repo'], 'loop-status': ['id', 'repo'],
     'loop-advance': ['id', 'revision', 'event', 'repo'], 'loop-recover': ['id', 'repo']
   };
-  const projectCommands=['release-init','release-check','release-deploy','dispatch','precheck','policy-check','loop-start','loop-advance','loop-candidate','loop-validate','loop-review','loop-status','loop-handoff','loop-recover','run-state','close-interrupted-run','specialist-prepare','specialist-status','consultation-record','consultation-check','coherence-snapshot','coherence-run','coherence-check','coherence-status','sdd-plan','sdd-task','sdd-complete','sdd-status','graph-sync','graph-validate','graph-impact','ui-design-hash','ui-design-init','ui-design-check','ui-prepare','ui-recover','ui-status','ui-generate','ui-validate','technology-check'];
+  Object.assign(allowed,{'architecture-assess':['repo','context-file','requirements-file'],'architecture-check':['repo','context-file','technology-file','decision-file'],'architecture-hash':['decision-file'],'architecture-status':['repo'],'architecture-baseline':['repo'],'architecture-complete':['repo']});
+  allowed['create-project'].push('architecture-file');allowed['adopt-project'].push('architecture-file');
+  const projectCommands=['architecture-status','architecture-baseline','architecture-complete','release-init','release-check','release-deploy','dispatch','precheck','policy-check','loop-start','loop-advance','loop-candidate','loop-validate','loop-review','loop-status','loop-handoff','loop-recover','run-state','close-interrupted-run','specialist-prepare','specialist-status','consultation-record','consultation-check','coherence-snapshot','coherence-run','coherence-check','coherence-status','sdd-plan','sdd-task','sdd-complete','sdd-status','graph-sync','graph-validate','graph-impact','ui-design-hash','ui-design-init','ui-design-check','ui-prepare','ui-recover','ui-status','ui-generate','ui-validate','technology-check'];
   for(const name of projectCommands)allowed[name].push('project');
   if (!Object.hasOwn(allowed, command) || Object.keys(options).some(key => !allowed[command].includes(key))) throw new Error('comando/opção desconhecido');
   const read = path => JSON.parse(readFileSync(resolve(path), 'utf8'));
@@ -169,6 +180,12 @@ export async function main(argv, services = {}) {
     ? syncGraph({ repo: resolve(options.repo ?? repoRoot) }) : undefined;
   const withTraceability = result => ({...result,...(automatic?{traceability:automatic}:{}),...(selection?{project_id:selection.id}:{})});
   switch (command) {
+    case 'architecture-assess': return assessArchitecture({context:readContext(options['context-file']),requirements:readDecision(options['requirements-file']),repo:resolve(options.repo??repoRoot)});
+    case 'architecture-check': return inspectArchitectureDecision({repo:resolve(options.repo??repoRoot),context:readContext(options['context-file']),technologyDecision:readDecision(options['technology-file']),decision:readDecision(options['decision-file']),requireApproval:true});
+    case 'architecture-hash': return {decision_sha256:architectureDigest(readDecision(options['decision-file']))};
+    case 'architecture-baseline': return {source_sha256:architectureSourceSnapshot(resolve(options.repo??repoRoot))};
+    case 'architecture-status': return reviewArchitecture({repo:resolve(options.repo??repoRoot)});
+    case 'architecture-complete': return completeArchitecture({repo:resolve(options.repo??repoRoot)});
     case 'graph-sync': return syncGraph({ repo: resolve(options.repo ?? repoRoot), file: options.file, dryRun: options['dry-run'] ?? false, acceptChanges: options['accept-changes'] ?? false });
     case 'graph-validate': return validateGraph({ repo: resolve(options.repo ?? repoRoot), file: options.file });
     case 'graph-impact': if (!options.id) throw new Error('id obrigatório'); return graphImpact({ repo: resolve(options.repo ?? repoRoot), file: options.file, id: options.id });
@@ -243,10 +260,10 @@ export async function main(argv, services = {}) {
       return inspectTechnologyDecision({ context, decision: readDecision(options['decision-file']), repo: resolve(options.repo ?? repoRoot) });
     }
     case 'onboarding': return onboarding({ repo: resolve(options.repo ?? repoRoot), name: options.name, context: readContext(options['context-file']) });
-    case 'adopt-project': return adoptProject({ provider: options.provider, repo: resolve(options.repo ?? repoRoot), name: options.name, context: readContext(options['context-file']), presentation: options.presentation, technologyDecision: readDecision(options['technology-file']), preparation: readDecision(options['preparation-file']), researchRequest: services.researchRequest, contextFile: options['context-file'] ? resolve(options['context-file']) : undefined, dryRun: options['dry-run'] ?? false });
+    case 'adopt-project': return adoptProject({ provider: options.provider, repo: resolve(options.repo ?? repoRoot), name: options.name, context: readContext(options['context-file']), presentation: options.presentation, technologyDecision: readDecision(options['technology-file']), architectureDecision:readDecision(options['architecture-file']), preparation: readDecision(options['preparation-file']), researchRequest: services.researchRequest, contextFile: options['context-file'] ? resolve(options['context-file']) : undefined, dryRun: options['dry-run'] ?? false });
     case 'restore-adoption': if (!options.journal) throw new Error('journal obrigatório'); return restoreAdoption(resolve(options.journal), { dryRun: options['dry-run'] ?? false });
     case 'hash': return { sha256: sha256(readFileSync(resolve(options.file))) };
-    case 'create-project': return createProject({ name: options.name, target: options.target, provider: options.provider, presentation: options.presentation, context: readContext(options['context-file']), technologyDecision: readDecision(options['technology-file']), preparation: readDecision(options['preparation-file']), researchRequest: services.researchRequest, decisionRepo: resolve(options.repo ?? repoRoot), dryRun: options['dry-run'] ?? false });
+    case 'create-project': return createProject({ name: options.name, target: options.target, provider: options.provider, presentation: options.presentation, context: readContext(options['context-file']), technologyDecision: readDecision(options['technology-file']), architectureDecision:readDecision(options['architecture-file']), preparation: readDecision(options['preparation-file']), researchRequest: services.researchRequest, decisionRepo: resolve(options.repo ?? repoRoot), dryRun: options['dry-run'] ?? false });
     case 'precheck': return withTraceability(precheck(resolve(options.repo ?? repoRoot), options.phase));
     case 'route': if(options.request!==undefined){if(options.category!==undefined)throw new Error('Use categoria ou pedido, não ambos');return routeRequest({request:options.request,lastAsset:options['last-asset']});}if(options['last-asset']!==undefined)throw new Error('Contexto visual exige pedido');return route(options.category);
     case 'providers': return Promise.all(['codex', 'claude', 'cursor'].map(provider => checkProvider(provider)));

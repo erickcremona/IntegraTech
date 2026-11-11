@@ -1,3 +1,4 @@
+import {taskArchitectureTransition,verifyArchitectureOracles} from './architecture-oracles.mjs';
 import {sourceRoot,sourceFile,linkedProject,ignoredSourcePath} from './project-locations.mjs';
 import {assertSDDTask} from './sdd-workflow.mjs';
 import { readFileSync, mkdirSync, existsSync, writeFileSync, unlinkSync, readdirSync, lstatSync, rmSync } from 'node:fs';
@@ -81,19 +82,22 @@ export function startTask({ repo, delegation, phase, provider }) {
     }
     mkdirSync(paths.dir);
     const baselineFiles = inventory(repo);
-    const oracleFiles = baselineFiles.filter(item => /(^|\/)tests?\//.test(item.path) || /\.(?:test|spec)\.(?:mjs|cjs|js)$/.test(item.path));
+    const oracleFiles = baselineFiles.map(item=>({...item})).filter(item => /(^|\/)tests?\//.test(item.path) || /\.(?:test|spec)\.(?:mjs|cjs|js)$/.test(item.path));
+    const transition=taskArchitectureTransition(repo,delegation,baselineFiles);
     for (const file of oracleFiles) {
       const target = contained(join(paths.dir, 'oracles'), file.path);
       mkdirSync(resolve(target, '..'), { recursive: true });
       const bytes = readFileSync(sourceFile(repo, file.path));
       if (fingerprint(bytes) !== file.sha256) throw new Error('oráculo alterado durante captura');
-      writeFileSync(target, bytes, { flag: 'wx' });
+      if(transition?.path===file.path)file.sha256=transition.target_sha256;
+      writeFileSync(target, transition?.path===file.path?transition.content:bytes, { flag: 'wx' });
     }
     if (fingerprint(inventory(repo)) !== fingerprint(baselineFiles)) throw new Error('insumos alterados durante criação');
     const state = {
       schema_version: 1, id, task_id: delegation.task_id, provider, phase,
       assigned_agent: delegation.assigned_agent, human_gate: delegation.human_gate,
       ownership: delegation.file_ownership,
+      ...(transition?{architecture_oracle_transition:(({content,...record})=>record)(transition)}:{}),
       status: 'awaiting_gate', revision: 1,
       attempts: 0, correction_count: 0, snapshot: snapshot(repo, delegation),
       delegation_sha256: digest(JSON.stringify(delegation)), baseline_files: baselineFiles, oracle_files: oracleFiles, delegation, events: [
@@ -114,6 +118,7 @@ export function inspectTask({ repo, id }) {
   validateAgainstSchema(loadSchema('task-run'), state);
   if (state.id !== id || !Number.isInteger(state.revision) || !Array.isArray(state.events)
     || state.events.at(-1)?.revision !== state.revision) throw new Error('registro inválido');
+  verifyArchitectureOracles(repo,state);
   return { ...state, snapshot_matches: snapshot(repo, { file_ownership: state.ownership }) === state.snapshot };
 }
 

@@ -6,11 +6,11 @@ Núcleo comum para Codex, Claude Code e Cursor. [Uso no Cursor](../../docs/inici
 
 ## Uso a partir da raiz
 
-Adoção na cópia atual: `onboarding` identifica somente os dados ausentes; `adopt-project --name Nome --context-file PATH --technology-file DECISAO --dry-run` simula e o mesmo comando sem --dry-run aplica a identidade e o contexto, preservando a pasta raiz e o Git. Consulte [adoção guiada](../../docs/inicio/adotar-projeto.md). A operação exige baseline sem conflitos e bloqueia remotos canônicos. `restore-adoption --journal PATH` ou o recover.mjs do backup permite recuperação protegida por hashes.
+Adoção na cópia atual: `onboarding` identifica somente os dados ausentes; `adopt-project --name Nome --context-file PATH --technology-file DECISAO --architecture-file ARQUITETURA --dry-run` simula e o mesmo comando sem --dry-run aplica a identidade e o contexto, preservando a pasta raiz e o Git. Consulte [adoção guiada](../../docs/inicio/adotar-projeto.md). A operação exige baseline sem conflitos e bloqueia remotos canônicos. `restore-adoption --journal PATH` ou o recover.mjs do backup permite recuperação protegida por hashes.
 
 Ao manter o modelo, qualquer mudança em arquivo controlado exige revisar a mudança e atualizar o baseline antes de publicar: `node tools/IntegraTech.IA.Toolkit/scripts/update-template-baseline.mjs --write`. Sem --write, o comando apenas verifica. Nunca execute essa atualização no onboarding para contornar conflitos. O baseline detecta customizações acidentais; não é uma assinatura criptográfica de autoria. Projetos reais não podem ser adotados novamente por inferência.
 
-Para iniciar outro produto, use `create-project --name MeuProjeto --target DESTINO --context-file CONTEXTO --preparation-file PESQUISA --technology-file DECISAO --provider all`. Contexto completo, consultas externas e decisão aprovada são obrigatórios, inclusive com --presentation e --dry-run. A geração produz especialista de domínio e adaptadores dos provedores selecionados, sem herdar dados de outro projeto. Siga [especialista de domínio](../../docs/inicio/especialista-dominio.md) para os contratos, pesquisa, consulta por funcionalidade, atualização e otimização global final. Sem acesso às fontes necessárias, bloqueie e retome depois; não há fallback offline.
+Para iniciar outro produto, use `create-project --name MeuProjeto --target DESTINO --context-file CONTEXTO --preparation-file PESQUISA --technology-file DECISAO --architecture-file ARQUITETURA --provider all`. Contexto completo, consultas externas e decisão aprovada são obrigatórios, inclusive com --presentation e --dry-run. A geração produz especialista de domínio e adaptadores dos provedores selecionados, sem herdar dados de outro projeto. Siga [especialista de domínio](../../docs/inicio/especialista-dominio.md) para os contratos, pesquisa, consulta por funcionalidade, atualização e otimização global final. Sem acesso às fontes necessárias, bloqueie e retome depois; não há fallback offline.
 
 O instalador abaixo continua destinado à instalação/manutenção da fábrica; não equivale ao gerador da solução completa. Para o negócio, siga [o guia de início](../../docs/inicio/primeiro-projeto.md).
 
@@ -99,3 +99,6 @@ Publicação: release-init --id ID prepara rascunho; release-check --id ID --sta
 
 
 Design gráfico: rota graphic-design/visual-assets/motion-design aciona graphic-designer e a skill integratech-design-grafico para imagens e animações conforme as ferramentas disponíveis. Veja [guia de design gráfico](../../docs/inicio/design-grafico.md).
+
+
+Consulte [arquitetura contextual](../../docs/inicio/arquitetura-contextual.md) para escolher o menor perfil adequado, registrar decisão/aceite e reavaliar evolução. Criação/adoção exigem `--architecture-file PATH`; planos SDD de produtos com arquitetura gerenciada exigem `architecture_sha256`. Migrações dependem de aprovação, fases, compatibilidade, recuperação e entrega validada antes de distribuição.

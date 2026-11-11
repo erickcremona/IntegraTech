@@ -46,15 +46,15 @@ Se o contexto exigir interface, registre a propriedade estruturada `interface` n
 Na cópia do desenvolvedor:
 
 ```powershell
-npm run toolkit -- adopt-project --name MeuProjeto --context-file .scratch/contexto-inicial.json --preparation-file .scratch/pesquisa.json --technology-file .scratch/decisao-tecnologica.json --dry-run
-npm run toolkit -- adopt-project --name MeuProjeto --context-file .scratch/contexto-inicial.json --preparation-file .scratch/pesquisa.json --technology-file .scratch/decisao-tecnologica.json
+npm run toolkit -- adopt-project --name MeuProjeto --context-file .scratch/contexto-inicial.json --preparation-file .scratch/pesquisa.json --technology-file .scratch/decisao-tecnologica.json --architecture-file .scratch/arquitetura.json --dry-run
+npm run toolkit -- adopt-project --name MeuProjeto --context-file .scratch/contexto-inicial.json --preparation-file .scratch/pesquisa.json --technology-file .scratch/decisao-tecnologica.json --architecture-file .scratch/arquitetura.json
 ```
 
 A decisão aprovada e seu aceite são preservados em `references/technology-decision.json` e `references/technology-approval.md`; o estado aponta para a decisão. O contexto não pode mudar sem reavaliá-la. O precheck business verifica esse vínculo e a apresentação aplicada, além dos gates funcionais existentes.
 
 A transação remove somente arquivos controlados do modelo, inclusive o host worker substituído, e atualiza solução, referências, código e teste de ciclo de vida para a apresentação escolhida. Qualquer arquivo controlado modificado bloqueia a operação antes de escrever. Arquivos pessoais, remotos e arquivos desconhecidos permanecem; o journal permite recuperação. Diretórios que ficaram vazios após a remoção dos arquivos controlados são retirados. Artefatos locais de builds anteriores e diretórios com arquivos desconhecidos permanecem, pois a operação não apaga recursivamente arquivos fora do manifesto. Não reaplique adoção a um projeto real; evolução posterior é uma tarefa explícita com preservação do trabalho existente.
 
-Para gerar em outra pasta vazia, use `create-project --name MeuProjeto --target DESTINO --context-file .scratch/contexto-inicial.json --preparation-file .scratch/pesquisa.json --technology-file .scratch/decisao-tecnologica.json`; referências de aceite são resolvidas na raiz do modelo que executa o comando. Projetos descendentes não herdam contexto, decisão nem aceite do projeto anterior.
+Para gerar em outra pasta vazia, use `create-project --name MeuProjeto --target DESTINO --context-file .scratch/contexto-inicial.json --preparation-file .scratch/pesquisa.json --technology-file .scratch/decisao-tecnologica.json --architecture-file .scratch/arquitetura.json`; referências de aceite são resolvidas na raiz do modelo que executa o comando. Projetos descendentes não herdam contexto, decisão nem aceite do projeto anterior.
 
 A opção `--presentation api|console|worker` apenas confere a apresentação da decisão aprovada. Não dispensa contexto completo, pesquisa externa verificada ou aprovação. Se a consulta estiver bloqueada, a criação e adoção ficam bloqueadas até conseguir acesso. Prepare o especialista e conclua a otimização global conforme [especialista-dominio.md](especialista-dominio.md).
 
@@ -69,3 +69,6 @@ Consultadas em 2026-11-07 pelos repositórios públicos das fontes:
 - [MADR — template](https://github.com/adr/madr/blob/develop/template/adr-template.md): contexto, critérios, alternativas, consequências e confirmação de decisões.
 
 Essas fontes sustentam o fluxo da fábrica; cada projeto exige pesquisa própria das tecnologias candidatas. Não copie estas referências como evidência automática de uma nova decisão.
+
+
+Consulte [arquitetura contextual](arquitetura-contextual.md) para escolher o menor perfil adequado, registrar decisão/aceite e reavaliar evolução. Criação/adoção exigem `--architecture-file PATH`; planos SDD de produtos com arquitetura gerenciada exigem `architecture_sha256`. Migrações dependem de aprovação, fases, compatibilidade, recuperação e entrega validada antes de distribuição.

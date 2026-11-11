@@ -11,7 +11,7 @@
 | Infra.Service | Aplicação, Domínio |
 | Infra.CrossCutting.IoC | Aplicação, Domínio, Infra.Data, Infra.Service |
 
-O modelo atual usa apresentação Worker. Nos projetos gerados, ela pode ser Worker, Api ou Console, sempre referenciando Aplicação e IoC. Bibliotecas sem conteúdo permanecem vazias até o domínio ser informado; não há classes de negócio fictícias.
+O modelo atual usa apresentação Worker. Novos produtos podem escolher Worker, Api ou Console e um dos três perfis aprovados: aplicação simples, monólito modular ou monólito em camadas. Apenas o perfil em camadas usa os projetos abaixo; consulte [arquitetura contextual](../inicio/arquitetura-contextual.md). Bibliotecas sem conteúdo permanecem vazias até o domínio ser informado; não há classes de negócio fictícias.
 
 O Worker usa Generic Host e BackgroundService; IoC centraliza a composição futura. O método AddIntegraTech não registra conectores nesta base. A inicialização só registra o Worker inativo, que aguarda cancelamento. Configuração e logging usam mecanismos nativos do Host, sem connection string ou segredo predefinidos.
 

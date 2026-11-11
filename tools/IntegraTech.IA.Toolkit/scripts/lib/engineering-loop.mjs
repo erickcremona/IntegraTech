@@ -84,6 +84,7 @@ export function acceptCandidate({ repo, id, expectedRevision, profile }) {
     const state = load(repo, id, expectedRevision);
     if (!['implementation_pending', 'correction_pending', 'validation_blocked', 'review_blocked', 'ready_for_delivery'].includes(state.status)) throw new Error('estado não permite candidato');
     const files = inventory(repo);
+    const transition=state.architecture_oracle_transition;if(transition&&files.find(f=>f.path===transition.path)?.sha256!==transition.target_sha256)throw new Error('Candidato deve atualizar o oráculo arquitetural para o alvo aprovado');
     const changed = changes(state.baseline_files, files);
     if (changed.some(path => !owns(state.ownership.write, path))) throw new Error('alterações fora do ownership ou insumos alterados');
     const candidateHash = fingerprint(files);

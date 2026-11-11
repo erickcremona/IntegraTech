@@ -1,3 +1,5 @@
+import {architectureDigest,architectureTechnologyHash} from '../scripts/lib/architecture-decision.mjs';
+import {fingerprint} from '../scripts/lib/candidate.mjs';
 // Explicit test data: only network I/O is simulated; all production gates run.
 import { mkdtempSync, mkdirSync, writeFileSync, existsSync, lstatSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -14,7 +16,14 @@ export function generationOptions(args) {
     if (!existsSync(join(decisionRepo, 'references/aceite-tecnologia.md'))) writeFileSync(join(decisionRepo, 'references/aceite-tecnologia.md'), 'Test fixture: usuário aprovou a apresentação selecionada.');
   }
   const technologyDecision = args.technologyDecision ?? (args.presentation ? decisionFor(context, args.presentation) : undefined);
-  return { ...args, context, decisionRepo, technologyDecision, preparation: args.preparation ?? preparationFor(context), researchRequest: args.researchRequest ?? researchRequest };
+  let architectureDecision=args.architectureDecision;
+  if(!architectureDecision&&technologyDecision){
+    const evidence='Synthetic architecture approval for generation fixture only.';
+    if(existsSync(decisionRepo)&&!lstatSync(decisionRepo).isSymbolicLink())writeFileSync(join(decisionRepo,'references/architecture-fixture-approval.md'),evidence);
+    architectureDecision={schema_version:1,mode:'initial',profile:'layered-monolith',layout:{name:args.name,presentation:args.presentation??technologyDecision.options.find(o=>o.id===technologyDecision.selected_option)?.presentation,stack:'dotnet'},context_sha256:fingerprint(context),technology_sha256:architectureTechnologyHash(technologyDecision),source_binding_sha256:null,requirements:{schema_version:1,context_sha256:fingerprint(context),domain_complexity:'simple',modules:[],drivers:[],unknowns:[]},rationale:['Synthetic backwards-compatible layered fixture'],alternatives:[{profile:'simple-application',reason:'Fixture tests the existing layered layout'}],research:[{url:'https://example.com/synthetic',accessed_at:'2026-01-01',findings:'Synthetic fixture, not actual research'}],validation_strategy:['Build and structural lifecycle tests'],migration:null};
+    architectureDecision.approval={status:'approved',decision_sha256:architectureDigest(architectureDecision),approved_by:'Synthetic owner',approved_at:new Date().toISOString(),source_reference:'references/architecture-fixture-approval.md',source_reference_sha256:fingerprint(evidence)};
+  }
+  return { ...args, architectureDecision, context, decisionRepo, technologyDecision, preparation: args.preparation ?? preparationFor(context), researchRequest: args.researchRequest ?? researchRequest };
 }
 export const createProject = args => generate(generationOptions(args));
 export const adoptProject = args => adopt(generationOptions(args));

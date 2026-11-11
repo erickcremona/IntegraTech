@@ -1,3 +1,4 @@
+import {architectureCompleted} from './architecture-workflow.mjs';
 import {readFileSync,existsSync,lstatSync,mkdirSync,writeFileSync,unlinkSync} from 'node:fs';
 import {dirname,resolve,isAbsolute} from 'node:path';
 import {fileURLToPath} from 'node:url';
@@ -33,6 +34,8 @@ export function checkRelease({repo,id,stage='staging'}){
  const path=releasePath(id);const plan=json(repo,path);if(plan.schema_version!==1||plan.release_id!==id)throw new Error('manifesto de release inválido');
  const evidenceBinding=releaseEvidenceBinding(plan);
  const checks=[];const add=(id,passed,basis)=>checks.push({id,status:passed?'passed':'blocked',basis});
+ let architecture=true;try{architecture=architectureCompleted(repo)!==false;}catch{architecture=false;}
+ add('architecture',architecture,'approved_architecture_and_completed_migration');
  let bound=false;try{const current=binding(repo);bound=Object.keys(current).every(key=>plan[key]===current[key])&&json(repo,'project.json').is_model===false;}catch{}
  add('version_binding',bound,'observed_local_hashes');
  let scope=false,delivery=false;try{scope=sddStatus({repo}).status==='completed';const {action}=actionPlan(repo);const run=engineeringStatus({repo,id:plan.run_id});delivery=scope&&run.delivery_valid&&run.phase==='business'&&action.tasks.some(task=>sddDelegation({repo,id:task.id}).task_id===plan.run_id);}catch{}

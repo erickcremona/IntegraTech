@@ -159,7 +159,7 @@ test('Cursor: CLI cria e adota com escolha explícita e recuperação', { skip: 
       writeFileSync(join(repo, path), readFileSync(join(repoRoot, path)));
     }
     writeFileSync(join(repo, 'personal.txt'), 'arquivo pessoal');
-    const adoptionInputs = transport.prepare(repo);
+    const adoptionInputs = transport.prepare(repo,undefined,'ProdutoCursor');
     const args = ['adopt-project', '--repo', repo, '--name', 'ProdutoCursor', ...adoptionInputs, '--provider', provider, '--presentation', 'api'];
     assert.equal((await run([...args, '--dry-run'])).status, 'planned');
     assert.equal(read(join(repo, 'project.json')).is_model, true);

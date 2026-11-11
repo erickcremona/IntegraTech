@@ -28,6 +28,10 @@ mindmap
       Especialista de domínio
     Decisões aprovadas
       Tecnologias justificadas
+      Arquitetura pelo contexto
+        Aplicação simples
+        Monólito modular ou camadas
+        Distribuição com evidências
       UX/UI e referência visual
       Criação ou adoção dedicada
     Plano SDD
@@ -46,6 +50,9 @@ mindmap
       Análises independentes sem escrita
       Checkpoints por tarefa
       Retomada e evolução
+      Reavaliação arquitetural
+        Manter ou propor migração
+        Aceite SDD testes e recuperação
     Publicação orientada
       Agente de publicação
       Prontidão por evidências
@@ -169,7 +176,7 @@ Em um projeto personalizado, use o nome de sua solução e do projeto de testes.
 Para gerar em outra pasta vazia, após preparar contexto completo, pesquisa externa e decisão aprovada:
 
 ```powershell
-npm run toolkit -- create-project --name MeuProjeto --target C:\Projetos\MeuProjeto --context-file .scratch/contexto.json --preparation-file .scratch/pesquisa.json --technology-file .scratch/tecnologia.json --provider all --dry-run
+npm run toolkit -- create-project --name MeuProjeto --target C:\Projetos\MeuProjeto --context-file .scratch/contexto.json --preparation-file .scratch/pesquisa.json --technology-file .scratch/tecnologia.json --architecture-file .scratch/arquitetura.json --provider all --dry-run
 ```
 
 Revise a simulação e repita sem `--dry-run` para criar. O projeto não herda histórico Git, remotos, credenciais, artefatos locais ou aprovações de outro projeto. Contexto/pesquisa insuficientes bloqueiam a criação. [Decisão tecnológica](docs/inicio/decisao-tecnologica.md) · [Especialista de domínio](docs/inicio/especialista-dominio.md) · [Manual de comandos](tools/IntegraTech.IA.Toolkit/README.md).
@@ -188,3 +195,6 @@ Documentos em `docs/superpowers` e `docs/validacao` registram a manutenção do 
 ## Autoria
 
 Criado por **[Erick Cremona](https://www.linkedin.com/in/erick-cremona-6983a1383/)**. [Registro de autoria da ferramenta](AUTHORS.md).
+
+
+Consulte [arquitetura contextual](docs/inicio/arquitetura-contextual.md) para escolher o menor perfil adequado, registrar decisão/aceite e reavaliar evolução. Criação/adoção exigem `--architecture-file PATH`; planos SDD de produtos com arquitetura gerenciada exigem `architecture_sha256`. Migrações dependem de aprovação, fases, compatibilidade, recuperação e entrega validada antes de distribuição.
