@@ -138,3 +138,6 @@ Enquanto nenhuma proposta for aceita, o design permanece draft. Após aceite hum
 A referência aprovada passa a ser o padrão de interface do produto: novas telas, componentes, navegação, tipografia, cores, espaçamento, estados e responsividade devem seguir a direção e as regras registradas. A revisão UX deve comparar a implementação com esse padrão e apontar desvios; o template técnico não o substitui. Ajustes dentro do padrão não exigem escolher outro design; mudanças materiais de direção exigem nova proposta e novo aceite vinculado ao conteúdo/protótipos.
 
 Após aprovação, explore alternativas em rascunhos/protótipos separados e preserve a versão e os artefatos aprovados. Pedir uma sugestão nova não revoga nem sobrescreve o padrão ativo. Só promova a substituição após novo aceite explícito, preservando o histórico sanitizado de versões e decisões. Não reaproveite o aceite antigo para trocar a referência.
+
+
+O system design é avaliado pelos riscos registrados na especificação; quando necessário, seu registro integrado cobre componentes, dados, integrações, falhas, segurança, observabilidade, validação e pontos de UX e fica coberto pelo aceite do plano. Consulte [system design](system-design.md).

@@ -1,3 +1,4 @@
+import {assessSystemDesign} from './lib/system-design.mjs';
 #!/usr/bin/env node
 import {assessArchitecture,inspectArchitectureDecision,architectureDigest} from './lib/architecture-decision.mjs';
 import {architectureSourceSnapshot,architectureRead} from './lib/architecture-inspection.mjs';
@@ -37,7 +38,9 @@ import { startTask, inspectTask, advanceTask, recoverTask } from './lib/task-loo
 
 const help = `IntegraTech Toolkit — Node.js >=22
   help
+  system-design-assess --context-file PATH --specification-file PATH
   architecture-assess --context-file PATH [--requirements-file PATH] [--repo PATH]
+  system-design-assess --context-file PATH --specification-file PATH
   architecture-check --context-file PATH --technology-file PATH --decision-file PATH [--repo PATH]
   architecture-hash --decision-file PATH
   architecture-status [--repo PATH] [--project ID]
@@ -101,7 +104,7 @@ const help = `IntegraTech Toolkit — Node.js >=22
   hash --file PATH
   install --provider codex|claude|cursor|both|all [--target PATH] [--dry-run]
   validate [--provider codex|claude|cursor|both|all] [--repo PATH]
-  contract --kind delegation|return|review|handoff|business-context|business-plan|business-plan-v2|functional-spec|technical-design|approval|technology-decision|domain-preparation|domain-consultation|domain-coherence|task-run|traceability-graph --file PATH
+  contract --kind delegation|return|review|handoff|business-context|business-plan|business-plan-v2|functional-spec|technical-design|approval|technology-decision|system-design|domain-preparation|domain-consultation|domain-coherence|task-run|traceability-graph --file PATH
   dispatch --provider codex|claude --task PATH --files PATH --phase toolkit|discovery|design|business [--repo PATH] [--timeout 120000]
   resume --file PATH
 
@@ -150,9 +153,9 @@ export async function main(argv, services = {}) {
     'loop-start': ['task', 'phase', 'provider', 'repo'], 'loop-status': ['id', 'repo'],
     'loop-advance': ['id', 'revision', 'event', 'repo'], 'loop-recover': ['id', 'repo']
   };
-  Object.assign(allowed,{'architecture-assess':['repo','context-file','requirements-file'],'architecture-check':['repo','context-file','technology-file','decision-file'],'architecture-hash':['decision-file'],'architecture-status':['repo'],'architecture-baseline':['repo'],'architecture-complete':['repo']});
+  Object.assign(allowed,{'system-design-assess':['context-file','specification-file'],'architecture-assess':['repo','context-file','requirements-file'],'architecture-check':['repo','context-file','technology-file','decision-file'],'architecture-hash':['decision-file'],'architecture-status':['repo'],'architecture-baseline':['repo'],'architecture-complete':['repo']});
   allowed['create-project'].push('architecture-file');allowed['adopt-project'].push('architecture-file');
-  const projectCommands=['architecture-status','architecture-baseline','architecture-complete','release-init','release-check','release-deploy','dispatch','precheck','policy-check','loop-start','loop-advance','loop-candidate','loop-validate','loop-review','loop-status','loop-handoff','loop-recover','run-state','close-interrupted-run','specialist-prepare','specialist-status','consultation-record','consultation-check','coherence-snapshot','coherence-run','coherence-check','coherence-status','sdd-plan','sdd-task','sdd-complete','sdd-status','graph-sync','graph-validate','graph-impact','ui-design-hash','ui-design-init','ui-design-check','ui-prepare','ui-recover','ui-status','ui-generate','ui-validate','technology-check'];
+  const projectCommands=['system-design-assess','architecture-status','architecture-baseline','architecture-complete','release-init','release-check','release-deploy','dispatch','precheck','policy-check','loop-start','loop-advance','loop-candidate','loop-validate','loop-review','loop-status','loop-handoff','loop-recover','run-state','close-interrupted-run','specialist-prepare','specialist-status','consultation-record','consultation-check','coherence-snapshot','coherence-run','coherence-check','coherence-status','sdd-plan','sdd-task','sdd-complete','sdd-status','graph-sync','graph-validate','graph-impact','ui-design-hash','ui-design-init','ui-design-check','ui-prepare','ui-recover','ui-status','ui-generate','ui-validate','technology-check'];
   for(const name of projectCommands)allowed[name].push('project');
   if (!Object.hasOwn(allowed, command) || Object.keys(options).some(key => !allowed[command].includes(key))) throw new Error('comando/opção desconhecido');
   const read = path => JSON.parse(readFileSync(resolve(path), 'utf8'));
@@ -180,6 +183,7 @@ export async function main(argv, services = {}) {
     ? syncGraph({ repo: resolve(options.repo ?? repoRoot) }) : undefined;
   const withTraceability = result => ({...result,...(automatic?{traceability:automatic}:{}),...(selection?{project_id:selection.id}:{})});
   switch (command) {
+    case 'system-design-assess': return assessSystemDesign({context:readContext(options['context-file']),specification:readDecision(options['specification-file'])});
     case 'architecture-assess': return assessArchitecture({context:readContext(options['context-file']),requirements:readDecision(options['requirements-file']),repo:resolve(options.repo??repoRoot)});
     case 'architecture-check': return inspectArchitectureDecision({repo:resolve(options.repo??repoRoot),context:readContext(options['context-file']),technologyDecision:readDecision(options['technology-file']),decision:readDecision(options['decision-file']),requireApproval:true});
     case 'architecture-hash': return {decision_sha256:architectureDigest(readDecision(options['decision-file']))};

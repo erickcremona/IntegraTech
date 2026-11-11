@@ -29,14 +29,14 @@ mindmap
     Decisões aprovadas
       Tecnologias justificadas
       Arquitetura pelo contexto
-        Aplicação simples
-        Monólito modular ou camadas
-        Distribuição com evidências
+      Perfis simples, modular e em camadas
+      System design quando necessário
       UX/UI e referência visual
       Criação ou adoção dedicada
     Plano SDD
       Especificação e cenários
       Desenho técnico
+        System design detalhado só quando necessário
       Fases e tarefas dependentes
       Aceite vinculado à versão
     Execução assistida
@@ -52,6 +52,7 @@ mindmap
       Retomada e evolução
       Reavaliação arquitetural
         Manter ou propor migração
+        System design no desenho técnico quando justificado
         Aceite SDD testes e recuperação
     Publicação orientada
       Agente de publicação
@@ -64,7 +65,7 @@ mindmap
 
 [Fluxo de uso do toolkit](docs/inicio/fluxo-toolkit.md) · [Execução SDD](docs/inicio/sdd.md)
 
-**Contexto e pesquisa → decisões → especificação e desenho → plano faseado aprovado → tarefas → testes e revisão → checkpoints → entrega e evolução.**
+**Contexto e pesquisa → decisões → system design quando justificado → especificação e desenho → plano faseado aprovado → tarefas → testes e revisão → checkpoints → entrega e evolução.**
 
 | Etapa | O que você faz | O que o toolkit prepara |
 |---|---|---|
@@ -198,3 +199,6 @@ Criado por **[Erick Cremona](https://www.linkedin.com/in/erick-cremona-6983a1383
 
 
 Consulte [arquitetura contextual](docs/inicio/arquitetura-contextual.md) para escolher o menor perfil adequado, registrar decisão/aceite e reavaliar evolução. Criação/adoção exigem `--architecture-file PATH`; planos SDD de produtos com arquitetura gerenciada exigem `architecture_sha256`. Migrações dependem de aprovação, fases, compatibilidade, recuperação e entrega validada antes de distribuição.
+
+
+O desenho de sistema é condicional aos riscos e atributos dos requisitos. Consulte [quando e como usar system design](docs/inicio/system-design.md); se exigido ou recomendado, o registro fica vinculado ao desenho técnico e ao aceite SDD.

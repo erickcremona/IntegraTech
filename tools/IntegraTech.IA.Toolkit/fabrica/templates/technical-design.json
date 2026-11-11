@@ -4,5 +4,23 @@
   "specification_sha256": "",
   "architecture": [],
   "decisions": [],
-  "validation_strategy": []
+  "validation_strategy": [],
+  "system_design": {
+    "applicability": "not_required",
+    "decision": "not_applicable",
+    "rationale": "O contexto e a especificação não apontam fluxo de sistema que justifique decomposição adicional.",
+    "signals": [],
+    "components": [],
+    "flows": [],
+    "data_boundaries": [],
+    "integrations": [],
+    "failure_modes": [],
+    "quality_attributes": [],
+    "security": [],
+    "observability": [],
+    "ux_touchpoints": [
+      "Sem impacto de UX identificado no escopo atual."
+    ],
+    "validation_strategy": []
+  }
 }

@@ -119,6 +119,13 @@
       "read_only": false,
       "skill": "integratech-aplicacao",
       "description": "Implementa somente migração arquitetural aprovada e faseada em SDD conforme docs/inicio/arquitetura-contextual.md; preserva contratos, regressões, ownership e recuperação."
+    },
+    {
+      "name": "system-design-analyst",
+      "kind": "executor",
+      "read_only": true,
+      "skill": "integratech-planejamento",
+      "description": "Avalia sinais estruturados da especificação/contexto e prepara ou revisa system design de componentes, fluxos, dados, integrações, falhas, segurança, observabilidade e pontos de UX; não implementa nem aprova em nome do usuário."
     }
   ],
   "routes": {
@@ -142,6 +149,7 @@
     "visual-assets": "graphic-designer",
     "motion-design": "graphic-designer",
     "architecture": "architecture-analyst",
-    "architecture-evolution": "architecture-engineer"
+    "architecture-evolution": "architecture-engineer",
+    "system-design": "system-design-analyst"
   }
 }

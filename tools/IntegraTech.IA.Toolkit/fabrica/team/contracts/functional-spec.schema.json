@@ -67,6 +67,59 @@
                 }
               }
             }
+          },
+          "system_design_signals": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "kind",
+                "evidence"
+              ],
+              "properties": {
+                "kind": {
+                  "type": "string",
+                  "enum": [
+                    "multiple_components",
+                    "critical_external_integration",
+                    "payment_or_financial_flow",
+                    "regulated_data_boundary",
+                    "cross_system_consistency",
+                    "availability_requirement",
+                    "performance_requirement",
+                    "distributed_runtime",
+                    "complex_async_workflow",
+                    "resilience_requirement"
+                  ]
+                },
+                "evidence": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              }
+            }
+          },
+          "context_refs": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "pointer",
+                "quote"
+              ],
+              "properties": {
+                "pointer": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "quote": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              }
+            }
           }
         }
       }
