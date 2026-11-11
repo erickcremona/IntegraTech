@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import {initializeRelease,checkRelease,deployRelease} from './lib/release-workflow.mjs';
 import {attachProject,attachedProject,listAttachedProjects} from './lib/project-attachment.mjs';
 import { initializeDesign,inspectDesign,designHash } from './lib/interface-design.mjs';
 import {prepareActionPlan,sddDelegation,sddStatus} from './lib/sdd-workflow.mjs';
@@ -32,6 +33,9 @@ import { startTask, inspectTask, advanceTask, recoverTask } from './lib/task-loo
 
 const help = `IntegraTech Toolkit — Node.js >=22
   help
+  release-init --id ID [--repo PATH] [--project ID]
+  release-check --id ID [--stage staging|production] [--repo PATH] [--project ID]
+  release-deploy --id ID --approval-file PATH [--stage staging|production] [--dry-run] [--repo PATH] [--project ID]
   attach-project --id ID [--source PATH] [--name NOME] [--context-file PATH] [--provider codex|claude|cursor|both|all] [--dry-run] [--repo TOOLKIT]
   attached-projects [--repo TOOLKIT]
   project-status --project ID [--repo TOOLKIT]
@@ -81,7 +85,7 @@ const help = `IntegraTech Toolkit — Node.js >=22
   restore-adoption --journal PATH [--dry-run]
   create-project --name NomeProjeto --target PATH [--repo RAIZ_DO_ACEITE] [--provider codex|claude|cursor|both|all] --context-file PATH --preparation-file PATH --technology-file PATH [--presentation worker|api|console] [--dry-run]
   precheck --phase toolkit|discovery|design|business [--repo PATH]
-  route --category toolkit|worker|integration|qa|security|data|review|discovery
+  route --category toolkit|worker|integration|qa|security|data|review|discovery|release|deployment
   providers
   hash --file PATH
   install --provider codex|claude|cursor|both|all [--target PATH] [--dry-run]
@@ -122,6 +126,7 @@ export async function main(argv, services = {}) {
     'graph-sync': ['repo', 'file', 'dry-run', 'accept-changes'],
     'graph-validate': ['repo', 'file'], 'graph-impact': ['repo', 'file', 'id'],
     'ui-recover': ['repo'], 'ui-design-hash':['repo'],'ui-design-init':['repo'],'ui-design-check':['repo'],'ui-capabilities': [], 'ui-prepare': ['repo','dry-run'], 'ui-status': ['repo'], 'ui-generate': ['repo','dry-run'], 'ui-validate': ['repo','local'],
+    'release-init':['repo','id'],'release-check':['repo','id','stage'],'release-deploy':['repo','id','stage','approval-file','dry-run'],
     'sdd-plan':['repo','dry-run'],'sdd-task':['repo','id'],'sdd-status':['repo'],'sdd-complete':['repo','id','run-id'],
     'attach-project':['repo','id','source','name','provider','context-file','dry-run'], 'attached-projects':['repo'], 'project-status':['repo','project'],
     help: [], 'create-project': ['repo', 'name', 'target', 'provider', 'presentation', 'dry-run', 'context-file', 'technology-file', 'preparation-file'], precheck: ['repo', 'phase'], route: ['category'], providers: [], hash: ['file'],
@@ -134,7 +139,7 @@ export async function main(argv, services = {}) {
     'loop-start': ['task', 'phase', 'provider', 'repo'], 'loop-status': ['id', 'repo'],
     'loop-advance': ['id', 'revision', 'event', 'repo'], 'loop-recover': ['id', 'repo']
   };
-  const projectCommands=['dispatch','precheck','policy-check','loop-start','loop-advance','loop-candidate','loop-validate','loop-review','loop-status','loop-handoff','loop-recover','run-state','close-interrupted-run','specialist-prepare','specialist-status','consultation-record','consultation-check','coherence-snapshot','coherence-run','coherence-check','coherence-status','sdd-plan','sdd-task','sdd-complete','sdd-status','graph-sync','graph-validate','graph-impact','ui-design-hash','ui-design-init','ui-design-check','ui-prepare','ui-recover','ui-status','ui-generate','ui-validate','technology-check'];
+  const projectCommands=['release-init','release-check','release-deploy','dispatch','precheck','policy-check','loop-start','loop-advance','loop-candidate','loop-validate','loop-review','loop-status','loop-handoff','loop-recover','run-state','close-interrupted-run','specialist-prepare','specialist-status','consultation-record','consultation-check','coherence-snapshot','coherence-run','coherence-check','coherence-status','sdd-plan','sdd-task','sdd-complete','sdd-status','graph-sync','graph-validate','graph-impact','ui-design-hash','ui-design-init','ui-design-check','ui-prepare','ui-recover','ui-status','ui-generate','ui-validate','technology-check'];
   for(const name of projectCommands)allowed[name].push('project');
   if (!Object.hasOwn(allowed, command) || Object.keys(options).some(key => !allowed[command].includes(key))) throw new Error('comando/opção desconhecido');
   const read = path => JSON.parse(readFileSync(resolve(path), 'utf8'));
@@ -178,6 +183,9 @@ export async function main(argv, services = {}) {
     case 'sdd-task': return sddDelegation({repo:resolve(options.repo??repoRoot),id:options.id});
     case 'sdd-status': return sddStatus({repo:resolve(options.repo??repoRoot)});
     case 'sdd-complete': return completeSDDTask({repo:resolve(options.repo??repoRoot),id:options.id,runId:options['run-id']});
+    case 'release-init':return initializeRelease({repo:resolve(options.repo??repoRoot),id:options.id});
+    case 'release-check':return checkRelease({repo:resolve(options.repo??repoRoot),id:options.id,stage:options.stage});
+    case 'release-deploy':return deployRelease({repo:resolve(options.repo??repoRoot),id:options.id,stage:options.stage,approvalFile:options['approval-file'],dryRun:options['dry-run']??false});
     case 'help': return help;
     case 'doctor': return diagnoseProviders();
     case 'policy-check': return checkPolicy({ repo: resolve(options.repo ?? repoRoot), action: options.action, agent: options.agent, phase: options.phase });
@@ -262,7 +270,7 @@ if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1]
   try {
     const result = await main(process.argv.slice(2));
     console.log(typeof result === 'string' ? result : JSON.stringify(result, null, 2));
-    if (['blocked', 'failed', 'needs_input', 'empty', 'needs_review'].includes(result?.status) || result?.failed > 0) process.exitCode = 2;
+    if (['blocked', 'failed', 'needs_input', 'empty', 'needs_review', 'preparing'].includes(result?.status) || result?.failed > 0) process.exitCode = 2;
   } catch (error) {
     // Adoption errors identify controlled conflicts/recovery paths, never print file contents.
     if (['adopt-project', 'restore-adoption', 'create-project', 'research-collect', 'specialist-check', 'specialist-prepare', 'specialist-status', 'consultation-record', 'consultation-check', 'coherence-check', 'coherence-status', 'coherence-run'].includes(process.argv[2])) console.error(error instanceof SyntaxError ? 'Documento da operação inválido.' : error.message);

@@ -38,6 +38,11 @@ mindmap
       Análises independentes sem escrita
       Checkpoints por tarefa
       Retomada e evolução
+    Publicação orientada
+      Agente de publicação
+      Prontidão por evidências
+      Homologação e produção
+      Distribuição autorizada
 ```
 
 [Fluxo de uso do toolkit](docs/inicio/fluxo-toolkit.md) · [Execução SDD](docs/inicio/sdd.md)
@@ -123,6 +128,12 @@ O **loop assistido** registra o candidato e vincula validação e revisões ao m
 Testes isolados exigem ambiente compatível: o executor disponível usa Linux/Bubblewrap e bloqueia quando o isolamento não pode ser comprovado. O dispatcher automatiza revisões Codex/Claude com pacote explícito autorizado e provedor compatível; Cursor usa a sessão nativa e seus adaptadores, sem dispatcher automatizado. Testes locais e simulações não comprovam funcionamento dos serviços externos. [Limites e confiabilidade](docs/inicio/confiabilidade.md).
 
 Você recebe arquivos alterados, resultados observados, limitações e próximos passos. Entrega não publica o produto: push, merge, deploy e outras operações externas exigem autorização aplicável.
+
+## Publicação e prontidão
+
+Após criar a solução, release-engineer orienta a distribuição conforme a stack, o público, os ambientes, custos e operação. O agente deve pesquisar alternativas e preparar um plano progressivo, sem escolher nuvem ou loja por padrão. release-init/check avaliam a versão por critérios obrigatórios e evidências, separando homologação de produção; uma pontuação não compensa bloqueios.
+
+A automação inicial distribui um artefato local para destino explicitamente aprovado, sem sobrescrita. Ela não ativa serviços nem comprova aplicação online. Cloud e lojas continuam com orientação contextual, sem executor automático. Registros humanos de operação não são certificação; a prontidão depende da suficiência das evidências e dos gates técnicos. [Fluxo, métrica e comandos de publicação](docs/inicio/publicacao.md).
 
 ## Comandos para operação direta
 

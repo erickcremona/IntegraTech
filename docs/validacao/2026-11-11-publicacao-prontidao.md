@@ -1,0 +1,13 @@
+# Publicação e prontidão — validação
+
+Agente release-engineer e skill integratech-publicacao orientam distribuição por contexto desde a solução criada. Comandos release-init/check/deploy também aceitam sistemas externos por --project. Métrica usa critérios atendidos/obrigatórios sem compensação por média; estados preparing, ready_for_staging e ready_for_production. Produção exige evidência adicional de homologação e aceite específico.
+
+Gates técnicos verificam a entrega observada atual de uma tarefa do plano SDD e conclusão do escopo aprovado, além de hashes de fonte/contexto/identidade/vínculo e artefato. Registros operacionais permanecem explicitamente humanos/não autenticados, vinculados à versão/artefato/destino/estágio; sua suficiência exige inspeção responsável, não certificação automática. O campo evidence_binding_sha256 muda quando metadados relevantes mudam; approvals vinculam o manifesto exato.
+
+Primeiro executor: distribuição local de artefato até 32 MiB, com simulação sem aceite/escrita, aceite efetivo para ação real, destino separado já preparado, lock, journal, escrita atômica e exclusividade sem sobrescrita. Recibo preserva manifesto e checks. Não inicia serviço, altera DNS/TLS, executa migração nem configura infraestrutura. Resultados dizem application_health=not_observed. Cloud/lojas permanecem orientação manual, sem adaptador automático.
+
+Os testes iniciais falharam antes do módulo/CLI; a regressão de troca de ambiente falhou antes do vínculo por evidência e passou após correção. Integração percorre duas tarefas SDD reais em estados normal e anexado com validadores/revisores explicitamente simulados, aceita homologação, bloqueia produção sem sua evidência, exige reavaliação ao trocar alvo, recusa aceite de outro estágio e distribuição repetida, realiza cópia temporária e detecta artefato/fonte alterados. Nenhuma operação em produção real ocorreu; exemplos de pesquisa nos testes são sintéticos, não consultas externas.
+
+Resultado: 250 testes passaram. npm run verify: exit 0, 24 verificações passaram, incluindo testes, oito avaliações locais, padrões de segredos, builds, ciclo de vida, geração Worker/API/Console e adoção API/Console. Adaptadores all válidos com doze papéis; baseline controlado atualizado. Revisão independente não encontrou problemas importantes. README/mapa, guias, manuais e adaptadores de skills atualizados e transportados aos produtos gerados.
+
+Nenhuma avaliação com modelo externo, publicação de ambiente, push ou deploy de aplicação real nesta entrega. Prontidão por registros locais não autentica responsáveis nem certifica segurança, saúde ou disponibilidade de produção.

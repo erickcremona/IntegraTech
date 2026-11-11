@@ -99,3 +99,6 @@ Na manutenção de legado, finalizar a coerência preserva a entrega se apenas o
 
 
 Código e segurança são revisados em paralelo sobre o mesmo candidato, aguardando ambos os resultados; UX continua depois da aprovação dos dois. Análises independentes somente de leitura podem ser delegadas pelo CTO na sessão nativa, até duas por produto, com entradas fixadas e consolidação. Não há executor automático dessas análises. Implementação permanece sequencial. Recomendações devem explicar fundamentos, alternativas, custos e limites, inclusive quando for melhor simplificar, adiar ou não implementar.
+
+
+Publicação: após criar a solução, planeje distribuição com release-engineer e acompanhe os critérios de prontidão por ambiente. Entrega técnica não aprova produção. Consulte [publicação e prontidão](publicacao.md); somente o destino local de artefato tem automação neste incremento, com aceite específico.

@@ -91,6 +91,13 @@
       "skill": "integratech-ux-review",
       "review_type": "ux_accessibility",
       "description": "Revisa independentemente experiência, responsividade e acessibilidade com evidências do candidato; não implementa."
+    },
+    {
+      "name": "release-engineer",
+      "kind": "executor",
+      "read_only": false,
+      "skill": "integratech-publicacao",
+      "description": "Orienta publicação e operação por contexto, avalia prontidão por evidências e prepara automação de distribuição somente nos destinos suportados e autorizados."
     }
   ],
   "routes": {
@@ -107,6 +114,8 @@
     "review": "code-reviewer",
     "traceability": "traceability-maintainer",
     "interface": "ui-engineer",
-    "ux-review": "ux-accessibility-reviewer"
+    "ux-review": "ux-accessibility-reviewer",
+    "release": "release-engineer",
+    "deployment": "release-engineer"
   }
 }

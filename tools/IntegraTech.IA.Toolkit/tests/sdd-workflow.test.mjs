@@ -1,3 +1,4 @@
+import {initializeRelease,checkRelease,deployRelease,releaseCriteria,releaseEvidenceBinding} from '../scripts/lib/release-workflow.mjs';
 import {runCoherenceChecks,completeCoherence,repositorySnapshot} from '../scripts/lib/domain-workflow.mjs';
 import {attachProject,attachedProject} from '../scripts/lib/project-attachment.mjs';
 import test from 'node:test';
@@ -274,6 +275,30 @@ for (const external of [false,true]) for (const attestTests of [false, true]) te
     assert.equal(engineeringStatus({repo:f.repo,id:nextDelegation.task_id}).delivery_valid,false);
     f.save('references/project-state.json',stateBytes);
   }
+  // Actual readiness gates and local distribution; human/runtime observations remain synthetic.
+  const releaseId='candidate';const draft=initializeRelease({repo:f.repo,id:releaseId});
+  const plan=JSON.parse(readFileSync(join(f.repo,draft.path),'utf8'));
+  const destinationRoot=mkdtempSync(join(tmpdir(),'release-destination-'));t.after(()=>rmSync(destinationRoot,{recursive:true,force:true}));
+  const destination=join(destinationRoot,'product.zip');
+  const evidencePath='qa-artifacts/release-evidence.md';const evidence='Synthetic operator inspection: acceptance, build provenance and operational recovery verified for this fixture.';
+  f.save(evidencePath,evidence);f.save('qa-artifacts/product.zip','synthetic artifact bytes');
+  const attestation={status:'passed',verified_by:'Synthetic fixture owner',verified_at:new Date().toISOString(),statement:'Synthetic evidence for the exact release and environment',evidence_path:evidencePath,evidence_sha256:fingerprint(evidence)};
+  plan.run_id=nextDelegation.task_id;plan.artifact={path:'qa-artifacts/product.zip',sha256:fingerprint('synthetic artifact bytes')};
+  plan.target={kind:'local-artifact',environment:'staging',destination,rationale:'Synthetic local distribution fixture with an explicit approved destination',research:[{url:'https://example.com/fixture-reference',accessed_at:'2026-01-01',finding:'Synthetic source fixture, not an external consultation'}]};
+  for(const key of releaseCriteria)plan.criteria[key]={...attestation,release_binding_sha256:releaseEvidenceBinding(plan)};
+  f.save(draft.path,plan);assert.equal(checkRelease({repo:f.repo,id:releaseId}).status,'ready_for_staging');
+  assert.ok(checkRelease({repo:f.repo,id:releaseId,stage:'production'}).blockers.includes('staging_validation'));
+  plan.target.environment='production';plan.criteria.staging_validation={...attestation};f.save(draft.path,plan);
+  assert.ok(checkRelease({repo:f.repo,id:releaseId,stage:'production'}).blockers.includes('configuration'));
+  for(const key of [...releaseCriteria,'staging_validation'])plan.criteria[key].release_binding_sha256=releaseEvidenceBinding(plan);f.save(draft.path,plan);
+  const ready=checkRelease({repo:f.repo,id:releaseId,stage:'production'});assert.equal(ready.status,'ready_for_production');assert.equal(ready.metric.satisfied,ready.metric.required);
+  const approvalPath='qa-artifacts/release-approval.json';const approval={kind:'release_deploy',decision:'approved',stage:'production',manifest_sha256:ready.manifest_sha256,approved_by:'Synthetic fixture owner',approved_at:new Date().toISOString(),source_reference:evidencePath,source_reference_sha256:fingerprint(evidence)};f.save(approvalPath,approval);
+  const deploy={repo:f.repo,id:releaseId,stage:'production',approvalFile:join(f.repo,approvalPath)};
+  assert.equal(deployRelease({...deploy,dryRun:true}).status,'planned');assert.equal(existsSync(destination),false);
+  f.save(approvalPath,{...approval,stage:'staging'});assert.throws(()=>deployRelease(deploy),/aceite/);assert.equal(existsSync(destination),false);f.save(approvalPath,approval);
+  assert.equal(deployRelease(deploy).status,'distributed');assert.equal(readFileSync(destination,'utf8'),'synthetic artifact bytes');assert.throws(()=>deployRelease(deploy),/existente/);
+  f.save('qa-artifacts/product.zip','tampered bytes');assert.ok(checkRelease({repo:f.repo,id:releaseId,stage:'production'}).blockers.includes('artifact'));
+  const sourceBytes=readFileSync(f.disk('src/request.mjs'),'utf8');f.save('src/request.mjs',sourceBytes+'// unobserved release change');assert.ok(checkRelease({repo:f.repo,id:releaseId,stage:'production'}).blockers.includes('version_binding'));f.save('src/request.mjs',sourceBytes);
   assert.deepEqual(finalStatus.completed, ['register-task', 'list-task']);
   assert.deepEqual(finalStatus.ready, []);
   assert.deepEqual(finalStatus.phases, [{ id: 'register', completed: true }, { id: 'list', completed: true }]);

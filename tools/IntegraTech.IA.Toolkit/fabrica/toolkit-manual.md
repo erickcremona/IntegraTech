@@ -88,3 +88,6 @@ Sistemas externos: attach-project --id ID --source PATH [--name NOME] [--provide
 
 
 Código e segurança são revisados em paralelo sobre o mesmo candidato, aguardando ambos os resultados; UX continua depois da aprovação dos dois. Análises independentes somente de leitura podem ser delegadas pelo CTO na sessão nativa, até duas por produto, com entradas fixadas e consolidação. Não há executor automático dessas análises. Implementação permanece sequencial. Recomendações devem explicar fundamentos, alternativas, custos e limites, inclusive quando for melhor simplificar, adiar ou não implementar.
+
+
+Publicação: release-init --id ID prepara rascunho; release-check --id ID --stage staging|production informa critérios atendidos/obrigatórios e bloqueios. release-deploy --id ID --dry-run mostra distribuição local; execução real exige --approval-file PATH e gates válidos. Aceita --project ID. Não inicia aplicação nem automatiza cloud/lojas. Veja [publicação](../../docs/inicio/publicacao.md).

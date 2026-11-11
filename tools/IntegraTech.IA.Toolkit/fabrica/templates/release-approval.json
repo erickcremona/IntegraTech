@@ -1,0 +1,10 @@
+{
+  "kind": "release_deploy",
+  "decision": "approved",
+  "stage": "staging",
+  "manifest_sha256": "",
+  "approved_by": "",
+  "approved_at": "",
+  "source_reference": "",
+  "source_reference_sha256": ""
+}

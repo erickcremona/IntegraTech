@@ -62,3 +62,6 @@ Execução SDD: em produtos novos, use especificação funcional e desenho técn
 
 
 Sistema legado externo: quando o usuário informar que o produto já existe, siga [sistemas existentes](sistemas-existentes.md). Solicite o local acessível se faltar, registre o vínculo externo e mantenha o fonte na origem e os registros na gestão separada. Não use adoção do modelo sobre esse sistema.
+
+
+Publicação: após criar a solução, planeje distribuição com release-engineer e acompanhe os critérios de prontidão por ambiente. Entrega técnica não aprova produção. Consulte [publicação e prontidão](publicacao.md); somente o destino local de artefato tem automação neste incremento, com aceite específico.

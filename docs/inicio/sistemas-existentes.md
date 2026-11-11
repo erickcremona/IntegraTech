@@ -72,3 +72,6 @@ No modo legado, a área dedicada não contém solução, Worker, API ou Console 
 O diagnóstico registra candidatos de interface e mantém sua classificação pendente. O loop também verifica os arquivos atuais: alterações com sinais de UI sem perfil de interface aprovado são bloqueadas, inclusive quando o executor é application-engineer. Registre a decisão técnica e prepare o perfil e o desenho UX antes de tentar o candidato; a detecção é conservadora e não substitui a análise da arquitetura.
 
 Concluir o relatório de coerência não invalida a entrega por atualizar somente workflow_status/coherence_path. Contexto, plano, aceite, vínculo, código e demais insumos continuam sujeitos às verificações de mudança. Execuções registradas antes da normalização de snapshots podem exigir nova validação; evidências antigas não são reescritas automaticamente.
+
+
+Publicação: após criar a solução, planeje distribuição com release-engineer e acompanhe os critérios de prontidão por ambiente. Entrega técnica não aprova produção. Consulte [publicação e prontidão](publicacao.md); somente o destino local de artefato tem automação neste incremento, com aceite específico.
