@@ -85,3 +85,6 @@ Execução SDD: em produtos novos, use especificação funcional e desenho técn
 
 
 Sistemas externos: attach-project --id ID --source PATH [--name NOME] [--provider all] [--dry-run] registra gestão privada sem escrever no fonte. attached-projects lista vínculos; project-status --project ID mostra as duas raízes. Use --project ID nos comandos de contexto/especialista/SDD/loop/grafo/coerência/interface/dispatch. Veja [sistemas existentes](../../docs/inicio/sistemas-existentes.md).
+
+
+Código e segurança são revisados em paralelo sobre o mesmo candidato, aguardando ambos os resultados; UX continua depois da aprovação dos dois. Análises independentes somente de leitura podem ser delegadas pelo CTO na sessão nativa, até duas por produto, com entradas fixadas e consolidação. Não há executor automático dessas análises. Implementação permanece sequencial. Recomendações devem explicar fundamentos, alternativas, custos e limites, inclusive quando for melhor simplificar, adiar ou não implementar.

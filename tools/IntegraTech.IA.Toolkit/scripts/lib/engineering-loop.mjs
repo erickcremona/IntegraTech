@@ -173,26 +173,37 @@ export async function reviewCandidate({ repo, id, expectedRevision, dispatcher =
     remaining(state); save(repo, state, 'review_started');
     const started = performance.now();
     try {
-      for (const type of reviewTypes) {
-        const task = { ...state.delegation, task_id: `review-${fingerprint({ id, candidate: state.engineering.candidate_sha256, type }).slice(0, 32)}`, assigned_agent: type === 'code' ? 'code-reviewer' : type === 'security' ? 'security-reviewer' : 'ux-accessibility-reviewer', file_ownership: { read: files, write: [] } };
-        const timeLeft = limits.active_ms - state.engineering.spent_ms - Math.ceil(performance.now() - started);
-        if (timeLeft < 100) throw new Error('orçamento esgotado');
-        state.engineering.review_attempts.push({ type, task_id: task.task_id, candidate_sha256: state.engineering.candidate_sha256 });
-        persist(taskPaths(repo, id), state);
-        const response = await dispatcher({ repo, task, candidate, phase: state.phase, provider: state.provider, files, timeoutMs: Math.min(120000, timeLeft) });
-        gate(repo, state);
-        if (!current(repo, state) || !inspectTask({ repo, id }).snapshot_matches) throw new Error('snapshot divergente');
-        if (response.status !== 'completed' || typeof response.run_id !== 'string' || response.candidate_sha256 !== candidate.sha256 || response.package_sha256 !== expectedPackageHash) { state.status = 'review_blocked'; break; }
-        const path = relative(resolve(repo), resolve(response.output)).replaceAll('\\', '/');
-        if (!path.startsWith('qa-artifacts/') || isAbsolute(path)) throw new Error('parecer fora dos artefatos');
-        const output = contained(repo, path); assertNoLinks(output);
-        const text = readFileSync(output, 'utf8'); assertSanitized(text);
-        const report = JSON.parse(text); validateContract('review', report, task.task_id);
-        if (report.review_type !== type || report.verdict !== response.verdict) throw new Error('parecer divergente');
-        state.engineering.reviews.push({ type, run_id: response.run_id, path, sha256: fingerprint(text), package_sha256: expectedPackageHash, candidate_sha256: state.engineering.candidate_sha256, verdict: report.verdict });
-        // Findings require correction and a fresh independent review; no automatic risk acceptance.
-        if (report.verdict === 'blocked') { state.status = 'review_blocked'; break; }
-        if (report.verdict !== 'approved' || report.findings.length) { state.status = 'correction_pending'; break; }
+      // Code/security share one immutable candidate; UX remains a later gate.
+      const batches=[reviewTypes.filter(type=>type!=='ux_accessibility'),reviewTypes.filter(type=>type==='ux_accessibility')].filter(batch=>batch.length);
+      for(const types of batches){
+        const jobs=types.map(type=>({type,task:{...structuredClone(state.delegation),task_id:`review-${fingerprint({id,candidate:state.engineering.candidate_sha256,type}).slice(0,32)}`,assigned_agent:type==='code'?'code-reviewer':type==='security'?'security-reviewer':'ux-accessibility-reviewer',file_ownership:{read:[...files],write:[]}}}));
+        const timeLeft=limits.active_ms-state.engineering.spent_ms-Math.ceil(performance.now()-started);
+        if(timeLeft<100)throw new Error('orçamento esgotado');
+        // Persist every reservation before any child starts; interruption cannot replay peers.
+        for(const {type,task}of jobs)state.engineering.review_attempts.push({type,task_id:task.task_id,candidate_sha256:state.engineering.candidate_sha256});
+        persist(taskPaths(repo,id),state);
+        const results=await Promise.allSettled(jobs.map(({task})=>Promise.resolve().then(()=>dispatcher({repo,task,candidate:structuredClone(candidate),phase:state.phase,provider:state.provider,files:[...files],timeoutMs:Math.min(120000,timeLeft)}))));
+        // The transition lock is held until all children have settled, even after failure.
+        gate(repo,state);
+        if(!current(repo,state)||!inspectTask({repo,id}).snapshot_matches)throw new Error('snapshot divergente');
+        for(const [index,result]of results.entries()){
+          const {type,task}=jobs[index];
+          try{
+            if(result.status!=='fulfilled')throw new Error('revisor falhou');
+            const response=result.value;
+            if(response.status!=='completed'||typeof response.run_id!=='string'||response.candidate_sha256!==candidate.sha256||response.package_sha256!==expectedPackageHash)throw new Error('resposta de revisão inválida');
+            const path=relative(resolve(repo),resolve(response.output)).replaceAll('\\','/');
+            if(!path.startsWith('qa-artifacts/')||isAbsolute(path))throw new Error('parecer fora dos artefatos');
+            const output=contained(repo,path);assertNoLinks(output);
+            const text=readFileSync(output,'utf8');assertSanitized(text);
+            const report=JSON.parse(text);validateContract('review',report,task.task_id);
+            if(report.review_type!==type||report.verdict!==response.verdict)throw new Error('parecer divergente');
+            state.engineering.reviews.push({type,run_id:response.run_id,path,sha256:fingerprint(text),package_sha256:expectedPackageHash,candidate_sha256:state.engineering.candidate_sha256,verdict:report.verdict});
+            if(report.verdict==='blocked')state.status='review_blocked';
+            else if((report.verdict!=='approved'||report.findings.length)&&state.status!=='review_blocked')state.status='correction_pending';
+          }catch{state.status='review_blocked';}
+        }
+        if(state.status!=='reviewing')break;
       }
       if (state.status === 'reviewing') state.status = state.engineering.reviews.length === reviewTypes.length ? 'ready_for_delivery' : 'review_blocked';
     } catch { state.status = 'review_blocked'; }

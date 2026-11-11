@@ -48,3 +48,6 @@ Referências consultadas: [GitHub Spec Kit](https://github.com/github/spec-kit),
 Cada novo aceite cria uma identidade de execução própria, mesmo sem alterações no plano, preservando o histórico. Checkpoints registram a versão validada: alterações posteriores não são cobertas pelo registro antigo. A próxima tarefa deve começar nessa versão e só pode modificar seus arquivos aprovados; mudanças fora desse fluxo exigem retomada válida ou replanejamento.
 
 A versão atual é conferida pelo encadeamento dos inventários das execuções, sem usar a data declarada do checkpoint como autoridade. Checkpoints divergentes ou ciclos de versões bloqueiam o avanço até reconciliação e nova validação. Para evitar conflitos, conclua um incremento antes de integrar outro, inclusive em fases independentes.
+
+
+Código e segurança são revisados em paralelo sobre o mesmo candidato, aguardando ambos os resultados; UX continua depois da aprovação dos dois. Análises independentes somente de leitura podem ser delegadas pelo CTO na sessão nativa, até duas por produto, com entradas fixadas e consolidação. Não há executor automático dessas análises. Implementação permanece sequencial. Recomendações devem explicar fundamentos, alternativas, custos e limites, inclusive quando for melhor simplificar, adiar ou não implementar.

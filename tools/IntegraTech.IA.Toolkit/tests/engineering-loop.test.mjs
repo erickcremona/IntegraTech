@@ -236,3 +236,25 @@ test('Node bin sources are inventoried and edits invalidate delivery while dotne
     assert.equal(inventory(f.repo).some(item=>item.path==='src/app/bin/output.dll'),false);
   } finally { rmSync(f.repo, { recursive: true, force: true }); }
 });
+
+test('independent code and security reviews start together and settle before release',async()=>{
+ const f=fixture();try{
+  let state=candidate(f);state=await engineering.validateCandidate({...f,expectedRevision:state.revision,validator:observed});
+  const started=[];let release;const barrier=new Promise(resolve=>{release=resolve;});
+  const pending=engineering.reviewCandidate({...f,expectedRevision:state.revision,dispatcher:async args=>{started.push(args.task.assigned_agent);if(started.length===2)release();await barrier;return reviewer(args);}});
+  await new Promise(resolve=>setImmediate(resolve));
+  const simultaneous=[...started];release();
+  state=await pending;assert.deepEqual(simultaneous,['code-reviewer','security-reviewer']);assert.equal(state.status,'ready_for_delivery');assert.equal(state.engineering.review_attempts.length,2);
+ }finally{rmSync(f.repo,{recursive:true,force:true});}
+});
+
+test('rejected concurrent review waits for its peer and preserves blocked outcome',async()=>{
+ const f=fixture();try{
+  let state=candidate(f);state=await engineering.validateCandidate({...f,expectedRevision:state.revision,validator:observed});
+  let release,entered;const enteredPromise=new Promise(resolve=>{entered=resolve;});const barrier=new Promise(resolve=>{release=resolve;});let finished=false;
+  const pending=engineering.reviewCandidate({...f,expectedRevision:state.revision,dispatcher:async args=>{if(args.task.assigned_agent==='code-reviewer')throw Error('synthetic failure');entered();await barrier;return reviewer(args);}}).then(result=>{finished=true;return result;});
+  await new Promise(resolve=>setImmediate(resolve));
+  const earlyFinish=finished;release();
+  state=await pending;assert.equal(earlyFinish,false);assert.equal(state.status,'review_blocked');assert.equal(state.engineering.review_attempts.length,2);assert.ok(state.engineering.reviews.some(r=>r.type==='security'));
+ }finally{rmSync(f.repo,{recursive:true,force:true});}
+});

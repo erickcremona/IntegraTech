@@ -34,7 +34,8 @@ mindmap
       Grafo de rastreabilidade
     Validação e entrega
       Testes isolados
-      Revisões de código e segurança
+      Código e segurança em paralelo
+      Análises independentes sem escrita
       Checkpoints por tarefa
       Retomada e evolução
 ```
@@ -106,6 +107,12 @@ A referência React passou por build e browser com teclado e axe. A revisão ind
 ## Plano aprovado e execução SDD
 
 Novos produtos usam especificação funcional, desenho técnico e plano v2 faseado, com requisitos/cenários ligados às tarefas e testes previstos. Após o aceite, a fábrica materializa o plano de ação sem alterar a decomposição aprovada. Dependências exigem checkpoints de conclusão observada antes do avanço. Planos antigos são identificados como legados e precisam de migração explícita. [Fluxo e comandos SDD](docs/inicio/sdd.md).
+
+## Recomendações e paralelismo
+
+As orientações devem ser fundamentadas no contexto e nas evidências, explicando alternativas, custos e limites. A fábrica deve discordar quando necessário e recomendar simplificar ou não implementar quando o benefício não justificar a complexidade; concordância automática não é critério de qualidade.
+
+Análises e pesquisas independentes podem ser delegadas em paralelo pela sessão nativa, até duas por produto e sem escrita. No loop, revisões de código e segurança ocorrem em paralelo sobre o mesmo candidato imutável; ambos os resultados são exigidos. UX permanece depois dessas revisões. A implementação de código continua sequencial por produto. Isso reduz dependências desnecessárias, mas ganho de tempo/custo precisa ser medido no uso real.
 
 ## Como o toolkit acompanha e valida
 
