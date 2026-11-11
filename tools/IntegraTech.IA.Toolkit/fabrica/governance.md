@@ -72,3 +72,8 @@ Após criação/adoção, README, SOLUTION_CONTEXT, retomada e entrada da fábri
 
 
 Autoria: preserve AUTHORS.md e THIRD-PARTY-NOTICES.md ao criar/adotar e gerar descendentes. O crédito do criador da ferramenta não é renomeado para o produto e não atribui a Erick Cremona a autoria de produtos derivados. Créditos nos documentos de entrada ficam em posição secundária, preservando o foco no produto. Não alterar licenças para incluir essa assinatura.
+
+
+## SDD e execução faseada
+
+Siga docs/inicio/sdd.md. Para produtos sdd-v2, prepare requisitos/cenários versionados, desenho técnico e plano v2 com tarefas, testes previstos, ownership e dependências antes do aceite. Após aprovação, use sdd-plan para materializar a decomposição aprovada, sdd-task para delegação exata e o loop para implementação/validação/revisão. sdd-complete só registra conclusão com entrega observada e testes atestados; sdd-status informa fases e próximas tarefas liberadas. Não iniciar dependências pendentes, executar validation_commands como shell arbitrário nem marcar testes prometidos como realizados. Mudança no plano/especificação/desenho exige reavaliação e novo aceite; legados exigem migração explícita e não são declarados SDD. Preserve os limites de UX, isolamento e autorização externa.

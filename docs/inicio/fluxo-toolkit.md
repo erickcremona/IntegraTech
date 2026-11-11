@@ -88,3 +88,6 @@ Projetos já criados não recebem atualizações silenciosas do modelo. Sua docu
 
 
 Na etapa de UX/UI, peça uma sugestão visual moderna ou apresente sua referência. Você pode solicitar novas opções até gostar de uma. A opção aprovada vira o padrão de interface do produto; o toolkit deve segui-la nas próximas telas e preservar o padrão vigente enquanto explora alternativas ainda não aprovadas.
+
+
+Execução SDD: em produtos novos, use especificação funcional e desenho técnico vinculados ao contexto, plano business v2 com tarefas/dependências antes do aceite e os comandos sdd-plan, sdd-task, sdd-complete e sdd-status após aprovação. Consulte [SDD](sdd.md). Planos v1 são legados e não equivalem a esse fluxo; não migrar ou aprovar automaticamente.

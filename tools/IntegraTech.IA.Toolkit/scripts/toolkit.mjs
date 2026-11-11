@@ -1,5 +1,7 @@
 #!/usr/bin/env node
 import { initializeDesign,inspectDesign,designHash } from './lib/interface-design.mjs';
+import {prepareActionPlan,sddDelegation,sddStatus} from './lib/sdd-workflow.mjs';
+import {completeSDDTask} from './lib/sdd-completion.mjs';
 import { interfaceRegistry } from './lib/interface-selection.mjs';
 import { prepareInterface, interfaceStatus, recoverInterface } from './lib/interface-profile.mjs';
 import { generateInterface, validateInterface } from './lib/interface-generator.mjs';
@@ -29,6 +31,10 @@ import { startTask, inspectTask, advanceTask, recoverTask } from './lib/task-loo
 
 const help = `IntegraTech Toolkit — Node.js >=22
   help
+  sdd-plan [--dry-run] [--repo PATH]
+  sdd-task --id TASK_ID [--repo PATH]
+  sdd-status [--repo PATH]
+  sdd-complete --id TASK_ID --run-id RUN_ID [--repo PATH]
   ui-capabilities
   ui-design-hash [--repo PATH]
   ui-design-init [--repo PATH]
@@ -76,7 +82,7 @@ const help = `IntegraTech Toolkit — Node.js >=22
   hash --file PATH
   install --provider codex|claude|cursor|both|all [--target PATH] [--dry-run]
   validate [--provider codex|claude|cursor|both|all] [--repo PATH]
-  contract --kind delegation|return|review|handoff|business-context|business-plan|approval|technology-decision|domain-preparation|domain-consultation|domain-coherence|task-run|traceability-graph --file PATH
+  contract --kind delegation|return|review|handoff|business-context|business-plan|business-plan-v2|functional-spec|technical-design|approval|technology-decision|domain-preparation|domain-consultation|domain-coherence|task-run|traceability-graph --file PATH
   dispatch --provider codex|claude --task PATH --files PATH --phase toolkit|discovery|design|business [--repo PATH] [--timeout 120000]
   resume --file PATH
 
@@ -108,6 +114,7 @@ export async function main(argv, services = {}) {
     'graph-sync': ['repo', 'file', 'dry-run', 'accept-changes'],
     'graph-validate': ['repo', 'file'], 'graph-impact': ['repo', 'file', 'id'],
     'ui-recover': ['repo'], 'ui-design-hash':['repo'],'ui-design-init':['repo'],'ui-design-check':['repo'],'ui-capabilities': [], 'ui-prepare': ['repo','dry-run'], 'ui-status': ['repo'], 'ui-generate': ['repo','dry-run'], 'ui-validate': ['repo','local'],
+    'sdd-plan':['repo','dry-run'],'sdd-task':['repo','id'],'sdd-status':['repo'],'sdd-complete':['repo','id','run-id'],
     help: [], 'create-project': ['repo', 'name', 'target', 'provider', 'presentation', 'dry-run', 'context-file', 'technology-file', 'preparation-file'], precheck: ['repo', 'phase'], route: ['category'], providers: [], hash: ['file'],
     onboarding: ['repo', 'name', 'context-file'], 'adopt-project': ['repo', 'name', 'context-file', 'dry-run', 'presentation', 'technology-file', 'provider', 'preparation-file'], 'technology-check': ['repo', 'context-file', 'decision-file'], 'restore-adoption': ['journal', 'dry-run'],
     'research-collect': ['context-file', 'preparation-file', 'output'], 'specialist-check': ['context-file', 'preparation-file'], 'specialist-prepare': ['repo', 'preparation-file'], 'specialist-status': ['repo'], 'consultation-record': ['repo', 'file'], 'consultation-check': ['repo', 'file'], 'coherence-snapshot': ['repo'], 'coherence-run': ['repo'], 'coherence-check': ['repo', 'report-file'], 'coherence-status': ['repo'],
@@ -151,6 +158,10 @@ export async function main(argv, services = {}) {
     case 'ui-status': return interfaceStatus(resolve(options.repo??repoRoot));
     case 'ui-generate': return generateInterface({repo:resolve(options.repo??repoRoot),dryRun:options['dry-run']??false});
     case 'ui-validate': return validateInterface({repo:resolve(options.repo??repoRoot),local:options.local??false});
+    case 'sdd-plan': return prepareActionPlan({repo:resolve(options.repo??repoRoot),dryRun:options['dry-run']??false});
+    case 'sdd-task': return sddDelegation({repo:resolve(options.repo??repoRoot),id:options.id});
+    case 'sdd-status': return sddStatus({repo:resolve(options.repo??repoRoot)});
+    case 'sdd-complete': return completeSDDTask({repo:resolve(options.repo??repoRoot),id:options.id,runId:options['run-id']});
     case 'help': return help;
     case 'doctor': return diagnoseProviders();
     case 'policy-check': return checkPolicy({ repo: resolve(options.repo ?? repoRoot), action: options.action, agent: options.agent, phase: options.phase });

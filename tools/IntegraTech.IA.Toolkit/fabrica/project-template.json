@@ -198,6 +198,18 @@
     "tools/IntegraTech.IA.Toolkit/fabrica/ui/experience-quality.md",
     "tools/IntegraTech.IA.Toolkit/scripts/lib/product-entry.mjs",
     "tools/IntegraTech.IA.Toolkit/fabrica/toolkit-manual.md",
-    "AUTHORS.md"
+    "AUTHORS.md",
+    "tools/IntegraTech.IA.Toolkit/scripts/lib/sdd-plan.mjs",
+    "tools/IntegraTech.IA.Toolkit/scripts/lib/sdd-workflow.mjs",
+    "tools/IntegraTech.IA.Toolkit/scripts/lib/sdd-completion.mjs",
+    "tools/IntegraTech.IA.Toolkit/tests/sdd-plan.test.mjs",
+    "tools/IntegraTech.IA.Toolkit/tests/sdd-workflow.test.mjs",
+    "tools/IntegraTech.IA.Toolkit/fabrica/templates/functional-spec.json",
+    "tools/IntegraTech.IA.Toolkit/fabrica/templates/technical-design.json",
+    "tools/IntegraTech.IA.Toolkit/fabrica/templates/business-plan-v2.json",
+    "tools/IntegraTech.IA.Toolkit/fabrica/team/contracts/functional-spec.schema.json",
+    "tools/IntegraTech.IA.Toolkit/fabrica/team/contracts/technical-design.schema.json",
+    "tools/IntegraTech.IA.Toolkit/fabrica/team/contracts/business-plan-v2.schema.json",
+    "docs/inicio/sdd.md"
   ]
 }

@@ -103,3 +103,34 @@ test('frozen helper files in conventional test directory use the same allowlist 
  const r=await validateIsolated({repo,files,profile:'node-tests-v1',oracles:{root:repo,files}});
  assert.notEqual(r.reason_code,'invalid_oracles');
 }));
+
+test('SIMULATED SDD requested candidate tests run separately after frozen regressions and attest actual bytes',()=>fixture(async repo=>{
+ const cp=await import('node:child_process');const {syncBuiltinESMExports}=await import('node:module');const {EventEmitter}=await import('node:events');const {PassThrough}=await import('node:stream');const original=cp.default.spawn;const calls=[];
+ cp.default.spawn=(exe,args)=>{calls.push(args);const c=new EventEmitter();c.pid=99999999;c.stdout=new PassThrough();c.stderr=new PassThrough();queueMicrotask(()=>{if(calls.length>1)c.stdout.emit('data',Buffer.from('TAP version 13\n# Subtest: assertion\nok 1 - assertion\n1..1\n# tests 1\n# suites 0\n# pass 1\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 1\n'));c.emit('close',0);});return c;};syncBuiltinESMExports();
+ try{
+  const source="import test from 'node:test';test('assertion',()=>{});";await writeFile(join(repo,'original.test.mjs'),source);await writeFile(join(repo,'new.test.mjs'),source+'\n');
+  const r=await validateIsolated({repo,files:{'original.test.mjs':digest(source),'new.test.mjs':digest(source+'\n')},profile:'node-tests-v1',oracles:{root:repo,files:{'original.test.mjs':digest(source)}},requestedTests:['new.test.mjs']});
+  assert.equal(r.status,'passed');assert.equal(calls.length,3);assert.ok(!calls[1].includes('new.test.mjs'));assert.ok(calls[2].includes('new.test.mjs'));assert.ok(r.test_files.some(file=>file.path==='new.test.mjs'&&file.sha256===digest(source+'\n')));
+ }finally{cp.default.spawn=original;syncBuiltinESMExports();}
+}));
+
+test('SIMULATED skipped requested tests never produce SDD execution attestations',()=>fixture(async repo=>{
+ const cp=await import('node:child_process');const {syncBuiltinESMExports}=await import('node:module');const {EventEmitter}=await import('node:events');const {PassThrough}=await import('node:stream');const original=cp.default.spawn;let count=0;
+ cp.default.spawn=()=>{count++;const n=count;const c=new EventEmitter();c.pid=99999999;c.stdout=new PassThrough();c.stderr=new PassThrough();queueMicrotask(()=>{if(n>1)c.stdout.emit('data',Buffer.from(n===3?parentTap.replace('# tests 1','# tests 2').replace('# skipped 0','# skipped 1'):parentTap));c.emit('close',0);});return c;};syncBuiltinESMExports();
+ try{
+  const source="import test from 'node:test';test('assertion',()=>{});";await writeFile(join(repo,'original.test.mjs'),source);await writeFile(join(repo,'new.test.mjs'),source);
+  const r=await validateIsolated({repo,files:{'original.test.mjs':digest(source),'new.test.mjs':digest(source)},profile:'node-tests-v1',oracles:{root:repo,files:{'original.test.mjs':digest(source)}},requestedTests:['new.test.mjs']});
+  assert.notEqual(r.status,'passed');assert.equal(count,3);assert.ok(!r.test_files?.length);
+ }finally{cp.default.spawn=original;syncBuiltinESMExports();}
+}));
+
+test('SIMULATED each requested test file must independently execute leaf tests',()=>fixture(async repo=>{
+ const cp=await import('node:child_process');const {syncBuiltinESMExports}=await import('node:module');const {EventEmitter}=await import('node:events');const {PassThrough}=await import('node:stream');const original=cp.default.spawn;const calls=[];
+ cp.default.spawn=(exe,args)=>{calls.push(args);const n=calls.length;const c=new EventEmitter();c.pid=99999999;c.stdout=new PassThrough();c.stderr=new PassThrough();queueMicrotask(()=>{if(n>1)c.stdout.emit('data',Buffer.from(n===4?parentTap.replace('# tests 1','# tests 0').replace('# suites 0','# suites 1').replace('# pass 1','# pass 0'):parentTap));c.emit('close',0);});return c;};syncBuiltinESMExports();
+ try{
+  const source="import test from 'node:test';test('assertion',()=>{});";const files={};
+  for(const path of ['original.test.mjs','a.test.mjs','b.test.mjs']){await writeFile(join(repo,path),source);files[path]=digest(source);}
+  const r=await validateIsolated({repo,files,profile:'node-tests-v1',oracles:{root:repo,files:{'original.test.mjs':digest(source)}},requestedTests:['a.test.mjs','b.test.mjs']});
+  assert.notEqual(r.status,'passed');assert.equal(calls.length,4);assert.ok(calls[2].includes('a.test.mjs'));assert.ok(!calls[2].includes('b.test.mjs'));assert.ok(calls[3].includes('b.test.mjs'));assert.ok(!r.test_files?.length);
+ }finally{cp.default.spawn=original;syncBuiltinESMExports();}
+}));

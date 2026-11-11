@@ -71,7 +71,17 @@ export function deriveTraceability(read) {
     check('business-plan',plan.value);
     if(plan.value.context_sha256!==contextDocument.source.digest)fail('plan_context_mismatch');
     const planNode=node('decision',planPath);link(contextNode,planNode);
-    for(const [index,phase]of plan.value.phases.entries())link(planNode,node('task',planPath,`/phases/${index}`,`phase:${phase.id}`));
+    if(plan.value.schema_version===2){
+      const spec=json(plan.value.specification_path,true);check('functional-spec',spec.value);
+      const specNode=node('decision',plan.value.specification_path);link(contextNode,specNode);link(specNode,planNode);
+      const requirementNodes=new Map();
+      for(const [i,requirement]of spec.value.requirements.entries()){const id=node('requirement',plan.value.specification_path,`/requirements/${i}`,`requirement:${requirement.id}`);requirementNodes.set(requirement.id,id);link(specNode,id);}
+      const design=json(plan.value.design_path,true);check('technical-design',design.value);link(specNode,node('decision',plan.value.design_path));
+      for(const [i,phase]of plan.value.phases.entries())for(const [j,task]of phase.tasks.entries()){
+        const id=node('task',planPath,`/phases/${i}/tasks/${j}`,`task:${task.id}`);link(planNode,id);
+        for(const requirement of task.requirement_ids)if(requirementNodes.has(requirement))link(requirementNodes.get(requirement),id,'implemented_by');
+      }
+    }else for(const [index,phase]of plan.value.phases.entries())link(planNode,node('task',planPath,`/phases/${index}`,`phase:${phase.id}`));
     const approvalPath=documentPath('approval_path','references/approval.json');
     const approval=approvalPath?json(approvalPath,!!state.approval_path):null;
     if(approval){

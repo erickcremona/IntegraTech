@@ -84,3 +84,6 @@ ui-validate bloqueia a execução isolada não disponível; ui-validate --local 
 ## Autoria da ferramenta
 
 Criado por **[Erick Cremona](https://www.linkedin.com/in/erick-cremona-6983a1383/)**. Consulte [AUTHORS.md](../../AUTHORS.md) para distinguir a autoria da ferramenta da autoria de cada produto.
+
+
+Execução SDD: em produtos novos, use especificação funcional e desenho técnico vinculados ao contexto, plano business v2 com tarefas/dependências antes do aceite e os comandos sdd-plan, sdd-task, sdd-complete e sdd-status após aprovação. Consulte [docs/inicio/sdd.md](../../docs/inicio/sdd.md). Planos v1 são legados e não equivalem a esse fluxo; não migrar ou aprovar automaticamente.

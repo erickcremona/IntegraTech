@@ -1,3 +1,4 @@
+import {assertSDDTask} from './sdd-workflow.mjs';
 import { readFileSync, mkdirSync, existsSync, writeFileSync, unlinkSync, readdirSync, lstatSync, rmSync } from 'node:fs';
 import { resolve, join, relative, isAbsolute } from 'node:path';
 import { createHash } from 'node:crypto';
@@ -55,6 +56,7 @@ export function startTask({ repo, delegation, phase, provider }) {
   if (!safeId(delegation.task_id)) throw new Error('identidade da tarefa inválida');
   if (!['toolkit', 'discovery', 'design', 'business'].includes(phase) || !['codex', 'claude', 'cursor'].includes(provider))
     throw new Error('fase ou provedor inválido');
+  assertSDDTask({repo,delegation,phase,starting:true});
   const id = delegation.task_id;
   const paths = taskPaths(repo, id);
   mkdirSync(paths.root, { recursive: true });
@@ -115,6 +117,7 @@ export function advanceTask({ repo, id, expectedRevision, event }) {
     if (state.revision !== expectedRevision) throw new Error('revisão divergente');
     if (!state.snapshot_matches) throw new Error('snapshot divergente');
     if (state.engineering) throw new Error('use os comandos de engenharia para o candidato');
+    assertSDDTask({repo,delegation:state.delegation,phase:state.phase});
     if (event?.type !== 'gate_checked') throw new Error('transição não suportada');
     const decision = state.phase === 'toolkit'
       ? checkPolicy({ repo, action: 'implement_toolkit', agent: state.assigned_agent, phase: state.phase })

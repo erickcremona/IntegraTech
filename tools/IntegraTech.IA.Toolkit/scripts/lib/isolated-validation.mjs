@@ -30,7 +30,7 @@ async function run(executable,args,deadline,oracleTests) {
     // Accept only its terminal aggregate, never a child's isolated '# pass'.
     const summary=output.match(/(?:^|\n)1\.\.(\d+)\n# tests (\d+)\n# suites (\d+)\n# pass (\d+)\n# fail (\d+)\n# cancelled (\d+)\n# skipped (\d+)\n# todo (\d+)\n# duration_ms [0-9.]+\n?$/);
     const fallback=oracleTests.some(path=>output.split('\n').map(line=>line.replaceAll('\\#','#')).some(line=>[path,join('/workspace',path)].some(label=>line===`# Subtest: ${label}`||/^ok \d+ - /.test(line)&&line.replace(/^ok \d+ - /,'')===label)));
-    incomplete=!summary||fallback||Number(summary[4])<1||Number(summary[5])!==0||Number(summary[6])!==0||Number(summary[8])!==0||Number(summary[2])<oracleTests.length||Number(summary[1])<1||Number(summary[1])>Number(summary[2])||Number(summary[4])+Number(summary[7])!==Number(summary[2]);
+    incomplete=!summary||fallback||Number(summary[4])<1||Number(summary[5])!==0||Number(summary[6])!==0||Number(summary[7])!==0||Number(summary[8])!==0||Number(summary[2])<oracleTests.length||Number(summary[1])<1||Number(summary[1])>Number(summary[2])||Number(summary[4])+Number(summary[7])!==Number(summary[2]);
     passedTests=incomplete?0:Number(summary[4]);
    }
    resolveRun({code:code??-1,timed,overflow,passedTests,incomplete});
@@ -72,7 +72,7 @@ async function inventoryBytes(root,entries,deadline) {
   }
  return buffers;
 }
-export async function validateIsolated({repo,files,profile,timeoutMs=120000,oracles}={}) {
+export async function validateIsolated({repo,files,profile,timeoutMs=120000,oracles,requestedTests=[]}={}) {
  const checks=[]; let staging;
  const blocked=code=>result('blocked','unverified',checks,code);
  if(!['node-tests-v1','dotnet-offline-v1'].includes(profile)) return blocked('unsupported_profile');
@@ -92,6 +92,7 @@ export async function validateIsolated({repo,files,profile,timeoutMs=120000,orac
   if(!frozenEntries.some(([path])=>runnable(path))) return blocked('no_tests');
   if(frozenEntries.some(([path])=>!/(^|\/)tests?\//.test(path)&&!nodeTest(path))) return blocked('invalid_oracles');
   const frozen=await inventoryBytes(await realpath(oracles.root),frozenEntries,deadline);
+  const originals=new Map(buffers);
   const merged=new Map(buffers);for(const [path,data] of frozen)merged.set(path,data);
   if(merged.size>MAX_FILES||[...merged.values()].reduce((sum,data)=>sum+data.length,0)>MAX_TOTAL) return blocked('inventory_limit');
   buffers.splice(0,buffers.length,...merged.entries());
@@ -142,11 +143,31 @@ export async function validateIsolated({repo,files,profile,timeoutMs=120000,orac
   let observed;
   for(const command of commands) {
    observed=await run(bwrap,[...args,...command],deadline,profile==='node-tests-v1'?tests:undefined);
-   if(profile==='dotnet-offline-v1' && ['restore','build'].includes(command[1]) && observed.code===0) continue;
+   if(profile==='dotnet-offline-v1' && ['restore','build'].includes(command[1]) && observed.code===0&&!observed.timed&&!observed.overflow) continue;
    if(observed.code!==0||observed.timed||observed.overflow||observed.passedTests===0) break;
   }
+  let executed=(profile==='node-tests-v1'?tests:frozenEntries.map(([path])=>path).filter(architecture)).map(path=>({path,sha256:oracles.files[path]}));
+  if(observed.code===0&&observed.passedTests>0&&!observed.timed&&!observed.overflow&&requestedTests.length){
+   if(profile!=='node-tests-v1'){
+    if(requestedTests.some(path=>!executed.some(item=>item.path===path&&item.sha256===files[path])))return blocked('requested_tests_not_observed');
+   }else{
+    if(requestedTests.some(path=>!nodeTest(path)||!originals.has(path)))return blocked('requested_tests_invalid');
+    const supplement=join(staging,'supplement');await mkdir(supplement);
+    for(const [path,data]of originals){const full=join(supplement,path);await mkdir(dirname(full),{recursive:true});await writeFile(full,data,{flag:'wx',mode:0o600});}
+    for(const path of outputPaths)await mkdir(join(supplement,path),{recursive:true});
+    const supplementalArgs=args.map(arg=>arg===candidate?supplement:arg);
+    // Each approved file must register at least one passing leaf test itself.
+    // Aggregate counts could otherwise hide an empty suite behind another file.
+    for(const path of requestedTests){
+     observed=await run(bwrap,[...supplementalArgs,process.execPath,'--test','--test-reporter=tap','--test-isolation=process',path],deadline,[path]);
+     if(observed.code!==0||observed.timed||observed.overflow||observed.passedTests===0)break;
+    }
+    executed=executed.filter(item=>!requestedTests.includes(item.path)).concat(requestedTests.map(path=>({path,sha256:files[path]})));
+   }
+  }
   checks.push({id:profile,code:observed.timed?124:observed.overflow?125:observed.code===0&&observed.passedTests>0?0:observed.passedTests===0?2:1});
-  return result(observed.code===0&&observed.passedTests>0&&!observed.timed&&!observed.overflow?'passed':'failed','verified',checks,observed.timed?'timeout':observed.overflow?'output_limit':observed.incomplete?'incomplete_oracles':undefined);
+  const finalResult=result(observed.code===0&&observed.passedTests>0&&!observed.timed&&!observed.overflow?'passed':'failed','verified',checks,observed.timed?'timeout':observed.overflow?'output_limit':observed.incomplete?'incomplete_oracles':undefined);
+  return {...finalResult,test_files:finalResult.status==='passed'?executed:[]};
  } catch(error) {return blocked(['unsafe_inventory','invalid_inventory','inventory_limit','inventory_mismatch','secret_detected','timeout'].includes(error.message)?error.message:'isolation_unavailable');}
  finally {if(staging) await rm(staging,{recursive:true,force:true});}
 }

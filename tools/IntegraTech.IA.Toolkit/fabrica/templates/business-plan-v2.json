@@ -1,0 +1,14 @@
+{
+  "schema_version": 2,
+  "context_sha256": "",
+  "specification_path": "references/functional-spec.json",
+  "specification_sha256": "",
+  "design_path": "references/technical-design.json",
+  "design_sha256": "",
+  "objective": "",
+  "scope": [],
+  "out_of_scope": [],
+  "risks": [],
+  "consultation_paths": [],
+  "phases": []
+}

@@ -56,3 +56,6 @@ Delegue a fase aprovada com ownership, aceite e validações. A implementação 
 Use o contrato handoff para registrar objetivo, fase, arquivos, testes, evidências, dúvidas e próximo passo. Valide o handoff com `resume`. Codex, Claude Code e Cursor consultam o mesmo núcleo; suas permissões e autenticação são próprias. Handoff não transfere autorização de merge, push, banco ou deploy.
 
 Antes de materializar, complete o fluxo de [contexto pesquisado, especialista e otimização](especialista-dominio.md). Contexto incompleto ou consulta indisponível bloqueia. Em projeto existente, prepare o especialista sem readotar; toda funcionalidade deve registrar sua consulta antes de implementação.
+
+
+Execução SDD: em produtos novos, use especificação funcional e desenho técnico vinculados ao contexto, plano business v2 com tarefas/dependências antes do aceite e os comandos sdd-plan, sdd-task, sdd-complete e sdd-status após aprovação. Consulte [SDD](sdd.md). Planos v1 são legados e não equivalem a esse fluxo; não migrar ou aprovar automaticamente.

@@ -41,11 +41,11 @@ function check(schema, value, path = '$') {
   }
 }
 export function loadSchema(kind) {
-  if (!['delegation', 'return', 'review', 'handoff', 'business-context', 'business-plan', 'approval', 'technology-decision', 'domain-preparation', 'domain-consultation', 'domain-coherence', 'task-run', 'traceability-graph', 'interface-profile'].includes(kind)) throw new Error('contrato desconhecido');
+  if (!['delegation', 'return', 'review', 'handoff', 'business-context', 'business-plan', 'approval', 'technology-decision', 'domain-preparation', 'domain-consultation', 'domain-coherence', 'task-run', 'traceability-graph', 'interface-profile', 'business-plan-v2', 'functional-spec', 'technical-design'].includes(kind)) throw new Error('contrato desconhecido');
   return JSON.parse(readFileSync(new URL(`../../fabrica/team/contracts/${kind}.schema.json`, import.meta.url), 'utf8'));
 }
 export function validateContract(kind, value, expectedTaskId) {
-  const schema = loadSchema(kind);
+  const schema = loadSchema(kind==='business-plan'&&value?.schema_version===2?'business-plan-v2':kind);
   assertSupported(schema);
   check(schema, value);
   if (expectedTaskId && value.task_id !== expectedTaskId) throw new Error('task_id divergente');

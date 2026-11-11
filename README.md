@@ -6,18 +6,43 @@ Você conversa com o agente sobre o projeto; ele organiza o trabalho e prepara o
 
 ## Entenda o fluxo
 
-![Mapa mental do IntegraTech: início com nome e problema, contexto e pesquisa, decisão tecnológica, plano e aprovação, implementação assistida, grafo, validação e revisão, entrega e retomada.](docs/imagens/mapa-mental-integratech.png)
+```mermaid
+mindmap
+  root((IntegraTech))
+    Contexto do produto
+      Nome e problema
+      Pesquisa externa
+      Especialista de domínio
+    Decisões aprovadas
+      Tecnologias justificadas
+      UX/UI e referência visual
+      Criação ou adoção dedicada
+    Plano SDD
+      Especificação e cenários
+      Desenho técnico
+      Fases e tarefas dependentes
+      Aceite vinculado à versão
+    Execução assistida
+      Agentes Codex Claude Cursor
+      Arquivos autorizados
+      Grafo de rastreabilidade
+    Validação e entrega
+      Testes isolados
+      Revisões de código e segurança
+      Checkpoints por tarefa
+      Retomada e evolução
+```
 
-[Abrir o mapa em tamanho completo](docs/imagens/mapa-mental-integratech.png) · [Fluxo de uso do toolkit](docs/inicio/fluxo-toolkit.md)
+[Fluxo de uso do toolkit](docs/inicio/fluxo-toolkit.md) · [Execução SDD](docs/inicio/sdd.md)
 
-**Nome e problema → contexto e pesquisa → decisão tecnológica → plano e aprovação → implementação → testes e revisão → entrega → evolução.**
+**Contexto e pesquisa → decisões → especificação e desenho → plano faseado aprovado → tarefas → testes e revisão → checkpoints → entrega e evolução.**
 
 | Etapa | O que você faz | O que o toolkit prepara |
 |---|---|---|
 | Início | Informa o nome e descreve o problema | Perguntas apenas sobre o que falta e contexto registrado |
 | Pesquisa e tecnologia | Esclarece restrições e revisa alternativas | Fontes externas, especialista de domínio e recomendação técnica |
 | Criação ou adoção | Aprova a base e escolhe sua cópia/destino | Identidade, estrutura e adaptadores dos provedores selecionados |
-| Plano | Revisa escopo, fases e critérios; aprova o plano | Desenho consultado com o especialista e registros de aceite |
+| Plano SDD | Revisa requisitos, cenários, desenho, fases e tarefas; aprova o plano | Decomposição com dependências, testes e aceite vinculado à versão |
 | Implementação | Solicita a fase aprovada | Tarefa, arquivos autorizados, código na sessão nativa e grafo atualizado |
 | Validação e revisão | Acompanha resultados e resolve decisões pendentes | Testes, pareceres vinculados à versão do código e análise de bloqueios |
 | Entrega e evolução | Revisa a entrega e informa mudanças | Resumo verificável, próximos passos, handoff e análise de impacto |
@@ -65,6 +90,10 @@ O agente registra o desenho em `references/interface-design.json` com `ui-design
 Há perfis de orientação para React/Vite, Next, Vue, Angular, Blazor e MAUI. O primeiro gerador testado é uma referência técnica neutra React/Vite, que exige desenho e refinamento próprios; outros perfis não são substituídos por ele. O fluxo de desenho não fornece novos renderizadores. A preparação acontece após a decisão técnica aprovada; gerar frontend exige também plano/aceite de negócio. Sem UI no contexto, o projeto continua sem frontend.
 
 A referência React passou por build e browser com teclado e axe. A revisão independente de UX/acessibilidade exige evidência visual efetivamente inspecionada e sete critérios com notas de 1 a 5, todos >=4: clareza da tarefa, hierarquia, identidade, estados, responsividade, acessibilidade e desempenho. Notas não certificam liderança de mercado ou WCAG; o dispatcher somente textual bloqueia julgamento visual sem acesso suficiente. Diagnóstico local não comprova entrega isolada: a entrega de UI permanece bloqueada enquanto o executor isolado específico estiver indisponível. [Capacidades, fluxo e comandos de interface](docs/inicio/interfaces.md).
+
+## Plano aprovado e execução SDD
+
+Novos produtos usam especificação funcional, desenho técnico e plano v2 faseado, com requisitos/cenários ligados às tarefas e testes previstos. Após o aceite, a fábrica materializa o plano de ação sem alterar a decomposição aprovada. Dependências exigem checkpoints de conclusão observada antes do avanço. Planos antigos são identificados como legados e precisam de migração explícita. [Fluxo e comandos SDD](docs/inicio/sdd.md).
 
 ## Como o toolkit acompanha e valida
 

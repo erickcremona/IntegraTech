@@ -1,3 +1,4 @@
+import {assertSDDTask} from './sdd-workflow.mjs';
 import { inspectDesign } from './interface-design.mjs';
 import { existsSync, readFileSync, writeFileSync, unlinkSync } from 'node:fs';
 import { resolve, relative, isAbsolute } from 'node:path';
@@ -27,6 +28,7 @@ function requiredReviewTypes(repo,state,changed){
 }
 function gate(repo, state) {
   validateContract('delegation', state.delegation);
+  assertSDDTask({repo,delegation:state.delegation,phase:state.phase});
   if (fingerprint(state.delegation) !== state.delegation_sha256 || state.delegation.task_id !== state.id)
     throw new Error('delegação divergente');
   if (state.human_gate !== 'none' || precheck(repo, state.phase).status !== 'ready'
@@ -102,7 +104,7 @@ function validValidation(value, profile, extraChecks=[]) {
 function sanitizeValidation(result, profile, extraChecks=[]) {
   const status = validValidation(result, profile, extraChecks) ? 'passed' : result?.status === 'failed' && result.isolation === 'verified' ? 'failed' : 'blocked';
   const checks = Array.isArray(result?.checks) ? result.checks.slice(0, 50).map(item => ({ id: /^[a-z0-9_-]{1,80}$/.test(item.id) ? item.id : 'criterion', code: Number.isInteger(item.code) ? item.code : null })) : [];
-  return { status, reason_code: typeof result?.reason_code === 'string' && /^[a-z0-9_]{1,100}$/.test(result.reason_code) ? result.reason_code : status === 'blocked' ? 'validation_unavailable_or_candidate_changed' : 'criteria_observed', isolation: result?.isolation === 'verified' ? 'verified' : 'unverified', checks,
+  return { status, test_files:Array.isArray(result?.test_files)?result.test_files.filter(item=>typeof item.path==='string'&&typeof item.sha256==='string').slice(0,2048):[], reason_code: typeof result?.reason_code === 'string' && /^[a-z0-9_]{1,100}$/.test(result.reason_code) ? result.reason_code : status === 'blocked' ? 'validation_unavailable_or_candidate_changed' : 'criteria_observed', isolation: result?.isolation === 'verified' ? 'verified' : 'unverified', checks,
     environment: { platform: typeof result?.environment?.platform === 'string' && /^[a-zA-Z0-9._-]{1,100}$/.test(result.environment.platform) ? result.environment.platform : 'unknown', runtime: typeof result?.environment?.runtime === 'string' && /^[a-zA-Z0-9._-]{1,100}$/.test(result.environment.runtime) ? result.environment.runtime : 'unknown' } };
 }
 export async function validateCandidate({ repo, id, expectedRevision, validator = validateIsolated }) {
@@ -122,7 +124,7 @@ export async function validateCandidate({ repo, id, expectedRevision, validator 
     let observed;
     try {
       const files = Object.fromEntries(state.engineering.files.filter(item => owns([...state.ownership.read, ...state.ownership.write], item.path)).map(item => [item.path, item.sha256]));
-      observed = await validator({ repo, files, profile: state.engineering.profile, timeoutMs, oracles: { root: contained(taskPaths(repo, id).dir, 'oracles'), files: Object.fromEntries((state.oracle_files ?? []).map(item => [item.path, item.sha256])) } });
+      observed = await validator({ repo, files, profile: state.engineering.profile, timeoutMs, requestedTests:state.delegation.sdd?state.delegation.evidence_required:[], oracles: { root: contained(taskPaths(repo, id).dir, 'oracles'), files: Object.fromEntries((state.oracle_files ?? []).map(item => [item.path, item.sha256])) } });
       gate(repo, state);
       if (!current(repo, state) || !inspectTask({ repo, id }).snapshot_matches) observed = { status: 'blocked' };
     } catch { observed = { status: 'blocked' }; }

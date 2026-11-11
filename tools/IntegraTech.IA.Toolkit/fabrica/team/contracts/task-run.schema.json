@@ -329,6 +329,24 @@
             "required",
             "pending"
           ]
+        },
+        "sdd": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "plan_sha256",
+            "task_id"
+          ],
+          "properties": {
+            "plan_sha256": {
+              "type": "string",
+              "minLength": 64
+            },
+            "task_id": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
         }
       }
     },
@@ -554,6 +572,26 @@
             "oracle_sha256": {
               "type": "string",
               "minLength": 64
+            },
+            "test_files": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": [
+                  "path",
+                  "sha256"
+                ],
+                "additionalProperties": false,
+                "properties": {
+                  "path": {
+                    "type": "string"
+                  },
+                  "sha256": {
+                    "type": "string",
+                    "minLength": 64
+                  }
+                }
+              }
             }
           },
           "required": [

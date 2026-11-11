@@ -1,3 +1,4 @@
+import {inspectSDDPlan} from './sdd-plan.mjs';
 import { readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { createHash } from 'node:crypto';
@@ -19,8 +20,8 @@ export function route(category) {
 }
 export function precheck(repo, phase) {
   if (!['toolkit', 'discovery', 'design', 'business'].includes(phase)) throw new Error('fase inválida');
-  let state;
-  const result = (ready, reason) => ({ status: ready ? 'ready' : 'blocked', phase, scope_status: state?.scope_status ?? 'pending', reason });
+  let state;let workflow='legacy-v1';
+  const result = (ready, reason) => ({ status: ready ? 'ready' : 'blocked', phase, scope_status: state?.scope_status ?? 'pending', ...(phase==='business'?{execution_workflow:workflow,sdd_verified:ready&&workflow==='sdd-v2',...(ready&&workflow==='legacy-v1'?{warning:'legacy_plan_not_sdd'}:{})}:{}), reason });
   try {
     const read = path => {
       const full = contained(repo, path);
@@ -28,6 +29,7 @@ export function precheck(repo, phase) {
       return new TextDecoder('utf-8', { fatal: true }).decode(readFileSync(full));
     };
     state = JSON.parse(read('references/project-state.json'));
+    workflow=state.execution_workflow??'legacy-v1';
     if (!['pending', 'defined'].includes(state.scope_status)) throw new Error('estado inválido');
     if (['toolkit', 'discovery'].includes(phase)) return result(true, 'Fase permitida; não autoriza efeitos externos ou implementação de negócio.');
     if (state.scope_status !== 'defined') throw new Error('contexto pendente');
@@ -50,7 +52,11 @@ export function precheck(repo, phase) {
     }
     if (state.plan_gate !== 'approved') throw new Error('plano pendente');
     const planText = read(state.plan_path);
-    const plan = validateContract('business-plan', JSON.parse(planText));
+    const rawPlan=JSON.parse(planText);
+    if(rawPlan.schema_version===2)workflow='sdd-v2';
+    if(state.execution_workflow==='sdd-v2'&&rawPlan.schema_version!==2)throw new Error('SDD exige plano v2');
+    const plan = validateContract(rawPlan.schema_version===2?'business-plan-v2':'business-plan', rawPlan);
+    if(plan.schema_version===2)inspectSDDPlan({repo,plan,contextHash:sha256(read(state.context_path))});
     assertMeaningful(plan);
     if (!Array.isArray(plan.consultation_paths) || !plan.consultation_paths.length) throw new Error('Consulta do especialista por funcionalidade ausente.');
     const consulted = plan.consultation_paths.map(path => { const record = readDocument(repo, path); inspectConsultation(repo, record); return record.feature_id; });
