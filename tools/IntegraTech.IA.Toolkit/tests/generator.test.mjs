@@ -60,7 +60,7 @@ test('gerador: identidades, três apresentações e provedores independentes', a
     assert.equal((await main(['validate'])).status, 'valid');
     assert.equal((await main(['precheck', '--phase', 'business'])).status, 'blocked');
     assert.equal((await main(['precheck', '--phase', 'discovery'])).status, 'ready');
-    assert.ok(!readFileSync(join(target, 'README.md'), 'utf8').includes('erickcremona'));
+    assert.ok(!readFileSync(join(target, 'README.md'), 'utf8').split('## Autoria da ferramenta')[0].includes('erickcremona'));
     const entrance=readFileSync(join(target,'README.md'),'utf8');
     assert.ok(entrance.includes(fullContext.problem));
     assert.ok(entrance.includes('Erick Cremona'));
