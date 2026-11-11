@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "description": "Lista controlada; mudan\u00e7as exigem revis\u00e3o. Somente texto do modelo, sem estado pessoal.",
+  "description": "Lista controlada; mudanças exigem revisão. Somente texto do modelo, sem estado pessoal.",
   "files": [
     ".agents/skills/integratech-rastreabilidade/SKILL.md",
     ".claude/agents/traceability-maintainer.md",
@@ -210,6 +210,10 @@
     "tools/IntegraTech.IA.Toolkit/fabrica/team/contracts/functional-spec.schema.json",
     "tools/IntegraTech.IA.Toolkit/fabrica/team/contracts/technical-design.schema.json",
     "tools/IntegraTech.IA.Toolkit/fabrica/team/contracts/business-plan-v2.schema.json",
-    "docs/inicio/sdd.md"
+    "docs/inicio/sdd.md",
+    "tools/IntegraTech.IA.Toolkit/scripts/lib/project-locations.mjs",
+    "tools/IntegraTech.IA.Toolkit/scripts/lib/project-attachment.mjs",
+    "tools/IntegraTech.IA.Toolkit/tests/project-attachment.test.mjs",
+    "docs/inicio/sistemas-existentes.md"
   ]
 }

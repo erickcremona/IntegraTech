@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import {attachProject,attachedProject,listAttachedProjects} from './lib/project-attachment.mjs';
 import { initializeDesign,inspectDesign,designHash } from './lib/interface-design.mjs';
 import {prepareActionPlan,sddDelegation,sddStatus} from './lib/sdd-workflow.mjs';
 import {completeSDDTask} from './lib/sdd-completion.mjs';
@@ -31,6 +32,9 @@ import { startTask, inspectTask, advanceTask, recoverTask } from './lib/task-loo
 
 const help = `IntegraTech Toolkit — Node.js >=22
   help
+  attach-project --id ID [--source PATH] [--name NOME] [--context-file PATH] [--provider codex|claude|cursor|both|all] [--dry-run] [--repo TOOLKIT]
+  attached-projects [--repo TOOLKIT]
+  project-status --project ID [--repo TOOLKIT]
   sdd-plan [--dry-run] [--repo PATH]
   sdd-task --id TASK_ID [--repo PATH]
   sdd-status [--repo PATH]
@@ -86,6 +90,10 @@ const help = `IntegraTech Toolkit — Node.js >=22
   dispatch --provider codex|claude --task PATH --files PATH --phase toolkit|discovery|design|business [--repo PATH] [--timeout 120000]
   resume --file PATH
 
+--project ID seleciona explicitamente um sistema anexado nos comandos de SDD, loop,
+especialista, coerência, grafo, interface, precheck e dispatch. --repo continua
+apontando para a instalação do toolkit; não use o caminho do fonte como gestão.
+
 --files aponta para JSON array de caminhos relativos explícitos. Dispatcher somente
 para revisores, sobre pacote textual limitado. Implementação usa a sessão nativa
 Codex/Claude Code/Cursor com os adaptadores selecionados e permissões vigentes.
@@ -115,6 +123,7 @@ export async function main(argv, services = {}) {
     'graph-validate': ['repo', 'file'], 'graph-impact': ['repo', 'file', 'id'],
     'ui-recover': ['repo'], 'ui-design-hash':['repo'],'ui-design-init':['repo'],'ui-design-check':['repo'],'ui-capabilities': [], 'ui-prepare': ['repo','dry-run'], 'ui-status': ['repo'], 'ui-generate': ['repo','dry-run'], 'ui-validate': ['repo','local'],
     'sdd-plan':['repo','dry-run'],'sdd-task':['repo','id'],'sdd-status':['repo'],'sdd-complete':['repo','id','run-id'],
+    'attach-project':['repo','id','source','name','provider','context-file','dry-run'], 'attached-projects':['repo'], 'project-status':['repo','project'],
     help: [], 'create-project': ['repo', 'name', 'target', 'provider', 'presentation', 'dry-run', 'context-file', 'technology-file', 'preparation-file'], precheck: ['repo', 'phase'], route: ['category'], providers: [], hash: ['file'],
     onboarding: ['repo', 'name', 'context-file'], 'adopt-project': ['repo', 'name', 'context-file', 'dry-run', 'presentation', 'technology-file', 'provider', 'preparation-file'], 'technology-check': ['repo', 'context-file', 'decision-file'], 'restore-adoption': ['journal', 'dry-run'],
     'research-collect': ['context-file', 'preparation-file', 'output'], 'specialist-check': ['context-file', 'preparation-file'], 'specialist-prepare': ['repo', 'preparation-file'], 'specialist-status': ['repo'], 'consultation-record': ['repo', 'file'], 'consultation-check': ['repo', 'file'], 'coherence-snapshot': ['repo'], 'coherence-run': ['repo'], 'coherence-check': ['repo', 'report-file'], 'coherence-status': ['repo'],
@@ -125,6 +134,8 @@ export async function main(argv, services = {}) {
     'loop-start': ['task', 'phase', 'provider', 'repo'], 'loop-status': ['id', 'repo'],
     'loop-advance': ['id', 'revision', 'event', 'repo'], 'loop-recover': ['id', 'repo']
   };
+  const projectCommands=['dispatch','precheck','policy-check','loop-start','loop-advance','loop-candidate','loop-validate','loop-review','loop-status','loop-handoff','loop-recover','run-state','close-interrupted-run','specialist-prepare','specialist-status','consultation-record','consultation-check','coherence-snapshot','coherence-run','coherence-check','coherence-status','sdd-plan','sdd-task','sdd-complete','sdd-status','graph-sync','graph-validate','graph-impact','ui-design-hash','ui-design-init','ui-design-check','ui-prepare','ui-recover','ui-status','ui-generate','ui-validate','technology-check'];
+  for(const name of projectCommands)allowed[name].push('project');
   if (!Object.hasOwn(allowed, command) || Object.keys(options).some(key => !allowed[command].includes(key))) throw new Error('comando/opção desconhecido');
   const read = path => JSON.parse(readFileSync(resolve(path), 'utf8'));
   const readContext = path => {
@@ -142,9 +153,14 @@ export async function main(argv, services = {}) {
       return JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(data));
     } catch { throw new Error('Não foi possível ler a decisão tecnológica como JSON válido.'); }
   };
+  if(command==='attach-project')return attachProject({repo:resolve(options.repo??repoRoot),id:options.id,source:options.source,name:options.name,provider:options.provider,context:readContext(options['context-file']),dryRun:options['dry-run']??false});
+  if(command==='attached-projects')return listAttachedProjects({repo:resolve(options.repo??repoRoot)});
+  if(command==='project-status'){const item=attachedProject({repo:resolve(options.repo??repoRoot),id:options.project});return {status:'attached',...item};}
+  let selection;
+  if(options.project){selection=attachedProject({repo:resolve(options.repo??repoRoot),id:options.project});options.repo=selection.repo;}
   const automatic = ['precheck', 'loop-start', 'loop-advance', 'specialist-status', 'coherence-run'].includes(command)
     ? syncGraph({ repo: resolve(options.repo ?? repoRoot) }) : undefined;
-  const withTraceability = result => automatic ? { ...result, traceability: automatic } : result;
+  const withTraceability = result => ({...result,...(automatic?{traceability:automatic}:{}),...(selection?{project_id:selection.id}:{})});
   switch (command) {
     case 'graph-sync': return syncGraph({ repo: resolve(options.repo ?? repoRoot), file: options.file, dryRun: options['dry-run'] ?? false, acceptChanges: options['accept-changes'] ?? false });
     case 'graph-validate': return validateGraph({ repo: resolve(options.repo ?? repoRoot), file: options.file });

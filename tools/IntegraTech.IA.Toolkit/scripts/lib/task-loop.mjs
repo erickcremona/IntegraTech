@@ -1,3 +1,4 @@
+import {sourceRoot,sourceFile,linkedProject,ignoredSourcePath} from './project-locations.mjs';
 import {assertSDDTask} from './sdd-workflow.mjs';
 import { readFileSync, mkdirSync, existsSync, writeFileSync, unlinkSync, readdirSync, lstatSync, rmSync } from 'node:fs';
 import { resolve, join, relative, isAbsolute } from 'node:path';
@@ -19,10 +20,12 @@ export function taskPaths(repo, id) {
   return { root, dir, state: contained(dir, 'state.json'), lock: contained(root, `${id}.lock`) };
 }
 export function snapshot(repo, delegation) {
-  const files = new Set(['project.json', 'references/project-state.json', 'references/business-context.json']);
+  const linked=linkedProject(repo),source=sourceRoot(repo);
+  const documents=['project.json','references/project-state.json','references/business-context.json',...(linked?['project-link.json']:[])];
+  const files = new Set(linked?[]:documents);
   for (const path of [...delegation.file_ownership.read, ...delegation.file_ownership.write]) {
-    const full = path === '.' ? resolve(repo) : contained(repo, path);
-    const rel = relative(resolve(repo), full);
+    const full = path === '.' ? source : sourceFile(repo, path);
+    const rel = relative(source, full);
     if (rel && (rel.startsWith('..') || isAbsolute(rel))) throw new Error('ownership fora do repositório');
     {
       const visit = (current, currentRel) => {
@@ -31,6 +34,7 @@ export function snapshot(repo, delegation) {
         const stat = lstatSync(current);
         if (stat.isDirectory()) {
           for (const child of readdirSync(current).sort()) {
+            if(linked&&ignoredSourcePath(join(currentRel,child)))continue;
             if (['.git', 'node_modules', 'qa-artifacts', 'runtime-publish', '.superpowers'].includes(child)) continue;
             if (lstatSync(join(current, child)).isDirectory() && generatedOutput(current, child)) continue;
             visit(join(current, child), join(currentRel, child));
@@ -42,10 +46,11 @@ export function snapshot(repo, delegation) {
     }
   }
   const entries = [...files].sort().map(path => {
-    const full = contained(repo, path);
+    const full = sourceFile(repo, path);
     return [path, existsSync(full) ? digest(readFileSync(full)) : null];
   });
-  return digest(JSON.stringify({ entries, policy: sha256(readFileSync(new URL('../../fabrica/policy.json', import.meta.url), 'utf8')) }));
+  const controls=linked?documents.map(path=>[path,digest(readFileSync(contained(repo,path)))]):[];
+  return digest(JSON.stringify({ entries, ...(linked?{controls}:{}), policy: sha256(readFileSync(new URL('../../fabrica/policy.json', import.meta.url), 'utf8')) }));
 }
 export function persist(paths, state) {
   atomicFileWrite(paths.state, JSON.stringify(state, null, 2) + '\n');
@@ -76,7 +81,7 @@ export function startTask({ repo, delegation, phase, provider }) {
     for (const file of oracleFiles) {
       const target = contained(join(paths.dir, 'oracles'), file.path);
       mkdirSync(resolve(target, '..'), { recursive: true });
-      const bytes = readFileSync(contained(repo, file.path));
+      const bytes = readFileSync(sourceFile(repo, file.path));
       if (fingerprint(bytes) !== file.sha256) throw new Error('oráculo alterado durante captura');
       writeFileSync(target, bytes, { flag: 'wx' });
     }

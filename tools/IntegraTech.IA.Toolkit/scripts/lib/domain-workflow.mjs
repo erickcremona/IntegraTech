@@ -1,3 +1,7 @@
+import {linkedProject,sourceFile} from './project-locations.mjs';
+import {inventory,fingerprint} from './candidate.mjs';
+import {sddStatus,sddDelegation,actionPlan} from './sdd-workflow.mjs';
+import {engineeringStatus} from './engineering-loop.mjs';
 import { readFileSync, writeFileSync, mkdirSync, readdirSync, existsSync, lstatSync, unlinkSync, mkdtempSync } from 'node:fs';
 import { join, dirname, resolve } from 'node:path';
 import { spawnSync } from 'node:child_process';
@@ -94,7 +98,7 @@ export function prepareSpecialist({ repo, preparation, request }) {
   }
   return { status: 'prepared', journal: journalPath, next_step: 'Revisar otimizações e concluir com coherence-run e coherence-check.' };
 }
-const ignoredDirectories = new Set(['.git', '.scratch', 'node_modules', 'bin', 'obj', '.vs', '.idea', 'qa-artifacts', 'runtime-publish', 'TestResults', 'secrets']);
+const ignoredDirectories = new Set(['.git', '.integratech', '.scratch', 'node_modules', 'bin', 'obj', '.vs', '.idea', 'qa-artifacts', 'runtime-publish', 'TestResults', 'secrets']);
 const ignoredReports = new Set(['references/domain-validation.json', 'references/domain-coherence.json']);
 export function repositorySnapshot(repo) {
   const entries = [];
@@ -116,9 +120,11 @@ export function repositorySnapshot(repo) {
     }
   }
   walk(resolve(repo));
+  if(linkedProject(repo))entries.push(['source-inventory',fingerprint(inventory(repo))]);
   return digest(JSON.stringify(entries));
 }
 function validationCommands(repo) {
+  const link=linkedProject(repo);if(link)return [['sdd-checkpoints',link.id]];
   const identity = readDocument(repo, 'project.json');
   if (!/^[A-Z][A-Za-z0-9]{0,49}$/.test(identity.name)) throw new Error('Identidade inválida.');
   return [['npm', 'test'], ['npm', 'run', 'check'], ['dotnet', 'build', `${identity.name}.sln`, '--disable-build-servers', '-m:1', '-p:UseSharedCompilation=false'], ['dotnet', 'run', '--project', `tests/${identity.name}.Arquitetura.Tests`, '--no-build']];
@@ -127,6 +133,12 @@ export function runCoherenceChecks({ repo, execute = (command, args, options) =>
   inspectSpecialist(repo);
   const snapshot = repositorySnapshot(repo);
   const commands = [];
+  if(linkedProject(repo)){
+    let valid=false;try{const status=sddStatus({repo});const {action}=actionPlan(repo);valid=status.status==='completed'&&action.tasks.some(task=>engineeringStatus({repo,id:sddDelegation({repo,id:task.id}).task_id}).delivery_valid);}catch{}
+    const record={schema_version:1,snapshot_sha256:snapshot,commands:[{argv:validationCommands(repo)[0],exit_code:valid?0:2,output_sha256:digest(JSON.stringify({valid,snapshot})),passed:valid}],status:valid?'passed':'blocked'};
+    atomicFileWrite(contained(repo,'references/domain-validation.json'),JSON.stringify(record,null,2)+'\n');
+    return {status:valid?'ready':'blocked',reason_code:valid?'observed_sdd_checkpoints':'linked_project_requires_observed_sdd_validation',commands:record.commands};
+  }
   for (const [command, ...args] of validationCommands(repo)) {
     const result = execute(command, args, { cwd: resolve(repo), timeout: 600000, maxBuffer: 4 * 1024 * 1024, encoding: 'utf8', shell: false });
     commands.push({ argv: [command, ...args], exit_code: result.status, output_sha256: digest(String(result.stdout ?? '') + String(result.stderr ?? '')), passed: result.status === 0 && !result.error && !result.signal });
@@ -143,7 +155,7 @@ export function inspectCoherence({ repo, report }) {
   if (report.snapshot_sha256 !== repositorySnapshot(repo)) throw new Error('Repositório mudou: atualize revisão e verificações.');
   const areas = ['structure', 'code', 'tests', 'dependencies', 'configuration', 'documentation', 'skills', 'context'];
   if (report.assessments.length !== areas.length || areas.some(area => report.assessments.filter(a => a.area === area && a.status === 'passed').length !== 1) || report.pending.some(p => p.blocking)) throw new Error('Revisão global incompleta ou com contradições bloqueadoras.');
-  for (const change of report.changes) contained(repo, change.path);
+  for (const change of report.changes) linkedProject(repo)&&change.path.startsWith('source/')?sourceFile(repo,change.path.slice(7)):contained(repo, change.path);
   let validation;
   try { validation = readDocument(repo, 'references/domain-validation.json'); } catch { throw new Error('Verificações obrigatórias ausentes: execute coherence-run.'); }
   if (validation.status !== 'passed' || validation.snapshot_sha256 !== report.snapshot_sha256 || JSON.stringify(validation.commands.map(c => c.argv)) !== JSON.stringify(validationCommands(repo)) || validation.commands.some(c => !c.passed || c.exit_code !== 0 || !/^[a-f0-9]{64}$/.test(c.output_sha256))) throw new Error('Validação obrigatória falhou ou diverge do repositório atual.');

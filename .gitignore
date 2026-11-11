@@ -25,3 +25,5 @@ qa-artifacts/
 .*-toolkit.json
 *.adoption-*.tmp
 TestResults/
+
+.integratech/

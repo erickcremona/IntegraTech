@@ -1,3 +1,4 @@
+import {sourceRoot,sourceFile} from './project-locations.mjs';
 import { createHash } from 'node:crypto';
 import { readFileSync, mkdirSync, writeFileSync, mkdtempSync, existsSync, unlinkSync } from 'node:fs';
 import { join, resolve, relative, isAbsolute } from 'node:path';
@@ -25,9 +26,9 @@ export async function dispatch({ repo, provider, task, phase, files, timeoutMs =
     if (!role || role.kind !== 'reviewer' || !role.read_only || task.file_ownership.write.length)
       return blocked('Dispatcher disponível somente para revisores sem ownership de escrita.');
     if (!Array.isArray(files) || !files.length || files.length > 80) return blocked('Pacote de arquivos explícito obrigatório (1–80).');
-    const ownedRoots = task.file_ownership.read.map(name => name === '.' ? resolve(repo) : contained(repo, name));
+    const ownedRoots = task.file_ownership.read.map(name => name === '.' ? sourceRoot(repo) : sourceFile(repo, name));
     if (files.some(name => !ownedRoots.some(root => {
-      const rel = relative(root, contained(repo, name));
+      const rel = relative(root, sourceFile(repo, name));
       return rel === '' || (!rel.startsWith('..') && !isAbsolute(rel));
     }))) return blocked('Pacote fora do ownership de leitura.');
     if (!Number.isInteger(timeoutMs) || timeoutMs < 100 || timeoutMs > 600000) return blocked('Timeout fora do limite.');
@@ -37,10 +38,10 @@ export async function dispatch({ repo, provider, task, phase, files, timeoutMs =
     if (candidate && (!/^[a-f0-9]{64}$/.test(candidate.sha256) || !Array.isArray(candidate.removed))) return blocked('Candidato inválido.');
     const readPackage = () => files.map(name => {
       if (candidate?.removed.includes(name)) {
-        if (existsSync(contained(repo, name))) throw new Error('exclusão divergente');
+        if (existsSync(sourceFile(repo, name))) throw new Error('exclusão divergente');
         return { path: name, content: null };
       }
-      const content = readReviewFile(repo, name);
+      const content = readReviewFile(sourceRoot(repo), name);
       if (candidate && hash(content) !== candidate.hashes?.[name]) throw new Error('hash divergente');
       return { path: name, content };
     });

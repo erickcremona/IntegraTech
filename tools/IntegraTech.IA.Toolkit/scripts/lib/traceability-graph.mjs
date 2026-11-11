@@ -1,3 +1,4 @@
+import {sourceFile,linkedProject} from './project-locations.mjs';
 import { readFileSync, statSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { contained, assertSanitized } from './paths.mjs';
@@ -16,8 +17,9 @@ export function graphPath(repo, path) {
     || /appsettings.*\.local\.json$/i.test(path)) failure('source_path_invalid');
   try { return contained(repo, path); } catch { failure('source_path_invalid'); }
 }
+export function graphSourcePath(repo,path){graphPath(repo,path);return path.startsWith('source/')&&linkedProject(repo)?sourceFile(repo,path.slice(7)):graphPath(repo,path);}
 function readText(repo, path) {
-  const full = graphPath(repo, path);
+  const full = graphSourcePath(repo, path);
   try {
     const stat = statSync(full);
     if (!stat.isFile()) failure('source_not_file');

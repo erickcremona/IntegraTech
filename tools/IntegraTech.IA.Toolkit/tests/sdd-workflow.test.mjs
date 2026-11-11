@@ -1,3 +1,5 @@
+import {runCoherenceChecks} from '../scripts/lib/domain-workflow.mjs';
+import {attachProject,attachedProject} from '../scripts/lib/project-attachment.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, existsSync, rmSync } from 'node:fs';
@@ -16,18 +18,21 @@ import { main } from '../scripts/toolkit.mjs';
 // These fixtures exercise production gates with synthetic user approvals and research
 // receipts. Injected validator/reviewer responses simulate observed isolated execution;
 // they establish state-machine behavior, not a live runtime or external model review.
-function fixture(t) {
-  const repo = mkdtempSync(join(tmpdir(), 'sdd-workflow-'));
-  t.after(() => rmSync(repo, { recursive: true, force: true }));
+function fixture(t, external = false) {
+  let repo = mkdtempSync(join(tmpdir(), 'sdd-workflow-'));
+  const home=repo; t.after(() => rmSync(home, { recursive: true, force: true }));
+  const source=external?join(home,'legacy'):repo;let linkedState={};
+  if(external){mkdirSync(source);const manager=join(home,'manager');mkdirSync(manager);attachProject({repo:manager,id:'legacy',source,name:'Atendimento'});repo=attachedProject({repo:manager,id:'legacy'}).repo;linkedState=JSON.parse(readFileSync(join(repo,'references/project-state.json'),'utf8'));}
+  const disk=path=>join(path.startsWith('src/')?source:repo,path);
   const save = (path, data) => {
     const text = typeof data === 'string' ? data : JSON.stringify(data);
-    mkdirSync(dirname(join(repo, path)), { recursive: true });
-    writeFileSync(join(repo, path), text);
+    mkdirSync(dirname(disk(path)), { recursive: true });
+    writeFileSync(disk(path), text);
     return fingerprint(text);
   };
-  const state = { execution_workflow: 'sdd-v2', scope_status: 'defined', plan_gate: 'approved', context_path: 'references/business-context.json', plan_path: 'references/business-plan.json', approval_path: 'references/approval.json', specialist_path: 'references/domain-specialist.json' };
+  const state = { ...linkedState, execution_workflow: 'sdd-v2', scope_status: 'defined', plan_gate: 'approved', context_path: 'references/business-context.json', plan_path: 'references/business-plan.json', approval_path: 'references/approval.json', specialist_path: 'references/domain-specialist.json' };
   const contextHash = save(state.context_path, fullContext);
-  save('project.json', { name: 'Atendimento', provider: 'both', presentation: 'worker', is_model: false });
+  save('project.json', { name: 'Atendimento', provider: 'both', presentation: 'worker', is_model: false, ...(external?{mode:'attached',id:'legacy'}:{}) });
   const specialist = specialistFiles({ name: 'Atendimento', provider: 'both', context: fullContext, preparation: preparationFor(fullContext) });
   for (const [path, text] of specialist) save(path, text);
   const meta = JSON.parse(specialist.get(state.specialist_path));
@@ -45,26 +50,27 @@ function fixture(t) {
   const designHash = save('references/technical-design.json', design);
   const task = (id, suffix) => ({ id, requirement_ids: [`req-${suffix}`], scenario_ids: [`scenario-${suffix}`], owner: 'application-engineer', read_files: ['src'], write_files: ['src'], deliverables: [`Implement ${suffix} use case`], validation_commands: ['node --test src/request.test.mjs'], test_paths: ['src/request.test.mjs'] });
   const phase = (id, tasks, depends_on) => ({ id, deliverables: [`Working ${id} flow`], acceptance_criteria: ['The linked scenario passes with an assigned owner'], validation_commands: ['node --test src/request.test.mjs'], depends_on, tasks });
-  const plan = { schema_version: 2, context_sha256: contextHash, objective: 'Track requests and their owners', scope: ['Registration and listing'], out_of_scope: [], risks: [], consultation_paths, specification_path: 'references/functional-spec.json', specification_sha256: specificationHash, design_path: 'references/technical-design.json', design_sha256: designHash, phases: [phase('register', [task('register-task', 'register')], []), phase('list', [task('list-task', 'list')], ['register'])] };
+  const plan = { ...(external?{source_binding_sha256:state.source_binding_sha256}:{}), schema_version: 2, context_sha256: contextHash, objective: 'Track requests and their owners', scope: ['Registration and listing'], out_of_scope: [], risks: [], consultation_paths, specification_path: 'references/functional-spec.json', specification_sha256: specificationHash, design_path: 'references/technical-design.json', design_sha256: designHash, phases: [phase('register', [task('register-task', 'register')], []), phase('list', [task('list-task', 'list')], ['register'])] };
   const approval = { schema_version: 1, decision: 'approved', context_sha256: contextHash, plan_sha256: save(state.plan_path, plan), approved_by: 'Synthetic product owner', approved_at: '2026-11-11T12:00:00Z', source_reference: 'references/approval-source.md' };
   save(approval.source_reference, 'Synthetic fixture approval: the product owner approves both described phases.');
   save(state.approval_path, approval); save('references/project-state.json', state);
   save('src/request.mjs', 'export const value = 1;\n');
   save('src/request.test.mjs', "import test from 'node:test'; import assert from 'node:assert/strict'; import { value } from './request.mjs'; test('request retains owner', () => assert.ok(value > 0));\n");
-  return { repo, state, plan, approval, specification, save };
+  return { repo, source, disk, state, plan, approval, specification, save, external };
 }
 
 // Only I/O observations are simulated; all state transitions, bindings and digests run.
 async function simulateValidationAndReviews(f, state, attestTests = true) {
   const id = state.id;
-  const frozenTest = readFileSync(join(f.repo, 'src/request.test.mjs'), 'utf8');
+  const frozenTest = readFileSync(f.disk('src/request.test.mjs'), 'utf8');
   let validationCalls = 0;
-  state = await validateCandidate({ repo: f.repo, id, expectedRevision: state.revision, validator: async ({ oracles, files, requestedTests }) => {
+  state = await validateCandidate({ repo: f.repo, id, expectedRevision: state.revision, validator: async ({ repo, oracles, files, requestedTests }) => {
+    assert.equal(repo,f.source);
     validationCalls++;
     assert.deepEqual(requestedTests, ['src/request.test.mjs']);
     assert.equal(readFileSync(join(oracles.root, 'src/request.test.mjs'), 'utf8'), frozenTest);
     assert.equal(oracles.files['src/request.test.mjs'], fingerprint(frozenTest));
-    assert.equal(files['src/request.mjs'], fingerprint(readFileSync(join(f.repo, 'src/request.mjs'))));
+    assert.equal(files['src/request.mjs'], fingerprint(readFileSync(f.disk('src/request.mjs'))));
     return { status: 'passed', isolation: 'verified', checks: ['inventory', 'frozen_oracles', 'isolation_canaries', 'node-tests-v1'].map(id => ({ id, code: 0 })), test_files: attestTests ? [{ path: 'src/request.test.mjs', sha256: fingerprint(frozenTest) }] : [], environment: { platform: 'synthetic-test', runtime: 'simulated-node' } };
   } });
   assert.equal(state.status, 'review_pending');
@@ -74,7 +80,7 @@ async function simulateValidationAndReviews(f, state, attestTests = true) {
     reviewedTypes.push(type);
     const path = `qa-artifacts/${task.task_id}.json`;
     f.save(path, { schema_version: 1, task_id: task.task_id, review_type: type, verdict: 'approved', findings: [], residual_risk: '' });
-    return { status: 'completed', verdict: 'approved', output: join(f.repo, path), run_id: task.task_id, candidate_sha256: candidate.sha256, package_sha256: fingerprint(files.map(path => ({ path, content: candidate.removed.includes(path) ? null : readFileSync(join(f.repo, path), 'utf8') }))) };
+    return { status: 'completed', verdict: 'approved', output: join(f.repo, path), run_id: task.task_id, candidate_sha256: candidate.sha256, package_sha256: fingerprint(files.map(path => ({ path, content: candidate.removed.includes(path) ? null : readFileSync(f.disk(path), 'utf8') }))) };
   } });
   assert.equal(validationCalls, 1);
   assert.deepEqual(reviewedTypes, ['code', 'security']);
@@ -198,10 +204,10 @@ test('SDD CLI exposes plan preview, task bindings, phase readiness, and blocked 
   await assert.rejects(main(['sdd-complete', '--repo', f.repo, '--id', 'register-task', '--run-id', delegation.task_id, '--passed']));
 });
 
-for (const attestTests of [false, true]) test(attestTests
+for (const external of [false,true]) for (const attestTests of [false, true]) test((external?'EXTERNAL SOURCE: ':'')+(attestTests
   ? 'SDD genuine engine transitions with simulated isolated checks and reviews unlock the next phase'
-  : 'SDD passing engine validation and reviews still require observed execution of intended tests', async t => {
-  const f = fixture(t); prepareActionPlan(f);
+  : 'SDD passing engine validation and reviews still require observed execution of intended tests'), async t => {
+  const f = fixture(t, external); prepareActionPlan(f);
   const delegation = sddDelegation({ repo: f.repo, id: 'register-task' });
   const id = delegation.task_id;
   startTask({ repo: f.repo, delegation, phase: 'business', provider: 'codex' });
@@ -229,7 +235,7 @@ for (const attestTests of [false, true]) test(attestTests
   assert.doesNotThrow(() => assertSDDTask({ repo: f.repo, delegation: nextDelegation, phase: 'business' }));
   // Historical evidence cannot validate new bytes before an authorized task starts.
   for (const path of ['src/request.mjs', 'src/request.test.mjs']) {
-    const bytes = readFileSync(join(f.repo, path), 'utf8');
+    const bytes = readFileSync(f.disk(path), 'utf8');
     f.save(path, bytes + '// unobserved edit\n');
     assert.throws(() => sddStatus(f), /checkpoint SDD histórico/);
     assert.throws(() => completeSDDTask({ repo: f.repo, id: 'register-task', runId: id }), /checkpoint SDD histórico/);
@@ -257,6 +263,7 @@ for (const attestTests of [false, true]) test(attestTests
   assert.equal(secondCompleted.status, 'completed');
   const finalStatus = sddStatus(f);
   assert.equal(finalStatus.status, 'completed');
+  if(external){assert.equal(existsSync(join(f.source,'references')),false);assert.equal(existsSync(join(f.source,'qa-artifacts')),false);assert.equal(runCoherenceChecks({repo:f.repo,execute:()=>{throw new Error('must never run stock commands in legacy');}}).status,'ready');}
   assert.deepEqual(finalStatus.completed, ['register-task', 'list-task']);
   assert.deepEqual(finalStatus.ready, []);
   assert.deepEqual(finalStatus.phases, [{ id: 'register', completed: true }, { id: 'list', completed: true }]);

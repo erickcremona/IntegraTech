@@ -2,7 +2,7 @@ import {readFileSync,existsSync,mkdirSync,writeFileSync,unlinkSync} from 'node:f
 import {dirname} from 'node:path';
 import {validateContract} from './contracts.mjs';
 import {atomicFileWrite} from './adoption-recovery.mjs';
-import {graphPath,readGraphSource,decodeGraphSource,validateGraphData} from './traceability-graph.mjs';
+import {graphPath,graphSourcePath,readGraphSource,decodeGraphSource,validateGraphData} from './traceability-graph.mjs';
 import {deriveTraceability,traceDigest,traceEdgeKey} from './traceability-sources.mjs';
 const defaultFile='references/traceability-graph.json';
 const empty=()=>({schema_version:1,nodes:[],edges:[]});
@@ -27,7 +27,7 @@ function staleDiagnostics(graph,read,repo){
   for(const item of graph.sync?.nodes??[]){
    const n=graph.nodes.find(node=>node.id===item.id);
    if(!n||fingerprint(n)!==item.sha256)return {};
-   graphPath(repo,n.source.path);
+   graphSourcePath(repo,n.source.path);
    let current=null;try{current=read(n.source.path).digest;}catch{ /* Missing/unreadable is a stale reference too. */ }
    if(current!==n.source.sha256){changed.push(n.id);paths.add(n.source.path);}
   }
@@ -116,7 +116,7 @@ export function syncGraph({repo,file=defaultFile,dryRun=false,acceptChanges=fals
   mkdirSync(dirname(full),{recursive:true});try{writeFileSync(lock,JSON.stringify({pid:process.pid}),{flag:'wx'});ownsLock=true;}catch{fail('graph_locked');}
   const output=JSON.stringify(candidate,null,2)+'\n';if(Buffer.byteLength(output)>256*1024)fail('graph_too_large');
   for(const [path,source]of inputs){
-   const pathOnDisk=graphPath(repo,path);const now=existsSync(pathOnDisk)?traceDigest(readFileSync(pathOnDisk)):null;
+   const pathOnDisk=graphSourcePath(repo,path);const now=existsSync(pathOnDisk)?traceDigest(readFileSync(pathOnDisk)):null;
    if(now!==(source?.digest??null))fail('source_changed_during_sync');
   }
   atomicFileWrite(full,output,{exclusive:inputs.get(file)===null});

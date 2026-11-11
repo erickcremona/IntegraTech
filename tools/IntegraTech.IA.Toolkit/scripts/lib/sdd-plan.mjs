@@ -1,3 +1,4 @@
+import {sourceRoot,sourceFile,sourceBinding} from './project-locations.mjs';
 import { readFileSync, lstatSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { posix } from 'node:path';
@@ -48,6 +49,7 @@ export function inspectSDDPlan({ repo, plan, contextHash }) {
   if (Buffer.byteLength(JSON.stringify(plan)) > limit) throw new Error('SDD: plano acima de 256 KiB');
   validateAgainstSchema(schema('business-plan-v2'), plan);
   meaningful(plan);
+  const binding=sourceBinding(repo);if(binding&&plan.source_binding_sha256!==binding)throw new Error('SDD: plano não vinculado ao fonte externo atual');
   if (!digest(contextHash) || plan.context_sha256 !== contextHash) throw new Error('SDD: contexto do plano divergente');
   if (!digest(plan.specification_sha256) || !digest(plan.design_sha256)) throw new Error('SDD: hash de artefato inválido');
   unique(plan.consultation_paths, 'consulta');
@@ -106,12 +108,12 @@ export function inspectSDDPlan({ repo, plan, contextHash }) {
       throw new Error('SDD: cenário desconhecido ou fora dos requisitos vinculados');
     for (const field of ['read_files', 'write_files', 'test_paths']) {
       unique(task[field], field);
-      task[field].forEach(path => canonical(repo, path));
+      task[field].forEach(path => {canonical(sourceRoot(repo), path);sourceFile(repo,path);});
     }
     for (const path of task.test_paths) {
       if (!owns([...task.read_files, ...task.write_files], path)) throw new Error('SDD: teste fora do ownership de leitura/escrita');
       try {
-        if (!lstatSync(canonical(repo, path)).isFile()) throw new Error('SDD: caminho de teste deve nomear arquivo');
+        if (!lstatSync(sourceFile(repo, path)).isFile()) throw new Error('SDD: caminho de teste deve nomear arquivo');
       } catch (error) { if (error.code !== 'ENOENT') throw error; }
     }
     task.requirement_ids.forEach(id => coveredRequirements.add(id));

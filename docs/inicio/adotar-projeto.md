@@ -47,3 +47,6 @@ Também existe restore-adoption --journal PATH no toolkit. A restauração verif
 ## Apresentação após adoção
 
 README.md, SOLUTION_CONTEXT.md, references/README.md e o README da fábrica passam a priorizar o produto, seus fatos e próximos passos. As entradas dos provedores continuam o produto em desenvolvimento, sem onboarding condicional como instrução principal. Manuais gerais continuam disponíveis como consulta secundária. O estado inicial é identificado como ponto de partida; atualize os resumos conforme a evolução e consulte project-state.json para a fase atual. A base técnica não é apresentada como funcionalidade de negócio concluída. Atualizações não sobrescrevem silenciosamente documentação personalizada de projetos já existentes.
+
+
+Sistema legado externo: quando o usuário informar que o produto já existe, siga [sistemas existentes](sistemas-existentes.md). Solicite o local acessível se faltar, registre o vínculo externo e mantenha o fonte na origem e os registros na gestão separada. Não use adoção do modelo sobre esse sistema.

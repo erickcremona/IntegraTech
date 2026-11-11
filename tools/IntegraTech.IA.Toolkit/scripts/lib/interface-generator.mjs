@@ -1,3 +1,4 @@
+import {linkedProject} from './project-locations.mjs';
 import { readFileSync, existsSync, lstatSync, readdirSync, mkdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { randomUUID } from 'node:crypto';
@@ -11,6 +12,7 @@ import { runProcess } from './providers.mjs';
 
 const frontendMeta='references/interface-frontend.json';
 export function generateInterface({repo,dryRun=false}){
+ if(linkedProject(repo))return {status:'blocked',reason_code:'existing_interface_requires_incremental_implementation'};
  const status=interfaceStatus(repo);if(status.status==='not_required')return {status:'not_required'};
  if(!status.capabilities.generator_available)return {status:'blocked',reason_code:'interface_generator_unavailable',framework:status.selection.framework};
  if(precheck(repo,'business').status!=='ready')return {status:'blocked',reason_code:'business_gate_required'};
@@ -41,6 +43,7 @@ function frontendSnapshot(repo){
  walk(root);return uiHash(entries);
 }
 export async function validateInterface({repo,local=false,runner=runProcess}){
+ if(linkedProject(repo))return {status:'blocked',reason_code:'existing_interface_validator_unavailable',delivery_valid:false};
  const profile=inspectInterface(repo);if(!profile)return {status:'not_required'};
  if(!local)return {status:'blocked',reason_code:'isolated_ui_executor_unavailable',local_diagnostic_available:profile.selection.framework==='react-vite',delivery_valid:false};
  if(profile.selection.framework!=='react-vite')return {status:'blocked',reason_code:'interface_validator_unavailable',delivery_valid:false};

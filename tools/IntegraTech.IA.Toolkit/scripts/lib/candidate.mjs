@@ -1,20 +1,22 @@
+import {sourceRoot,linkedProject,ignoredSourcePath} from './project-locations.mjs';
 import { readdirSync, lstatSync, readFileSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { createHash } from 'node:crypto';
 import { contained, assertNoLinks } from './paths.mjs';
 
 export const fingerprint = value => createHash('sha256').update(typeof value === 'string' || Buffer.isBuffer(value) ? value : JSON.stringify(value)).digest('hex');
-const ignored = new Set(['.git', '.scratch', '.superpowers', 'node_modules', 'qa-artifacts', 'runtime-publish', '.vs']);
+const ignored = new Set(['.git', '.integratech', '.scratch', '.superpowers', 'node_modules', 'qa-artifacts', 'runtime-publish', '.vs']);
 export function generatedOutput(directory, name) {
   return ['bin', 'obj'].includes(name) && !existsSync(join(directory, 'package.json')) && readdirSync(directory).some(file => file.endsWith('.csproj'));
 }
 export function inventory(repo) {
+  const linked=linkedProject(repo);repo=sourceRoot(repo);
   assertNoLinks(repo);
   const result = [];
   let bytes = 0;
   function visit(directory, prefix = '') {
     for (const name of readdirSync(directory).sort()) {
-      if (ignored.has(name)) continue;
+      if (ignored.has(name) || linked && ignoredSourcePath(prefix ? `${prefix}/${name}` : name)) continue;
       const path = prefix ? `${prefix}/${name}` : name;
       const full = contained(repo, path);
       const stat = lstatSync(full);

@@ -9,6 +9,12 @@ Você conversa com o agente sobre o projeto; ele organiza o trabalho e prepara o
 ```mermaid
 mindmap
   root((IntegraTech))
+    Entrada
+      Novo produto
+      Sistema existente
+        Vínculo externo
+        Fonte na origem
+        Gestão separada por sistema
     Contexto do produto
       Nome e problema
       Pesquisa externa
@@ -39,13 +45,19 @@ mindmap
 
 | Etapa | O que você faz | O que o toolkit prepara |
 |---|---|---|
-| Início | Informa o nome e descreve o problema | Perguntas apenas sobre o que falta e contexto registrado |
+| Início | Informa se é novo produto ou sistema existente, nome e problema | Contexto registrado; para legado, solicita o caminho e prepara vínculo separado |
 | Pesquisa e tecnologia | Esclarece restrições e revisa alternativas | Fontes externas, especialista de domínio e recomendação técnica |
 | Criação ou adoção | Aprova a base e escolhe sua cópia/destino | Identidade, estrutura e adaptadores dos provedores selecionados |
 | Plano SDD | Revisa requisitos, cenários, desenho, fases e tarefas; aprova o plano | Decomposição com dependências, testes e aceite vinculado à versão |
 | Implementação | Solicita a fase aprovada | Tarefa, arquivos autorizados, código na sessão nativa e grafo atualizado |
 | Validação e revisão | Acompanha resultados e resolve decisões pendentes | Testes, pareceres vinculados à versão do código e análise de bloqueios |
 | Entrega e evolução | Revisa a entrega e informa mudanças | Resumo verificável, próximos passos, handoff e análise de impacto |
+
+## Sistemas existentes
+
+O toolkit também pode manter um sistema já existente, preservando seu código na pasta original. Informe que deseja trabalhar em um legado e forneça o local quando solicitado. Cada sistema terá contexto, planos SDD, grafo e evidências em uma área de gestão separada dentro da instalação do toolkit. O vínculo não modifica o sistema; as alterações de manutenção são implementadas na origem após os gates aplicáveis.
+
+Uma instalação pode manter vários vínculos, selecionados explicitamente por --project ID. A análise parte da arquitetura e stack existentes; reconhecer uma tecnologia não garante que haja executor de validação compatível. [Fluxo de vínculo e manutenção](docs/inicio/sistemas-existentes.md).
 
 ## Comece em sua própria cópia
 

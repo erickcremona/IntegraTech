@@ -213,6 +213,10 @@
     "design_sha256": {
       "type": "string",
       "minLength": 64
+    },
+    "source_binding_sha256": {
+      "type": "string",
+      "minLength": 64
     }
   }
 }

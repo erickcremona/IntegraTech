@@ -1,3 +1,4 @@
+import {sourceRoot,sourceFile,sourceBinding} from './project-locations.mjs';
 import { readFileSync, writeFileSync, appendFileSync, mkdirSync, existsSync, unlinkSync } from 'node:fs';
 import { resolve, join } from 'node:path';
 import { randomUUID, createHash } from 'node:crypto';
@@ -15,14 +16,17 @@ function paths(repo, id) {
 }
 function snapshot(repo, inputs) {
   const values = {};
-  for (const file of [...new Set(['references/project-state.json', 'references/business-context.json', ...inputs])].sort()) {
-    const full = contained(repo, file);
-    values[file] = existsSync(full) ? hash(readFileSync(full)) : null;
+  for (const file of ['references/project-state.json','references/business-context.json']) {
+    const full=contained(repo,file);values['control:'+file]=existsSync(full)?hash(readFileSync(full)):null;
   }
+  for (const file of [...new Set(inputs)].sort()) {
+    const full=sourceFile(repo,file);values['source:'+file]=existsSync(full)?hash(readFileSync(full)):null;
+  }
+  if(sourceBinding(repo))values.source_binding=sourceBinding(repo);
   values.policy = hash(readFileSync(new URL('../../fabrica/policy.json', import.meta.url)));
   values.catalog = hash(readFileSync(new URL('../../fabrica/team/catalog.yaml', import.meta.url)));
-  if (existsSync(join(repo, '.git'))) {
-    try { values.commit = execFileSync('git', ['-C', repo, 'rev-parse', 'HEAD'], { encoding: 'utf8', windowsHide: true, stdio: ['ignore', 'pipe', 'ignore'] }).trim(); }
+  if (existsSync(join(sourceRoot(repo), '.git'))) {
+    try { values.commit = execFileSync('git', ['-C', sourceRoot(repo), 'rev-parse', 'HEAD'], { encoding: 'utf8', windowsHide: true, stdio: ['ignore', 'pipe', 'ignore'] }).trim(); }
     catch { values.commit = null; }
   }
   return hash(JSON.stringify(values));

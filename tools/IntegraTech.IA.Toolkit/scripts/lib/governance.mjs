@@ -1,3 +1,4 @@
+import {linkedProject} from './project-locations.mjs';
 import {inspectSDDPlan} from './sdd-plan.mjs';
 import { readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
@@ -28,9 +29,11 @@ export function precheck(repo, phase) {
       if (!statSync(full).isFile() || statSync(full).size > 128 * 1024) throw new Error('documento inválido');
       return new TextDecoder('utf-8', { fatal: true }).decode(readFileSync(full));
     };
+    const linked=linkedProject(repo);
     state = JSON.parse(read('references/project-state.json'));
     workflow=state.execution_workflow??'legacy-v1';
     if (!['pending', 'defined'].includes(state.scope_status)) throw new Error('estado inválido');
+    if(linked&&phase==='toolkit')return result(false,'Manutenção do toolkit usa sua raiz; o sistema anexado exige plano de negócio.');
     if (['toolkit', 'discovery'].includes(phase)) return result(true, 'Fase permitida; não autoriza efeitos externos ou implementação de negócio.');
     if (state.scope_status !== 'defined') throw new Error('contexto pendente');
     const contextText = read(state.context_path);
@@ -48,13 +51,13 @@ export function precheck(repo, phase) {
       const decision = JSON.parse(read(state.technology_decision_path));
       const technology = inspectTechnologyDecision({ decision, context, repo, requireApproval: true });
       const identity = JSON.parse(read('project.json'));
-      if (!technology.generator_supported || technology.selection.presentation !== identity.presentation) throw new Error('decisão tecnológica diverge do projeto');
+      if (!linked && (!technology.generator_supported || technology.selection.presentation !== identity.presentation)) throw new Error('decisão tecnológica diverge do projeto');
     }
     if (state.plan_gate !== 'approved') throw new Error('plano pendente');
     const planText = read(state.plan_path);
     const rawPlan=JSON.parse(planText);
     if(rawPlan.schema_version===2)workflow='sdd-v2';
-    if(state.execution_workflow==='sdd-v2'&&rawPlan.schema_version!==2)throw new Error('SDD exige plano v2');
+    if((linked||state.execution_workflow==='sdd-v2')&&rawPlan.schema_version!==2)throw new Error('SDD exige plano v2');
     const plan = validateContract(rawPlan.schema_version===2?'business-plan-v2':'business-plan', rawPlan);
     if(plan.schema_version===2)inspectSDDPlan({repo,plan,contextHash:sha256(read(state.context_path))});
     assertMeaningful(plan);

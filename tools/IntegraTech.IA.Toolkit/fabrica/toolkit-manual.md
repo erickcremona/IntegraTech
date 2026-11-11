@@ -82,3 +82,6 @@ ui-validate bloqueia a execução isolada não disponível; ui-validate --local 
 
 
 Execução SDD: em produtos novos, use especificação funcional e desenho técnico vinculados ao contexto, plano business v2 com tarefas/dependências antes do aceite e os comandos sdd-plan, sdd-task, sdd-complete e sdd-status após aprovação. Consulte [docs/inicio/sdd.md](../../docs/inicio/sdd.md). Planos v1 são legados e não equivalem a esse fluxo; não migrar ou aprovar automaticamente.
+
+
+Sistemas externos: attach-project --id ID --source PATH [--name NOME] [--provider all] [--dry-run] registra gestão privada sem escrever no fonte. attached-projects lista vínculos; project-status --project ID mostra as duas raízes. Use --project ID nos comandos de contexto/especialista/SDD/loop/grafo/coerência/interface/dispatch. Veja [sistemas existentes](../../docs/inicio/sistemas-existentes.md).

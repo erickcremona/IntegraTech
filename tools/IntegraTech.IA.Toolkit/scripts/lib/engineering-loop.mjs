@@ -1,3 +1,4 @@
+import {sourceRoot,sourceFile} from './project-locations.mjs';
 import {assertSDDTask} from './sdd-workflow.mjs';
 import { inspectDesign } from './interface-design.mjs';
 import { existsSync, readFileSync, writeFileSync, unlinkSync } from 'node:fs';
@@ -124,7 +125,7 @@ export async function validateCandidate({ repo, id, expectedRevision, validator 
     let observed;
     try {
       const files = Object.fromEntries(state.engineering.files.filter(item => owns([...state.ownership.read, ...state.ownership.write], item.path)).map(item => [item.path, item.sha256]));
-      observed = await validator({ repo, files, profile: state.engineering.profile, timeoutMs, requestedTests:state.delegation.sdd?state.delegation.evidence_required:[], oracles: { root: contained(taskPaths(repo, id).dir, 'oracles'), files: Object.fromEntries((state.oracle_files ?? []).map(item => [item.path, item.sha256])) } });
+      observed = await validator({ repo:sourceRoot(repo), files, profile: state.engineering.profile, timeoutMs, requestedTests:state.delegation.sdd?state.delegation.evidence_required:[], oracles: { root: contained(taskPaths(repo, id).dir, 'oracles'), files: Object.fromEntries((state.oracle_files ?? []).map(item => [item.path, item.sha256])) } });
       gate(repo, state);
       if (!current(repo, state) || !inspectTask({ repo, id }).snapshot_matches) observed = { status: 'blocked' };
     } catch { observed = { status: 'blocked' }; }
@@ -151,7 +152,7 @@ export async function reviewCandidate({ repo, id, expectedRevision, dispatcher =
     const removed = files.filter(path => !Object.hasOwn(hashes, path));
     if (removed.some(path => !state.baseline_files.some(item => item.path === path))) throw new Error('arquivo de revisão inexistente');
     const candidate = { sha256: state.engineering.candidate_sha256, hashes, removed };
-    const expectedPackageHash = fingerprint(files.map(path => ({ path, content: removed.includes(path) ? null : readFileSync(contained(repo, path), 'utf8') })));
+    const expectedPackageHash = fingerprint(files.map(path => ({ path, content: removed.includes(path) ? null : readFileSync(sourceFile(repo, path), 'utf8') })));
     // Dispatcher bounds and sanitizes its package. Never silently truncate a review.
     if (!files.length || files.length > 80) throw new Error('pacote deve conter de 1 a 80 arquivos; reduza o ownership de leitura');
     if (state.engineering.review_attempts?.length) throw new Error('revisão já tentada para este candidato; repetição bloqueada');
