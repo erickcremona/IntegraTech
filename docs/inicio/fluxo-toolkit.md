@@ -85,3 +85,6 @@ O agente prepara os detalhes operacionais. Para operar diretamente, consulte o [
 Mudanças no funcionamento, comandos, fases, provedores ou limites devem atualizar o README principal, este guia e os manuais afetados na mesma entrega. O README gerado aponta para este guia, que acompanha criação e adoção. A revisão deve conferir exemplos e links; ausência de impacto na documentação precisa ser justificada no relatório da mudança.
 
 Projetos já criados não recebem atualizações silenciosas do modelo. Sua documentação deve evoluir junto com o toolkit instalado, preservando personalizações. O mapa mental do README do modelo também deve refletir mudanças materiais no fluxo.
+
+
+Na etapa de UX/UI, peça uma sugestão visual moderna ou apresente sua referência. Você pode solicitar novas opções até gostar de uma. A opção aprovada vira o padrão de interface do produto; o toolkit deve segui-la nas próximas telas e preservar o padrão vigente enquanto explora alternativas ainda não aprovadas.

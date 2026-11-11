@@ -58,3 +58,16 @@ Notas: **1** = falha grave que impede uso; **2** = problemas importantes; **3** 
 Cada evidência deve permitir localizar o artefato e entender a observação, por exemplo: captura do candidato e viewport, estado/jornada observado, relatório de interação, medição e seu ambiente. Um caminho de screenshot não significa que o revisor viu a imagem. O dispatcher textual precisa bloquear julgamento visual quando não tiver acesso efetivo às imagens ou ao protótipo. Não invente capturas, consultas, observações, métricas ou aceites.
 
 Achados da revisão identificam jornada/estado, impacto, gravidade, evidência, correção esperada e o que precisa ser reobservado. O implementador refina; o revisor independente reavalia o candidato e as evidências correspondentes. Testes de componentes, Playwright/axe, screenshots e inspeção manual se complementam. Nenhum deles sozinho comprova usabilidade ou conformidade integral.
+
+
+## Propostas de interface e padrão aprovado
+
+Ao escolher uma tecnologia de frontend, o toolkit deve sugerir ao usuário uma interface moderna adequada ao contexto, apresentando uma proposta visual concreta (protótipo renderizado, telas ou imagens) e explicando suas decisões de UX/UI. Não basta listar frameworks ou descrever uma estética em texto.
+
+O usuário pode pedir novas sugestões e variações até gostar de uma delas, sem limite artificial de alternativas de design. Aproveite o feedback e os fatos existentes, registre versões e o que mudou, sem tratar exploração de design como tentativas de correção do loop de implementação. O usuário também pode fornecer sua própria referência: site, imagem, PDF, protótipo ou design system. Nesse caso, esclareça quais elementos devem ser preservados/adaptados e use essa referência como base da proposta. Referências próprias/autorizadas podem definir a identidade do produto; não imponha a estética do gerador.
+
+Enquanto nenhuma proposta for aceita, o design permanece draft. Após aceite humano efetivo, registre a proposta escolhida e o protótipo correspondente em design_reference: proposal_id, origin (toolkit ou user), revision, prototype_path e usage_rules. O protótipo escolhido deve estar em prototypes com seu hash. references admite URL HTTPS ou referência local do usuário com origin=user, path e sha256, sempre com accessed_at, analysis e application. Arquivos locais não precisam ser publicados na internet.
+
+A referência aprovada passa a ser o padrão de interface do produto: novas telas, componentes, navegação, tipografia, cores, espaçamento, estados e responsividade devem seguir a direção e as regras registradas. A revisão UX deve comparar a implementação com esse padrão e apontar desvios; o template técnico não o substitui. Ajustes dentro do padrão não exigem escolher outro design; mudanças materiais de direção exigem nova proposta e novo aceite vinculado ao conteúdo/protótipos.
+
+Após aprovação, explore alternativas em rascunhos/protótipos separados e preserve a versão e os artefatos aprovados. Pedir uma sugestão nova não revoga nem sobrescreve o padrão ativo. Só promova a substituição após novo aceite explícito, preservando o histórico sanitizado de versões e decisões. Não reaproveite o aceite antigo para trocar a referência.

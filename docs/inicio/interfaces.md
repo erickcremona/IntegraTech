@@ -125,3 +125,16 @@ As source_roots aprovadas delimitam o código de UI para o loop, inclusive templ
 
 
 O aceite de UX é um JSON separado, referenciado por approval_reference: schema_version=1, kind=ux_design, decision=approved, design_sha256, approved_by, approved_at UTC e source_reference para o registro humano sanitizado. Use ui-design-hash após preencher o briefing para calcular design_sha256; ele inclui direção, jornadas, referências e hashes dos protótipos, excluindo apenas status e approval_reference. Mudanças no conteúdo exigem novo aceite; aprovação do plano de negócio não substitui esse registro. O CLI verifica vínculo e presença, não autentica a pessoa nem avalia gosto visual.
+
+
+## Propostas de interface e padrão aprovado
+
+Ao escolher uma tecnologia de frontend, o toolkit deve sugerir ao usuário uma interface moderna adequada ao contexto, apresentando uma proposta visual concreta (protótipo renderizado, telas ou imagens) e explicando suas decisões de UX/UI. Não basta listar frameworks ou descrever uma estética em texto.
+
+O usuário pode pedir novas sugestões e variações até gostar de uma delas, sem limite artificial de alternativas de design. Aproveite o feedback e os fatos existentes, registre versões e o que mudou, sem tratar exploração de design como tentativas de correção do loop de implementação. O usuário também pode fornecer sua própria referência: site, imagem, PDF, protótipo ou design system. Nesse caso, esclareça quais elementos devem ser preservados/adaptados e use essa referência como base da proposta. Referências próprias/autorizadas podem definir a identidade do produto; não imponha a estética do gerador.
+
+Enquanto nenhuma proposta for aceita, o design permanece draft. Após aceite humano efetivo, registre a proposta escolhida e o protótipo correspondente em design_reference: proposal_id, origin (toolkit ou user), revision, prototype_path e usage_rules. O protótipo escolhido deve estar em prototypes com seu hash. references admite URL HTTPS ou referência local do usuário com origin=user, path e sha256, sempre com accessed_at, analysis e application. Arquivos locais não precisam ser publicados na internet.
+
+A referência aprovada passa a ser o padrão de interface do produto: novas telas, componentes, navegação, tipografia, cores, espaçamento, estados e responsividade devem seguir a direção e as regras registradas. A revisão UX deve comparar a implementação com esse padrão e apontar desvios; o template técnico não o substitui. Ajustes dentro do padrão não exigem escolher outro design; mudanças materiais de direção exigem nova proposta e novo aceite vinculado ao conteúdo/protótipos.
+
+Após aprovação, explore alternativas em rascunhos/protótipos separados e preserve a versão e os artefatos aprovados. Pedir uma sugestão nova não revoga nem sobrescreve o padrão ativo. Só promova a substituição após novo aceite explícito, preservando o histórico sanitizado de versões e decisões. Não reaproveite o aceite antigo para trocar a referência.

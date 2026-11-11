@@ -59,3 +59,8 @@ O perfil deve declarar orientação, gerador e capacidade realmente observada se
 ## Qualidade de UX/UI de produto
 
 Escolher framework não define experiência ou direção visual. Para UI, siga fabrica/ui/experience-quality.md e o briefing references/interface-design.json. Pesquise referências adequadas ao público, analise jornadas e proponha direção visual específica, tokens, conteúdo, estados e comportamento responsivo. Observe protótipos renderizados, critique e refine; a referência neutra do gerador não é produto final. O candidato de UI exige ui-design-check com aceite UX separado e vinculado ao conteúdo/protótipos. A revisão UX aprovada exige ux_assessment completo com evidências e mínimo 4/5 em cada critério; sem visão real dos artefatos ou evidência suficiente, bloqueie a avaliação visual. Notas e validação estrutural não certificam liderança de mercado, qualidade estética ou conformidade por si mesmas.
+
+
+## Escolha e continuidade da referência de interface
+
+Após a escolha de frontend, proponha uma interface visual moderna adequada ao contexto. Aceite novas solicitações de sugestões até o usuário escolher, ou use sua referência própria (URL/arquivo/protótipo/design system). Não contar essa exploração como correções limitadas de implementação. Registre proposta, origem, versão, protótipo e usage_rules em design_reference, com aceite UX vinculado. A referência aprovada é o padrão do produto e deve orientar telas/componentes e revisão UX. Não a trocar por um template genérico ou por alternativa não aprovada. Explore novas opções separadamente; substituição material exige novo aceite e preservação do histórico aprovado.

@@ -110,7 +110,7 @@ function approveBusiness(repo){
  save('references/project-state.json',{...state,scope_status:'defined',plan_gate:'approved',plan_path:'references/business-plan.json',approval_path:'references/approval.json'});
  const design=JSON.parse(readFileSync(join(repo,'references/interface-design.json')));
  save('references/ux-prototype.html','<!doctype html><main>Protótipo sintético do teste de contrato</main>');
- Object.assign(design,{status:'approved',experience_goals:['Fluxo compreensível para atendentes'],references:[{url:'https://designsystem.digital.gov/',accessed_at:'2026-11-10',analysis:'Fixture de análise de hierarquia e legibilidade',application:'Fixture de aplicação ao formulário'}],visual_direction:Object.fromEntries(['principles','typography','layout','color','spacing','components','motion'].map(key=>[key,['Direção específica revisada nesta fixture']])),journeys:[{task:'Registrar solicitação',steps:['Abrir formulário','Confirmar dados'],states:['Vazio','Erro','Sucesso'],acceptance:['Atendente consegue concluir']}],responsive_rules:['Adaptar navegação ao mobile'],content_guidelines:['Texto claro e específico'],validation_plan:['Revisar protótipo e testar tarefas'],prototypes:[{path:'references/ux-prototype.html',sha256:hash(readFileSync(join(repo,'references/ux-prototype.html'))),description:'Mockup de fixture, não prova de qualidade visual'}],approval_reference:'references/ux-design-approval.json'});
+ Object.assign(design,{status:'approved',design_reference:{proposal_id:'toolkit-option-1',origin:'toolkit',revision:'1.0',prototype_path:'references/ux-prototype.html',usage_rules:['Aplicar padrão aprovado nas telas do produto']},experience_goals:['Fluxo compreensível para atendentes'],references:[{url:'https://designsystem.digital.gov/',accessed_at:'2026-11-10',analysis:'Fixture de análise de hierarquia e legibilidade',application:'Fixture de aplicação ao formulário'}],visual_direction:Object.fromEntries(['principles','typography','layout','color','spacing','components','motion'].map(key=>[key,['Direção específica revisada nesta fixture']])),journeys:[{task:'Registrar solicitação',steps:['Abrir formulário','Confirmar dados'],states:['Vazio','Erro','Sucesso'],acceptance:['Atendente consegue concluir']}],responsive_rules:['Adaptar navegação ao mobile'],content_guidelines:['Texto claro e específico'],validation_plan:['Revisar protótipo e testar tarefas'],prototypes:[{path:'references/ux-prototype.html',sha256:hash(readFileSync(join(repo,'references/ux-prototype.html'))),description:'Mockup de fixture, não prova de qualidade visual'}],approval_reference:'references/ux-design-approval.json'});
  save('references/ux-approval.md','Fixture: usuário aprovou explicitamente esta direção e protótipo de UX.');
  save('references/ux-design-approval.json',{schema_version:1,kind:'ux_design',decision:'approved',design_sha256:designDigest(design),approved_by:'Responsável pelo design',approved_at:'2026-11-11T00:00:00Z',source_reference:'references/ux-approval.md'});
  save('references/interface-design.json',design);
@@ -217,5 +217,18 @@ test('product UX brief requires actual direction, journeys, prototype and human 
   const path=join(repo,'references/interface-design.json');const original=readFileSync(path,'utf8');const changed=JSON.parse(original);changed.visual_direction.color=['Nova direção sem novo aceite'];writeFileSync(path,JSON.stringify(changed));assert.throws(()=>design.inspectDesign(repo),/aceite UX/);writeFileSync(path,original);
   writeFileSync(join(repo,'references/ux-prototype.html'),'changed prototype');
   assert.throws(()=>design.inspectDesign(repo),/protótipo|evidência/);
+ }finally{rmSync(repo,{recursive:true,force:true});}
+});
+
+test('accepted design records selected proposal as product standard and accepts local user references',async()=>{
+ const {inspectDesign,designDigest}=await import('../scripts/lib/interface-design.mjs');const repo=fixture();
+ try{
+  approveBusiness(repo);const path=join(repo,'references/interface-design.json');const design=JSON.parse(readFileSync(path));
+  delete design.design_reference;writeFileSync(path,JSON.stringify(design));assert.throws(()=>inspectDesign(repo),/referência|padrão/);
+  const prototype=design.prototypes[0];design.design_reference={proposal_id:'user-option-2',origin:'user',revision:'2',prototype_path:prototype.path,usage_rules:['Aplicar hierarquia, tipografia e componentes nas novas telas']};
+  design.references=[{origin:'user',path:prototype.path,sha256:prototype.sha256,accessed_at:'2026-11-11',analysis:'Referência própria informada pelo usuário',application:'Padrão visual escolhido para o produto'}];
+  writeFileSync(path,JSON.stringify(design));const approvalPath=join(repo,design.approval_reference);const approval=JSON.parse(readFileSync(approvalPath));approval.design_sha256=designDigest(design);writeFileSync(approvalPath,JSON.stringify(approval));
+  const checked=inspectDesign(repo);assert.equal(checked.design_reference.origin,'user');assert.equal(checked.design_reference.proposal_id,'user-option-2');
+  design.design_reference.usage_rules=['Novo padrão não aprovado'];writeFileSync(path,JSON.stringify(design));assert.throws(()=>inspectDesign(repo),/aceite UX/);
  }finally{rmSync(repo,{recursive:true,force:true});}
 });

@@ -54,6 +54,8 @@ A aprovação técnica da base e a aprovação do plano de negócio são decisõ
 
 ## Interfaces modernas conforme o contexto
 
+O toolkit sugere uma proposta visual moderna e pode apresentar novas opções até o usuário gostar de uma. O usuário também pode fornecer sua própria referência de interface/design. Após aprovação explícita, a referência escolhida torna-se o padrão do produto e deve orientar telas e componentes; sua substituição exige novo aceite.
+
 Quando o projeto precisa de interface, o toolkit registra sua tecnologia separadamente do backend e prepara **ui-engineer**, uma skill especializada e os adaptadores dos provedores selecionados. O desenho parte do público, tarefas e jornadas: pesquisa referências reais com fontes/datas, propõe uma direção visual contextual e define hierarquia, tipografia, grid, tokens, conteúdo, estados e uso mobile. A meta é qualidade competitiva para o produto; um scaffold ou uma estética da moda não comprovam esse resultado.
 
 O agente registra o desenho em `references/interface-design.json` com `ui-design-init`, prototipa na tecnologia escolhida, inspeciona o resultado renderizado em browser/ferramenta nativa e refina a composição e a interação a partir de crítica visual e observações de uso. O aceite humano efetivo do desenho e `ui-design-check` são exigidos antes do candidato de UI, vinculados ao contexto, decisão e perfil atuais. O comando inicia/valida registros; não cria pesquisa, protótipo ou aprovação automaticamente.
