@@ -64,3 +64,8 @@ Escolher framework não define experiência ou direção visual. Para UI, siga f
 ## Escolha e continuidade da referência de interface
 
 Após a escolha de frontend, proponha uma interface visual moderna adequada ao contexto. Aceite novas solicitações de sugestões até o usuário escolher, ou use sua referência própria (URL/arquivo/protótipo/design system). Não contar essa exploração como correções limitadas de implementação. Registre proposta, origem, versão, protótipo e usage_rules em design_reference, com aceite UX vinculado. A referência aprovada é o padrão do produto e deve orientar telas/componentes e revisão UX. Não a trocar por um template genérico ou por alternativa não aprovada. Explore novas opções separadamente; substituição material exige novo aceite e preservação do histórico aprovado.
+
+
+## Apresentação de produto real
+
+Após criação/adoção, README, SOLUTION_CONTEXT, retomada e entrada da fábrica devem apresentar o produto, seus fatos, decisões e próximo passo. Entradas nativas dos provedores devem continuar o projeto real, sem oferecer onboarding como fluxo ativo. Manuais genéricos são referência secundária. Atualize os resumos com a evolução e confira o estado autoritativo em project-state.json; não alegue funcionalidades prontas a partir da base gerada. Nunca reaplicar adoção em produto real ou reescrever documentos personalizados apenas para atualizar a apresentação. Novos produtos não herdam o manual contextual ou fatos privados do produto de origem.

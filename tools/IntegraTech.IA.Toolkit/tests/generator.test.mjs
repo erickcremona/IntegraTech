@@ -61,6 +61,14 @@ test('gerador: identidades, três apresentações e provedores independentes', a
     assert.equal((await main(['precheck', '--phase', 'business'])).status, 'blocked');
     assert.equal((await main(['precheck', '--phase', 'discovery'])).status, 'ready');
     assert.ok(!readFileSync(join(target, 'README.md'), 'utf8').includes('erickcremona'));
+    const entrance=readFileSync(join(target,'README.md'),'utf8');
+    assert.ok(entrance.includes(fullContext.problem));
+    assert.ok(entrance.includes('Próximo passo'));
+    assert.ok(readFileSync(join(target,'references/README.md'),'utf8').includes(name));
+    const entry=readFileSync(join(target,provider==='claude'?'CLAUDE.md':'AGENTS.md'),'utf8');
+    assert.ok(!entry.includes('Se is_model=true'));
+    assert.ok(entry.includes('produto em desenvolvimento'));
+    assert.ok(readFileSync(join(target,`tools/${name}.IA.Toolkit/README.md`),'utf8').includes('Fábrica dedicada'));
     const userReadme = readFileSync(join(target, 'README.md'), 'utf8');
     assert.ok(userReadme.includes('[Fluxo de uso do toolkit](docs/inicio/fluxo-toolkit.md)'));
     assert.ok(existsSync(join(target, 'docs/inicio/fluxo-toolkit.md')));
@@ -69,12 +77,14 @@ test('gerador: identidades, três apresentações e provedores independentes', a
     assert.ok(userReadme.includes('loop-engenharia.md'));
     if (provider === 'codex') {
       writeFileSync(join(target, 'references/business-context.json'), JSON.stringify({ problem: 'Contexto privado do projeto anterior' }));
+      writeFileSync(join(toolkit,'README.md'),'Contexto privado no manual do produto anterior');
       const child = mkdtempSync(join(tmpdir(), 'model-regenerated-'));
       const { createProject: createAgain } = await import(pathToFileURL(join(toolkit, 'scripts/lib/project-generator.mjs')));
       assert.equal(createAgain(generationOptions({ name: 'CopiaLimpa', target: child, provider: 'both', presentation: 'console' })).status, 'created');
       assert.equal(read(join(child, 'references/business-context.json')).problem, fullContext.problem);
       assert.ok(existsSync(join(child, '.claude/agents/business-analyst.md')));
       assert.ok(!readFileSync(join(child, 'SOLUTION_CONTEXT.md'), 'utf8').includes('Contexto privado'));
+      assert.ok(!readFileSync(join(child,'tools/CopiaLimpa.IA.Toolkit/README.md'),'utf8').includes('Contexto privado'));
     }
   }
 });

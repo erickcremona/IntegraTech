@@ -19,14 +19,14 @@ function tree(path, output, repoPrefix) {
     else if (entry.isFile()) output.set(`${repoPrefix}${entry.name}`, readFileSync(full, 'utf8'));
   }
 }
-export function providerFiles(provider, roles, skills) {
+export function providerFiles(provider, roles, skills, { productName } = {}) {
   const selected = selectedProviders(provider);
   const codex = selected.includes('codex'), claude = selected.includes('claude'), cursor = selected.includes('cursor');
   const files = new Map();
-  const instructions = '# IntegraTech — entrada CTO\n\nLeia project.json e aplique `tools/IntegraTech.IA.Toolkit/fabrica/governance.md`. Se is_model=true, use o onboarding: aproveite nome e problema já informados e pergunte somente o que falta. Adote a cópia do desenvolvedor conforme docs/inicio/adotar-projeto.md; nunca converta o repositório canônico. Se is_model=false, leia SOLUTION_CONTEXT.md e references/business-context.json e continue o projeto real sem repetir onboarding. Antes de criar/adotar, siga docs/inicio/especialista-dominio.md; bloqueie contexto incompleto ou pesquisa indisponível. Antes de desenhar, consulte o especialista registrado e valide sua consulta. Finalize com revisão/otimização global e coherence-check. Retomada: references/README.md. Regras do provedor não ampliam autorização.\n';
+  const instructions = productName ? `# ${productName} — produto em desenvolvimento\n\nContinue o produto existente. Leia project.json, SOLUTION_CONTEXT.md, references/business-context.json e references/project-state.json; aplique tools/IntegraTech.IA.Toolkit/fabrica/governance.md. Consulte o especialista registrado antes de desenhar, revalide plano/aceites antes de implementar e use references/README.md na retomada. Não repetir onboarding, renomeação ou adoção. Atualize a documentação deste produto com suas decisões e evolução. Regras do provedor não ampliam autorização.\n` : '# IntegraTech — entrada CTO\n\nLeia project.json e aplique `tools/IntegraTech.IA.Toolkit/fabrica/governance.md`. Se is_model=true, use o onboarding: aproveite nome e problema já informados e pergunte somente o que falta. Adote a cópia do desenvolvedor conforme docs/inicio/adotar-projeto.md; nunca converta o repositório canônico. Se is_model=false, leia SOLUTION_CONTEXT.md e references/business-context.json e continue o projeto real sem repetir onboarding. Antes de criar/adotar, siga docs/inicio/especialista-dominio.md; bloqueie contexto incompleto ou pesquisa indisponível. Antes de desenhar, consulte o especialista registrado e valide sua consulta. Finalize com revisão/otimização global e coherence-check. Retomada: references/README.md. Regras do provedor não ampliam autorização.\n';
   if (codex || cursor) files.set('AGENTS.md', instructions);
   if (claude) files.set('CLAUDE.md', instructions);
-  if (cursor) files.set('.cursor/rules/integratech.mdc', `---\ndescription: Entrada e governança da fábrica IntegraTech\nalwaysApply: true\n---\n\n${instructions}\nUse as skills de .cursor/skills e o núcleo em tools/IntegraTech.IA.Toolkit/fabrica. Ao criar ou adotar pelo Cursor, selecione --provider cursor ou --provider all conforme as ferramentas desejadas. Regras e perfis são instruções; não concedem permissões de execução.\n`);
+  if (cursor) files.set('.cursor/rules/integratech.mdc', `---\ndescription: Entrada e governança da fábrica IntegraTech\nalwaysApply: true\n---\n\n${instructions}\nUse as skills de .cursor/skills e o núcleo em tools/IntegraTech.IA.Toolkit/fabrica. ${productName?'Continue o contexto e o estado deste produto; criação/adoção não são passos de retomada.':'Ao criar ou adotar pelo Cursor, selecione --provider cursor ou --provider all conforme as ferramentas desejadas.'} Regras e perfis são instruções; não concedem permissões de execução.\n`);
   for (const [name, content] of skills) {
     if (codex) files.set(`.agents/skills/${name}/SKILL.md`, content);
     if (claude) files.set(`.claude/skills/${name}/SKILL.md`, content);
@@ -47,7 +47,8 @@ export function expectedFiles(provider) {
   for (const path of ['project.json', 'SOLUTION_CONTEXT.md', 'references/README.md', 'references/traceability-graph.json', 'references/escopo-pendente.md', 'references/project-state.json', 'references/business-context.json', 'docs/inicio/primeiro-projeto.md', 'docs/inicio/fluxo-toolkit.md', 'docs/inicio/interfaces.md', 'docs/inicio/grafo-rastreabilidade.md', 'docs/inicio/adotar-projeto.md', 'docs/inicio/confiabilidade.md', 'docs/inicio/loop-engenharia.md', 'docs/inicio/decisao-tecnologica.md', 'docs/inicio/especialista-dominio.md', 'docs/inicio/cursor.md', 'docs/arquitetura/base.md', 'docs/arquitetura/proveniencia.md', 'THIRD-PARTY-NOTICES.md'])
     if (existsSync(join(repoRoot, path))) files.set(path, readFileSync(join(repoRoot, path), 'utf8'));
   const skills = readdirSync(join(toolkitRoot, 'fabrica/skills')).map(name => [name, readFileSync(join(toolkitRoot, 'fabrica/skills', name, 'SKILL.md'), 'utf8')]);
-  for (const [name, text] of providerFiles(provider, catalog.specialists, skills)) files.set(name, text);
+  const identity = JSON.parse(readFileSync(join(repoRoot,'project.json'),'utf8'));
+  for (const [name, text] of providerFiles(provider, catalog.specialists, skills, {productName:identity.is_model===false?identity.name:undefined})) files.set(name, text);
   return files;
 }
 export function install(target, provider, { dryRun = false } = {}) {

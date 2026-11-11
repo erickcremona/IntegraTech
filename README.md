@@ -38,6 +38,8 @@ Worker é um exemplo opcional, mantido apenas quando processamento em segundo pl
 
 Na criação/adoção, `all` inclui as três ferramentas; `both`, padrão existente, inclui somente Codex+Claude. Consulte [uso no Cursor](docs/inicio/cursor.md). O nome do projeto deve ser PascalCase alfanumérico, sem espaços ou nomes reservados.
 
+Após a criação ou adoção, os documentos de entrada passam a apresentar seu produto: problema, público, resultados, decisões e próximo passo. Os agentes continuam o projeto existente; os manuais de criação do toolkit ficam como referência secundária. Os resumos devem acompanhar a evolução e o estado atual é conferido em references/project-state.json.
+
 ## Conduza o trabalho pela conversa
 
 | Quando precisar | Exemplo de pedido |

@@ -39,6 +39,10 @@ test('adoção: simula sem escrita e converte nome/contexto na mesma pasta', opt
   assert.equal(existsSync(join(f.repo, 'IntegraTech.sln')), false);
   const identity = JSON.parse(readFileSync(join(f.repo, 'project.json')));
   assert.equal(identity.is_model, false);
+  assert.ok(readFileSync(join(f.repo,'README.md'),'utf8').includes(args.context.problem));
+  assert.ok(readFileSync(join(f.repo,'SOLUTION_CONTEXT.md'),'utf8').includes(args.context.problem));
+  assert.ok(readFileSync(join(f.repo,'references/README.md'),'utf8').includes(args.context.problem));
+  assert.ok(!readFileSync(join(f.repo,'AGENTS.md'),'utf8').includes('Se is_model=true'));
   assert.equal(identity.adoption.status, 'adopted');
   const context = JSON.parse(readFileSync(join(f.repo, 'references/business-context.json')));
   assert.equal(context.problem, args.context.problem);
