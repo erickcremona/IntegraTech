@@ -1,4 +1,4 @@
-import {sourceRoot,sourceFile} from './project-locations.mjs';
+import {sourceRoot,sourceFile,linkedProject,interfaceSourcePath} from './project-locations.mjs';
 import {assertSDDTask} from './sdd-workflow.mjs';
 import { inspectDesign } from './interface-design.mjs';
 import { existsSync, readFileSync, writeFileSync, unlinkSync } from 'node:fs';
@@ -19,6 +19,17 @@ const baseReviewTypes = Object.freeze(['code', 'security']);
 function requiredReviewTypes(repo,state,changed){
  const registered=existsSync(contained(repo,'references/interface-profile.json'));
  if(!registered){
+  if(linkedProject(repo)){
+   const paths=[...new Set([...changed,...inventory(repo).map(item=>item.path)])];
+   const signals=paths.some(interfaceSourcePath);
+   const inlineUI=changed.some(path=>{
+    if(!/\.(?:[cm]?[jt]s|cs|kt)$/i.test(path))return false;
+    const full=sourceFile(repo,path);if(!existsSync(full))return false;
+    const text=readFileSync(full,'utf8');return /(?:\bfrom\s*['"](?:react(?:['"/])|@angular\/|vue['"]|svelte(?:['"/]))|\b(?:require|import)\s*\(\s*['"](?:react(?:['"/])|@angular\/|vue['"]|svelte(?:['"/]))|\bReact\.createElement\b|\bMicrosoft\.Maui\b|\bRenderTreeBuilder\b|\bdocument\.(?:querySelector|createElement|getElementById)\b|<\/[A-Za-z][\w.:-]*\s*>|<[A-Za-z][\w.:-]*(?:\s[^<>]*)?\s*\/>)/i.test(text);
+   });
+   if(changed.some(interfaceSourcePath)||inlineUI||signals&&changed.some(path=>/\.(?:[cm]?[jt]s|cs|kt|json)$/i.test(path)))throw new Error('interface existente exige classificação e perfil de interface aprovado antes do candidato');
+  }
+
   if(state.assigned_agent==='ui-engineer')throw new Error('agente UI exige especialização aprovada');
   return [...baseReviewTypes];
  }

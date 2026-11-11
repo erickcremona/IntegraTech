@@ -55,7 +55,7 @@ mindmap
 
 ## Sistemas existentes
 
-O toolkit também pode manter um sistema já existente, preservando seu código na pasta original. Informe que deseja trabalhar em um legado e forneça o local quando solicitado. Cada sistema terá contexto, planos SDD, grafo e evidências em uma área de gestão separada dentro da instalação do toolkit. O vínculo não modifica o sistema; as alterações de manutenção são implementadas na origem após os gates aplicáveis.
+O toolkit também pode manter um sistema já existente, preservando seu código na pasta original. Informe que deseja trabalhar em um legado e forneça o local quando solicitado. Cada sistema terá contexto, planos SDD, grafo e evidências em uma área de gestão separada dentro da instalação do toolkit. O vínculo não modifica o sistema; as alterações de manutenção são implementadas na origem após os gates aplicáveis. Sinais de interface sem perfil aprovado bloqueiam o candidato de manutenção; finalizar a coerência preserva a entrega quando apenas os metadados de encerramento mudam.
 
 Uma instalação pode manter vários vínculos, selecionados explicitamente por --project ID. A análise parte da arquitetura e stack existentes; reconhecer uma tecnologia não garante que haja executor de validação compatível. [Fluxo de vínculo e manutenção](docs/inicio/sistemas-existentes.md).
 

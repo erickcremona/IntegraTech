@@ -24,3 +24,5 @@ export function linkedProject(repo){
 export const sourceRoot=repo=>linkedProject(repo)?.source_root??resolve(repo);
 export function sourceFile(repo,path){const link=linkedProject(repo);if(link&&ignoredSourcePath(path))throw new Error('arquivo sensível/operacional fora do escopo do fonte');return contained(link?.source_root??repo,path);}
 export const sourceBinding=repo=>linkedProject(repo)?.binding_sha256;
+
+export const interfaceSourcePath=path=>/\.(?:tsx|jsx|vue|svelte|html|css|scss|sass|less|razor|cshtml|xaml|swift|storyboard)$/i.test(path)||/(?:^|\/)(?:frontend|ui|views|pages|components|wwwroot|android|ios)(?:\/|$)/i.test(path)||/(?:^|\/)(?:angular\.json|AndroidManifest\.xml)$/.test(path);

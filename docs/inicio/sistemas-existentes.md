@@ -67,3 +67,8 @@ UI existente deve ser analisada e preservada. Uma modernização pode ser propos
 Push, merge, migração destrutiva e deploy continuam dependendo de autorização aplicável. Consulte [SDD](sdd.md), [interfaces](interfaces.md) e [fluxo geral](fluxo-toolkit.md).
 
 No modo legado, a área dedicada não contém solução, Worker, API ou Console .NET de exemplo: esses exemplos não são instalados nem usados como fonte do produto. O código .NET pertencente ao legado é preservado. Os templates da instalação compartilhada permanecem disponíveis para criação de outros produtos; não se apagam arquivos de outro sistema ou modelos compartilhados ao registrar um vínculo.
+
+
+O diagnóstico registra candidatos de interface e mantém sua classificação pendente. O loop também verifica os arquivos atuais: alterações com sinais de UI sem perfil de interface aprovado são bloqueadas, inclusive quando o executor é application-engineer. Registre a decisão técnica e prepare o perfil e o desenho UX antes de tentar o candidato; a detecção é conservadora e não substitui a análise da arquitetura.
+
+Concluir o relatório de coerência não invalida a entrega por atualizar somente workflow_status/coherence_path. Contexto, plano, aceite, vínculo, código e demais insumos continuam sujeitos às verificações de mudança. Execuções registradas antes da normalização de snapshots podem exigir nova validação; evidências antigas não são reescritas automaticamente.

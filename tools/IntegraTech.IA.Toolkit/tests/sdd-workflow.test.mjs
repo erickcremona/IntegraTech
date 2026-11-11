@@ -1,4 +1,4 @@
-import {runCoherenceChecks} from '../scripts/lib/domain-workflow.mjs';
+import {runCoherenceChecks,completeCoherence,repositorySnapshot} from '../scripts/lib/domain-workflow.mjs';
 import {attachProject,attachedProject} from '../scripts/lib/project-attachment.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -264,6 +264,16 @@ for (const external of [false,true]) for (const attestTests of [false, true]) te
   const finalStatus = sddStatus(f);
   assert.equal(finalStatus.status, 'completed');
   if(external){assert.equal(existsSync(join(f.source,'references')),false);assert.equal(existsSync(join(f.source,'qa-artifacts')),false);assert.equal(runCoherenceChecks({repo:f.repo,execute:()=>{throw new Error('must never run stock commands in legacy');}}).status,'ready');}
+  if(external){
+    const meta=JSON.parse(readFileSync(join(f.repo,f.state.specialist_path),'utf8'));
+    completeCoherence({repo:f.repo,report:{schema_version:1,context_sha256:meta.context_sha256,preparation_sha256:meta.preparation_sha256,skill_sha256:meta.skill_sha256,snapshot_sha256:repositorySnapshot(f.repo),assessments:['structure','code','tests','dependencies','configuration','documentation','skills','context'].map(area=>({area,status:'passed',conclusion:'Synthetic regression fixture'})),changes:[],pending:[]}});
+    assert.equal(engineeringStatus({repo:f.repo,id:nextDelegation.task_id}).delivery_valid,true);
+    assert.equal(runCoherenceChecks({repo:f.repo}).status,'ready');
+    const stateBytes=readFileSync(join(f.repo,'references/project-state.json'),'utf8');
+    f.save('references/project-state.json',{...JSON.parse(stateBytes),scope_status:'pending'});
+    assert.equal(engineeringStatus({repo:f.repo,id:nextDelegation.task_id}).delivery_valid,false);
+    f.save('references/project-state.json',stateBytes);
+  }
   assert.deepEqual(finalStatus.completed, ['register-task', 'list-task']);
   assert.deepEqual(finalStatus.ready, []);
   assert.deepEqual(finalStatus.phases, [{ id: 'register', completed: true }, { id: 'list', completed: true }]);
@@ -298,4 +308,17 @@ test('SDD completion rejects a delivered toolkit run that reuses the canonical I
   assert.throws(() => completeSDDTask({ repo: f.repo, id: 'register-task', runId: id }), /vínculo exato/);
   assert.deepEqual(sddStatus(f).completed, []);
   assert.deepEqual(sddStatus(f).ready, ['register-task']);
+});
+
+for(const path of ['src/screen.tsx','src/screen.css','src/frontend/screen.js','src/screen.js','src/angular.ts'])test(`attached UI without profile blocks application-engineer change: ${path}`,t=>{
+ const f=fixture(t,true);prepareActionPlan(f);const delegation=sddDelegation({repo:f.repo,id:'register-task'});let state=startTask({repo:f.repo,delegation,phase:'business',provider:'codex'});
+ for(let i=0;i<2;i++)state=advanceTask({repo:f.repo,id:state.id,expectedRevision:state.revision,event:{type:'gate_checked'}});
+ f.save(path,path==='src/screen.js'?"export function screen(){return document.createElement('button')}":path==='src/angular.ts'?"import {Component} from '@angular/core';":'/* synthetic interface source */');
+ assert.throws(()=>acceptCandidate({repo:f.repo,id:state.id,expectedRevision:state.revision,profile:'node-tests-v1'}),/interface.*perfil|perfil.*interface/i);
+});
+for(const [path,content] of [['src/backend.cs','public List<Request> GetRequests() => requests;'],['src/backend.ts','export async function load(): Promise<Result> { return result; }'],['src/backend.js','export const reactionCount = 0;'],['src/obsolete.mjs',null]])test(`attached backend without interface profile remains editable: ${path}`,t=>{
+ const f=fixture(t,true);if(content===null)f.save(path,'export const obsolete = true;');prepareActionPlan(f);const delegation=sddDelegation({repo:f.repo,id:'register-task'});let state=startTask({repo:f.repo,delegation,phase:'business',provider:'codex'});
+ for(let i=0;i<2;i++)state=advanceTask({repo:f.repo,id:state.id,expectedRevision:state.revision,event:{type:'gate_checked'}});
+ if(content===null)rmSync(f.disk(path));else f.save(path,content);
+ assert.equal(acceptCandidate({repo:f.repo,id:state.id,expectedRevision:state.revision,profile:'node-tests-v1'}).status,'validation_pending');
 });

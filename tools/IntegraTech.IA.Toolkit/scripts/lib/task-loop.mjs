@@ -49,7 +49,11 @@ export function snapshot(repo, delegation) {
     const full = sourceFile(repo, path);
     return [path, existsSync(full) ? digest(readFileSync(full)) : null];
   });
-  const controls=linked?documents.map(path=>[path,digest(readFileSync(contained(repo,path)))]):[];
+  const controls=linked?documents.map(path=>{
+    let bytes=readFileSync(contained(repo,path));
+    if(path==='references/project-state.json'){const state=JSON.parse(bytes);delete state.workflow_status;delete state.coherence_path;bytes=JSON.stringify(state);}
+    return [path,digest(bytes)];
+  }):[];
   return digest(JSON.stringify({ entries, ...(linked?{controls}:{}), policy: sha256(readFileSync(new URL('../../fabrica/policy.json', import.meta.url), 'utf8')) }));
 }
 export function persist(paths, state) {

@@ -2,13 +2,13 @@ import {existsSync,lstatSync,realpathSync,readFileSync,readdirSync,mkdirSync,wri
 import {resolve,join,dirname} from 'node:path';
 import {randomBytes,createHash} from 'node:crypto';
 import {assertNoLinks,contained,assertSanitized} from './paths.mjs';
-import {linkedProject,localDocument,overlaps,ignoredSourcePath} from './project-locations.mjs';
+import {linkedProject,localDocument,overlaps,ignoredSourcePath,interfaceSourcePath} from './project-locations.mjs';
 import {normalizeInitialContext} from './business-context.mjs';
 import {selectedProviders} from './provider-selection.mjs';
 const idCheck=id=>{if(typeof id!=='string'||!/^[a-z0-9][a-z0-9-]{0,59}$/.test(id))throw new Error('ID obrigatório: letras minúsculas, números e hífen');return id;};
 const directory=(repo,id)=>contained(resolve(repo),`.integratech/projects/${idCheck(id)}`);
 export function diagnoseSource(source){
- const manifests=[],technologies=new Set();let count=0;
+ const manifests=[],interface_candidates=[],technologies=new Set();let count=0;
  function walk(dir,prefix=''){
   for(const item of readdirSync(dir,{withFileTypes:true}).sort((a,b)=>a.name.localeCompare(b.name))){
    if(++count>10000)throw new Error('diagnóstico acima do limite de 10000 entradas; restrinja o escopo');
@@ -17,13 +17,14 @@ export function diagnoseSource(source){
    if(item.isDirectory())walk(join(dir,item.name),path+'/');
    else if(item.isFile()){
     const name=item.name;let technology;
+    if(interfaceSourcePath(path))interface_candidates.push(path);
     if(name==='package.json')technology='node';else if(/\.(?:csproj|sln)$/.test(name))technology='dotnet';else if(/^(?:pyproject\.toml|requirements.*\.txt|setup\.py)$/.test(name))technology='python';else if(name==='pom.xml'||/build\.gradle(?:\.kts)?$/.test(name))technology='java';else if(name==='go.mod')technology='go';else if(name==='Cargo.toml')technology='rust';else if(name==='composer.json')technology='php';
     if(technology){technologies.add(technology);manifests.push(path);}
    }
   }
  }
  walk(source);
- return {schema_version:1,scope:'manifest_names_only',manifests,technologies:[...technologies].sort().map(id=>({id})),validation_profiles:[],validation_status:'not_executed',next_step:'Analisar manifests, instruções do fonte, arquitetura e testes; confirmar contexto e perfil compatível antes de implementar. Detecção não certifica suporte.'};
+ return {schema_version:1,scope:'manifest_names_only',manifests,interface_candidates,interface_status:'unclassified',technologies:[...technologies].sort().map(id=>({id})),validation_profiles:[],validation_status:'not_executed',next_step:'Analisar manifests, instruções do fonte, arquitetura e testes; confirmar contexto e perfil compatível antes de implementar. Detecção não certifica suporte.'};
 }
 export function attachedProject({repo,id}){const root=directory(repo,id);const link=linkedProject(root);if(!link||link.id!==id)throw new Error('projeto anexado ausente ou divergente');return {id,repo:root,source:link.source_root,binding_sha256:link.binding_sha256};}
 export function listAttachedProjects({repo}){const root=contained(resolve(repo),'.integratech/projects');if(!existsSync(root))return {status:'ready',projects:[]};return {status:'ready',projects:readdirSync(root).filter(id=>/^[a-z0-9][a-z0-9-]{0,59}$/.test(id)).sort().map(id=>{try{const item=attachedProject({repo,id});return {id,status:'attached',name:localDocument(item.repo,'project.json').display_name??localDocument(item.repo,'project.json').name};}catch{return {id,status:'blocked'};}})};}

@@ -94,3 +94,5 @@ Execução SDD: em produtos novos, use especificação funcional e desenho técn
 
 
 Sistema legado externo: quando o usuário informar que o produto já existe, siga [sistemas existentes](sistemas-existentes.md). Solicite o local acessível se faltar, registre o vínculo externo e mantenha o fonte na origem e os registros na gestão separada. Não use adoção do modelo sobre esse sistema.
+
+Na manutenção de legado, finalizar a coerência preserva a entrega se apenas os metadados de encerramento mudarem. Candidatos com sinais de UI sem perfil aprovado são bloqueados até a classificação e preparação da interface; mudanças de backend sem esses sinais continuam pelo fluxo normal. Veja [sistemas existentes](sistemas-existentes.md).
