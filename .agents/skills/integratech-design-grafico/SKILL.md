@@ -1,6 +1,6 @@
 ---
 name: integratech-design-grafico
-description: Use when creating or refining visual assets such as imagens, ilustrações, infográficos, mapas mentais, diagramas, animações e motion graphics para documentação ou produtos.
+description: Use when users ask to criar uma imagem, gerar ilustração, melhorar mapa mental, fazer infográfico, animar um fluxo, criar GIF/vídeo ou pedir nova versão de uma peça visual, mesmo sem mencionar design, skill ou agente.
 ---
 
 # Design gráfico e motion

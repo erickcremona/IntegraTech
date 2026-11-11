@@ -221,6 +221,8 @@
     "tools/IntegraTech.IA.Toolkit/fabrica/templates/release-approval.json",
     "docs/inicio/publicacao.md",
     "tools/IntegraTech.IA.Toolkit/fabrica/skills/integratech-design-grafico/SKILL.md",
-    "docs/inicio/design-grafico.md"
+    "docs/inicio/design-grafico.md",
+    "tools/IntegraTech.IA.Toolkit/scripts/lib/request-routing.mjs",
+    "tools/IntegraTech.IA.Toolkit/tests/request-routing.test.mjs"
   ]
 }

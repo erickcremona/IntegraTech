@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import {routeRequest} from './lib/request-routing.mjs';
 import {initializeRelease,checkRelease,deployRelease} from './lib/release-workflow.mjs';
 import {attachProject,attachedProject,listAttachedProjects} from './lib/project-attachment.mjs';
 import { initializeDesign,inspectDesign,designHash } from './lib/interface-design.mjs';
@@ -85,6 +86,7 @@ const help = `IntegraTech Toolkit — Node.js >=22
   restore-adoption --journal PATH [--dry-run]
   create-project --name NomeProjeto --target PATH [--repo RAIZ_DO_ACEITE] [--provider codex|claude|cursor|both|all] --context-file PATH --preparation-file PATH --technology-file PATH [--presentation worker|api|console] [--dry-run]
   precheck --phase toolkit|discovery|design|business [--repo PATH]
+  route --request "PEDIDO DO USUÁRIO" [--last-asset image|animation|diagram]
   route --category toolkit|worker|integration|qa|security|data|review|discovery|release|deployment|graphic-design|visual-assets|motion-design
   providers
   hash --file PATH
@@ -129,7 +131,7 @@ export async function main(argv, services = {}) {
     'release-init':['repo','id'],'release-check':['repo','id','stage'],'release-deploy':['repo','id','stage','approval-file','dry-run'],
     'sdd-plan':['repo','dry-run'],'sdd-task':['repo','id'],'sdd-status':['repo'],'sdd-complete':['repo','id','run-id'],
     'attach-project':['repo','id','source','name','provider','context-file','dry-run'], 'attached-projects':['repo'], 'project-status':['repo','project'],
-    help: [], 'create-project': ['repo', 'name', 'target', 'provider', 'presentation', 'dry-run', 'context-file', 'technology-file', 'preparation-file'], precheck: ['repo', 'phase'], route: ['category'], providers: [], hash: ['file'],
+    help: [], 'create-project': ['repo', 'name', 'target', 'provider', 'presentation', 'dry-run', 'context-file', 'technology-file', 'preparation-file'], precheck: ['repo', 'phase'], route: ['category','request','last-asset'], providers: [], hash: ['file'],
     onboarding: ['repo', 'name', 'context-file'], 'adopt-project': ['repo', 'name', 'context-file', 'dry-run', 'presentation', 'technology-file', 'provider', 'preparation-file'], 'technology-check': ['repo', 'context-file', 'decision-file'], 'restore-adoption': ['journal', 'dry-run'],
     'research-collect': ['context-file', 'preparation-file', 'output'], 'specialist-check': ['context-file', 'preparation-file'], 'specialist-prepare': ['repo', 'preparation-file'], 'specialist-status': ['repo'], 'consultation-record': ['repo', 'file'], 'consultation-check': ['repo', 'file'], 'coherence-snapshot': ['repo'], 'coherence-run': ['repo'], 'coherence-check': ['repo', 'report-file'], 'coherence-status': ['repo'],
     doctor: [], 'policy-check': ['action', 'agent', 'phase', 'repo'], eval: ['mode', 'provider', 'trials', 'live'], 'run-state': ['id', 'repo'], 'close-interrupted-run': ['id', 'repo'], 'secret-scan': ['repo'],
@@ -246,7 +248,7 @@ export async function main(argv, services = {}) {
     case 'hash': return { sha256: sha256(readFileSync(resolve(options.file))) };
     case 'create-project': return createProject({ name: options.name, target: options.target, provider: options.provider, presentation: options.presentation, context: readContext(options['context-file']), technologyDecision: readDecision(options['technology-file']), preparation: readDecision(options['preparation-file']), researchRequest: services.researchRequest, decisionRepo: resolve(options.repo ?? repoRoot), dryRun: options['dry-run'] ?? false });
     case 'precheck': return withTraceability(precheck(resolve(options.repo ?? repoRoot), options.phase));
-    case 'route': return route(options.category);
+    case 'route': if(options.request!==undefined){if(options.category!==undefined)throw new Error('Use categoria ou pedido, não ambos');return routeRequest({request:options.request,lastAsset:options['last-asset']});}if(options['last-asset']!==undefined)throw new Error('Contexto visual exige pedido');return route(options.category);
     case 'providers': return Promise.all(['codex', 'claude', 'cursor'].map(provider => checkProvider(provider)));
     case 'install': return install(options.target ?? repoRoot, options.provider, { dryRun: options['dry-run'] ?? false });
     case 'contract': validateContract(options.kind, read(options.file)); return { status: 'valid', kind: options.kind };
@@ -270,7 +272,7 @@ if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1]
   try {
     const result = await main(process.argv.slice(2));
     console.log(typeof result === 'string' ? result : JSON.stringify(result, null, 2));
-    if (['blocked', 'failed', 'needs_input', 'empty', 'needs_review', 'preparing'].includes(result?.status) || result?.failed > 0) process.exitCode = 2;
+    if (['blocked', 'failed', 'needs_input', 'empty', 'needs_review', 'needs_clarification', 'preparing'].includes(result?.status) || result?.failed > 0) process.exitCode = 2;
   } catch (error) {
     // Adoption errors identify controlled conflicts/recovery paths, never print file contents.
     if (['adopt-project', 'restore-adoption', 'create-project', 'research-collect', 'specialist-check', 'specialist-prepare', 'specialist-status', 'consultation-record', 'consultation-check', 'coherence-check', 'coherence-status', 'coherence-run'].includes(process.argv[2])) console.error(error instanceof SyntaxError ? 'Documento da operação inválido.' : error.message);

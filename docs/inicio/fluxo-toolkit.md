@@ -105,3 +105,6 @@ Publicação: após criar a solução, planeje distribuição com release-engine
 
 
 Design gráfico: rota graphic-design/visual-assets/motion-design aciona graphic-designer e a skill integratech-design-grafico para imagens e animações conforme as ferramentas disponíveis. Veja [guia de design gráfico](design-grafico.md).
+
+
+Pedidos visuais são reconhecidos pela linguagem da conversa: “crie uma imagem”, “melhore o mapa mental” ou “anime este fluxo” acionam a skill de design gráfico e a coordenação de graphic-designer, sem o usuário precisar conhecer nomes técnicos. Revisões curtas usam o material anterior quando ele está definido; ambiguidades reais exigem esclarecimento. A triagem auxiliar route --request TEXT [--last-asset image|animation|diagram] usa regras limitadas; o CTO interpreta o contexto e não confunde criação de arte com implementação de upload/armazenamento de imagens. A chamada ao responsável ocorre na sessão nativa, conforme capacidades/permissões, sem automatizar publicação ou fingir geração.

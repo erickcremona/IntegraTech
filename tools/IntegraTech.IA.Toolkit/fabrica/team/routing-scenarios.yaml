@@ -67,6 +67,18 @@
     {
       "category": "ux-review",
       "expected": "ux-accessibility-reviewer"
+    },
+    {
+      "category": "graphic-design",
+      "expected": "graphic-designer"
+    },
+    {
+      "category": "visual-assets",
+      "expected": "graphic-designer"
+    },
+    {
+      "category": "motion-design",
+      "expected": "graphic-designer"
     }
   ]
 }

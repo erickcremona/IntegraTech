@@ -29,3 +29,8 @@ O agente deve informar decisões de design, arquivos e formatos reais, dimensõe
 Ao integrar arquivos ao produto, verifique também os limites de tamanho/inventário e os perfis de validação do loop; gerar uma imagem ou vídeo não comprova que esse ativo pode ser entregue pelo executor atual. Não excluir arquivos ou evidências do controle apenas para contornar um bloqueio.
 
 Aprovação de arte não autoriza publicação, push ou substituição silenciosa da identidade do produto. Mantenha README/mapa/guias atualizados quando a arte representar o funcionamento da ferramenta.
+
+
+## Reconhecimento do pedido
+
+Pedidos visuais são reconhecidos pela linguagem da conversa: “crie uma imagem”, “melhore o mapa mental” ou “anime este fluxo” acionam a skill de design gráfico e a coordenação de graphic-designer, sem o usuário precisar conhecer nomes técnicos. Revisões curtas usam o material anterior quando ele está definido; ambiguidades reais exigem esclarecimento. A triagem auxiliar route --request TEXT [--last-asset image|animation|diagram] usa regras limitadas; o CTO interpreta o contexto e não confunde criação de arte com implementação de upload/armazenamento de imagens. A chamada ao responsável ocorre na sessão nativa, conforme capacidades/permissões, sem automatizar publicação ou fingir geração.

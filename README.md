@@ -143,6 +143,8 @@ Você recebe arquivos alterados, resultados observados, limitações e próximos
 
 O toolkit inclui graphic-designer e a skill integratech-design-grafico para imagens, ilustrações, infográficos, mapas mentais e motion. A criação parte de brief, conteúdo correto, identidade e tamanho de uso, seguida de inspeção visual. Animações exigem linha do tempo, fallback estático e atenção a reduced motion. As ferramentas disponíveis determinam os formatos reais de entrega; gerar uma imagem não significa gerar vídeo. [Fluxo e capacidades de design gráfico](docs/inicio/design-grafico.md).
 
+Pedidos visuais são reconhecidos pela linguagem da conversa: “crie uma imagem”, “melhore o mapa mental” ou “anime este fluxo” acionam a skill de design gráfico e a coordenação de graphic-designer, sem o usuário precisar conhecer nomes técnicos. Revisões curtas usam o material anterior quando ele está definido; ambiguidades reais exigem esclarecimento. A triagem auxiliar route --request TEXT [--last-asset image|animation|diagram] usa regras limitadas; o CTO interpreta o contexto e não confunde criação de arte com implementação de upload/armazenamento de imagens. A chamada ao responsável ocorre na sessão nativa, conforme capacidades/permissões, sem automatizar publicação ou fingir geração.
+
 ## Publicação e prontidão
 
 Após criar a solução, release-engineer orienta a distribuição conforme a stack, o público, os ambientes, custos e operação. O agente deve pesquisar alternativas e preparar um plano progressivo, sem escolher nuvem ou loja por padrão. release-init/check avaliam a versão por critérios obrigatórios e evidências, separando homologação de produção; uma pontuação não compensa bloqueios.
