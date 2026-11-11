@@ -98,6 +98,13 @@
       "read_only": false,
       "skill": "integratech-publicacao",
       "description": "Orienta publicação e operação por contexto, avalia prontidão por evidências e prepara automação de distribuição somente nos destinos suportados e autorizados."
+    },
+    {
+      "name": "graphic-designer",
+      "kind": "executor",
+      "read_only": false,
+      "skill": "integratech-design-grafico",
+      "description": "Cria e refina imagens, infográficos, mapas mentais e animações com composição, legibilidade, identidade e ferramentas compatíveis com o destino."
     }
   ],
   "routes": {
@@ -116,6 +123,9 @@
     "interface": "ui-engineer",
     "ux-review": "ux-accessibility-reviewer",
     "release": "release-engineer",
-    "deployment": "release-engineer"
+    "deployment": "release-engineer",
+    "graphic-design": "graphic-designer",
+    "visual-assets": "graphic-designer",
+    "motion-design": "graphic-designer"
   }
 }

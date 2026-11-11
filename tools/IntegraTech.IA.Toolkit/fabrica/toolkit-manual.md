@@ -91,3 +91,6 @@ Código e segurança são revisados em paralelo sobre o mesmo candidato, aguarda
 
 
 Publicação: release-init --id ID prepara rascunho; release-check --id ID --stage staging|production informa critérios atendidos/obrigatórios e bloqueios. release-deploy --id ID --dry-run mostra distribuição local; execução real exige --approval-file PATH e gates válidos. Aceita --project ID. Não inicia aplicação nem automatiza cloud/lojas. Veja [publicação](../../docs/inicio/publicacao.md).
+
+
+Design gráfico: rota graphic-design/visual-assets/motion-design aciona graphic-designer e a skill integratech-design-grafico para imagens e animações conforme as ferramentas disponíveis. Consulte docs/inicio/design-grafico.md na raiz do projeto.

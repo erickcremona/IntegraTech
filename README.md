@@ -6,6 +6,13 @@ Você conversa com o agente sobre o projeto; ele organiza o trabalho e prepara o
 
 ## Entenda o fluxo
 
+![Mapa mental do IntegraTech: entrada para produto novo ou sistema existente, contexto, decisões, plano SDD, execução assistida, validação e publicação orientada.](docs/imagens/mapa-mental-integratech-v2.png)
+
+[Abrir mapa em resolução original](docs/imagens/mapa-mental-integratech-v2.png)
+
+<details>
+<summary>Versão textual e editável do mapa</summary>
+
 ```mermaid
 mindmap
   root((IntegraTech))
@@ -32,6 +39,7 @@ mindmap
       Agentes Codex Claude Cursor
       Arquivos autorizados
       Grafo de rastreabilidade
+      Design gráfico e animações
     Validação e entrega
       Testes isolados
       Código e segurança em paralelo
@@ -44,6 +52,8 @@ mindmap
       Homologação e produção
       Distribuição autorizada
 ```
+
+</details>
 
 [Fluxo de uso do toolkit](docs/inicio/fluxo-toolkit.md) · [Execução SDD](docs/inicio/sdd.md)
 
@@ -128,6 +138,10 @@ O **loop assistido** registra o candidato e vincula validação e revisões ao m
 Testes isolados exigem ambiente compatível: o executor disponível usa Linux/Bubblewrap e bloqueia quando o isolamento não pode ser comprovado. O dispatcher automatiza revisões Codex/Claude com pacote explícito autorizado e provedor compatível; Cursor usa a sessão nativa e seus adaptadores, sem dispatcher automatizado. Testes locais e simulações não comprovam funcionamento dos serviços externos. [Limites e confiabilidade](docs/inicio/confiabilidade.md).
 
 Você recebe arquivos alterados, resultados observados, limitações e próximos passos. Entrega não publica o produto: push, merge, deploy e outras operações externas exigem autorização aplicável.
+
+## Design gráfico e animações
+
+O toolkit inclui graphic-designer e a skill integratech-design-grafico para imagens, ilustrações, infográficos, mapas mentais e motion. A criação parte de brief, conteúdo correto, identidade e tamanho de uso, seguida de inspeção visual. Animações exigem linha do tempo, fallback estático e atenção a reduced motion. As ferramentas disponíveis determinam os formatos reais de entrega; gerar uma imagem não significa gerar vídeo. [Fluxo e capacidades de design gráfico](docs/inicio/design-grafico.md).
 
 ## Publicação e prontidão
 

@@ -102,3 +102,6 @@ Código e segurança são revisados em paralelo sobre o mesmo candidato, aguarda
 
 
 Publicação: após criar a solução, planeje distribuição com release-engineer e acompanhe os critérios de prontidão por ambiente. Entrega técnica não aprova produção. Consulte [publicação e prontidão](publicacao.md); somente o destino local de artefato tem automação neste incremento, com aceite específico.
+
+
+Design gráfico: rota graphic-design/visual-assets/motion-design aciona graphic-designer e a skill integratech-design-grafico para imagens e animações conforme as ferramentas disponíveis. Veja [guia de design gráfico](design-grafico.md).

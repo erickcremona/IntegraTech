@@ -219,6 +219,8 @@
     "tools/IntegraTech.IA.Toolkit/tests/release-workflow.test.mjs",
     "tools/IntegraTech.IA.Toolkit/fabrica/skills/integratech-publicacao/SKILL.md",
     "tools/IntegraTech.IA.Toolkit/fabrica/templates/release-approval.json",
-    "docs/inicio/publicacao.md"
+    "docs/inicio/publicacao.md",
+    "tools/IntegraTech.IA.Toolkit/fabrica/skills/integratech-design-grafico/SKILL.md",
+    "docs/inicio/design-grafico.md"
   ]
 }

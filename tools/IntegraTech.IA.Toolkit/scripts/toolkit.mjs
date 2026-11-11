@@ -85,7 +85,7 @@ const help = `IntegraTech Toolkit — Node.js >=22
   restore-adoption --journal PATH [--dry-run]
   create-project --name NomeProjeto --target PATH [--repo RAIZ_DO_ACEITE] [--provider codex|claude|cursor|both|all] --context-file PATH --preparation-file PATH --technology-file PATH [--presentation worker|api|console] [--dry-run]
   precheck --phase toolkit|discovery|design|business [--repo PATH]
-  route --category toolkit|worker|integration|qa|security|data|review|discovery|release|deployment
+  route --category toolkit|worker|integration|qa|security|data|review|discovery|release|deployment|graphic-design|visual-assets|motion-design
   providers
   hash --file PATH
   install --provider codex|claude|cursor|both|all [--target PATH] [--dry-run]
