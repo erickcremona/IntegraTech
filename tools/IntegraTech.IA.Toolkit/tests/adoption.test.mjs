@@ -37,10 +37,11 @@ test('adoção: simula sem escrita e converte nome/contexto na mesma pasta', opt
   assert.equal(existsSync(join(f.repo, '.scratch')), false);
   const result = f.adoptProject(args);
   assert.equal(result.status, 'adopted');
-  assert.equal(existsSync(join(f.repo, 'MensagensCliente.sln')), true);
+  assert.equal(existsSync(join(f.repo, 'MensagensCliente.sln')), false);
   assert.equal(existsSync(join(f.repo, 'IntegraTech.sln')), false);
   const identity = JSON.parse(readFileSync(join(f.repo, 'project.json')));
   assert.equal(identity.is_model, false);
+  assert.equal(Object.hasOwn(identity, 'presentation'), false);
   assert.ok(readFileSync(join(f.repo,'README.md'),'utf8').includes(args.context.problem));
   assert.ok(readFileSync(join(f.repo,'README.md'),'utf8').includes('Este projeto foi criado com base no [IntegraTech]'));
   assert.ok(readFileSync(join(f.repo,'SOLUTION_CONTEXT.md'),'utf8').includes(args.context.problem));
@@ -83,7 +84,7 @@ test('adoção: bloqueia origem canônica, alterações locais e colisões antes
   for (const kind of ['canonical', 'modified', 'collision', 'missing-problem']) {
     const f = await fixture({ git: kind === 'canonical', canonical: kind === 'canonical' });
     if (kind === 'modified') writeFileSync(join(f.repo, 'Directory.Build.props'), 'alteração pessoal');
-    if (kind === 'collision') writeFileSync(join(f.repo, 'MensagensCliente.sln'), 'solução pessoal');
+    if (kind === 'collision') writeFileSync(join(f.repo, 'references/technology-decision.json'), 'registro pessoal');
     assert.throws(() => f.adoptProject({ repo: f.repo, presentation: 'worker', name: 'MensagensCliente', context: { problem: kind === 'missing-problem' ? '' : 'Organizar mensagens dos atendentes.' } }));
     assert.equal(JSON.parse(readFileSync(join(f.repo, 'project.json'))).is_model, true);
     assert.equal(existsSync(join(f.repo, '.scratch')), false);
@@ -175,46 +176,51 @@ test('adoção: recovery independente e links não contornam a proteção', opti
   }
 });
 
-test('adoção: exige seleção explícita em vez de herdar exemplo worker', options, async () => {
+test('adoção: exige decisão tecnológica aprovada', options, async () => {
   const f = await fixture();
   assert.throws(() => f.adoptProject({ repo: f.repo, name: 'Catalogo', context: 'Publicar catálogo.' }), /decisão tecnológica/i);
   assert.equal(JSON.parse(readFileSync(join(f.repo, 'project.json'))).is_model, true);
   assert.equal(existsSync(join(f.repo, '.scratch')), false);
   assert.equal(f.onboarding({ repo: f.repo, name: 'Catalogo', context: fullContext }).status, 'needs_domain_research');
 });
-test('adoção: troca worker por api/console limpa referências e restaura o exemplo por recovery', options, async () => {
-  const { restoreAdoption } = await import('../scripts/lib/adoption-recovery.mjs');
-  const { context, decisionFor } = await import('./technology-fixture.mjs');
-  for (const presentation of ['api', 'console']) {
-    const f = await fixture();
-    mkdirSync(join(f.repo, 'references'), { recursive: true });
-    writeFileSync(join(f.repo, 'references/aceite-tecnologia.md'), 'Usuário aprovou a apresentação selecionada.');
-    const args = { repo: f.repo, name: 'Catalogo', context, technologyDecision: decisionFor(context, presentation) };
-    const preview = f.adoptProject({ ...args, dryRun: true });
-    assert.ok(preview.operations.some(op => op.path.endsWith('/IntegrationWorker.cs') && op.action === 'remove'));
-    assert.equal(existsSync(join(f.repo, 'Catalogo.sln')), false);
-    const result = f.adoptProject(args);
-    assert.equal(JSON.parse(readFileSync(join(f.repo, 'project.json'))).presentation, presentation);
-    assert.equal(existsSync(join(f.repo, 'src/IntegraTech.Apresentacao/IntegraTech.Apresentacao.Worker')), false);
-    assert.ok(!readFileSync(join(f.repo, 'Catalogo.sln'), 'utf8').includes('Apresentacao.Worker'));
-    const kind = presentation === 'api' ? 'Api' : 'Console';
-    assert.ok(readFileSync(join(f.repo, `tests/Catalogo.Arquitetura.Tests/Catalogo.Arquitetura.Tests.csproj`), 'utf8').includes(`Catalogo.Apresentacao.${kind}`));
-    assert.equal(readFileSync(join(f.repo, 'personal.txt'), 'utf8'), 'Meu arquivo pessoal');
-    assert.equal(restoreAdoption(result.journal).status, 'restored');
-    assert.ok(existsSync(join(f.repo, 'src/IntegraTech.Apresentacao/IntegraTech.Apresentacao.Worker/IntegrationWorker.cs')));
-  }
+test('adoção: preserva o exemplo controlado quando foi modificado', options, async () => {
+  const f = await fixture();
+  const worker = join(f.repo, 'src/IntegraTech.Apresentacao/IntegraTech.Apresentacao.Worker/IntegrationWorker.cs');
+  writeFileSync(worker, 'implementação pessoal');
+  assert.throws(() => f.adoptProject({ repo: f.repo, name: 'Catalogo', context: fullContext, presentation: 'api' }), /alterado/);
+  assert.equal(existsSync(join(f.repo, '.scratch')), false);
+  assert.equal(JSON.parse(readFileSync(join(f.repo, 'project.json'))).is_model, true);
+  assert.equal(readFileSync(worker, 'utf8'), 'implementação pessoal');
 });
-test('adoção: não remove worker modificado nem escreve recomendação sem gerador', options, async () => {
+test('adoção neutra remove exemplo controlado e preserva arquivos desconhecidos', options, async () => {
   const { context, decisionFor } = await import('./technology-fixture.mjs');
-  for (const scenario of ['modified', 'unsupported']) {
-    const f = await fixture();
-    writeFileSync(join(f.repo, 'references/aceite-tecnologia.md'), 'Usuário aprovou a escolha.');
-    const worker = join(f.repo, 'src/IntegraTech.Apresentacao/IntegraTech.Apresentacao.Worker/IntegrationWorker.cs');
-    if (scenario === 'modified') writeFileSync(worker, 'implementação pessoal');
-    const decision = decisionFor(); if (scenario === 'unsupported') decision.selected_option = 'static';
-    assert.throws(() => f.adoptProject({ repo: f.repo, name: 'Catalogo', context, technologyDecision: decision }), scenario === 'modified' ? /alterado/ : /suportado/);
-    assert.equal(existsSync(join(f.repo, '.scratch')), false);
-    assert.equal(JSON.parse(readFileSync(join(f.repo, 'project.json'))).is_model, true);
-    if (scenario === 'modified') assert.equal(readFileSync(worker, 'utf8'), 'implementação pessoal');
-  }
+  const f = await fixture();
+  const decision = decisionFor();
+  decision.selected_option = 'static';
+  decision.options[1].presentation = 'Catálogo estático publicado na web';
+  const example = 'src/IntegraTech.Apresentacao/IntegraTech.Apresentacao.Worker/IntegrationWorker.cs';
+  const personalSource = join(dirname(join(f.repo, example)), 'minhas-notas.txt');
+  writeFileSync(personalSource, 'Preservar anotações locais');
+  const args = { repo: f.repo, name: 'CatalogoNeutro', context, technologyDecision: decision };
+  const preview = f.adoptProject({ ...args, dryRun: true });
+  assert.ok(preview.operations.some(op => op.path === example && op.action === 'remove'));
+  assert.equal(existsSync(join(f.repo, example)), true);
+  const result = f.adoptProject(args);
+  assert.equal(result.status, 'adopted');
+  const identity = JSON.parse(readFileSync(join(f.repo, 'project.json'), 'utf8'));
+  assert.equal(Object.hasOwn(identity, 'presentation'), false);
+  assert.equal(existsSync(join(f.repo, example)), false);
+  for (const path of Object.keys(f.baseline.files).filter(path => path.endsWith('.csproj')))
+    assert.equal(existsSync(join(f.repo, path)), false, path);
+  for (const path of ['IntegraTech.sln', 'CatalogoNeutro.sln', 'global.json', 'Directory.Build.props'])
+    assert.equal(existsSync(join(f.repo, path)), false, path);
+  assert.equal(readFileSync(personalSource, 'utf8'), 'Preservar anotações locais');
+  assert.equal(readFileSync(join(f.repo, 'personal.txt'), 'utf8'), 'Meu arquivo pessoal');
+  const saved = JSON.parse(readFileSync(join(f.repo, 'references/technology-decision.json'), 'utf8'));
+  assert.deepEqual(saved, { ...decision, approval: { ...decision.approval, source_reference: 'references/technology-approval.md' } });
+  assert.doesNotMatch(readFileSync(join(f.repo, 'README.md'), 'utf8'), /\bdotnet\s+(?:build|run|test)\b/);
+  const { restoreAdoption } = await import('../scripts/lib/adoption-recovery.mjs');
+  assert.equal(restoreAdoption(result.journal).status, 'restored');
+  assert.equal(existsSync(join(f.repo, example)), true);
+  assert.equal(readFileSync(personalSource, 'utf8'), 'Preservar anotações locais');
 });

@@ -6,7 +6,6 @@ import { inspectInterfaceSelection } from './interface-selection.mjs';
 import { contained, assertSanitized } from './paths.mjs';
 
 export const technologyContextHash = context => createHash('sha256').update(JSON.stringify(normalizeInitialContext(context))).digest('hex');
-const models = ['worker', 'api', 'console'];
 function meaningful(value) {
   if (typeof value === 'string' && (!value.trim() || /^(todo|tbd|pendente|a definir|\.\.\.)[.!]?$/i.test(value.trim()))) throw new Error('decisão tecnológica incompleta');
   if (Array.isArray(value)) value.forEach(meaningful);
@@ -52,15 +51,5 @@ export function inspectTechnologyDecision({ decision, context, repo, requireAppr
     if (!evidence.trim()) throw new Error('aceite vazio');
     assertSanitized(evidence);
   }
-  return { interface: inspectInterfaceSelection(selection.interface, sources), status: decision.approval.status === 'approved' ? 'approved' : 'proposed', selection, generator_supported: selection.stack === 'dotnet' && models.includes(selection.presentation), context_sha256: decision.context_sha256 };
-}
-export function selectionForGeneration({ decision, context, repo, presentation }) {
-  if (decision !== undefined) {
-    const result = inspectTechnologyDecision({ decision, context, repo, requireApproval: true });
-    if (!result.generator_supported) throw new Error('stack/apresentação recomendada sem gerador suportado; nenhuma aproximação será criada');
-    if (presentation !== undefined && presentation !== result.selection.presentation) throw new Error('apresentação diverge da decisão tecnológica');
-    return result.selection.presentation;
-  }
-  if (!models.includes(presentation)) throw new Error('decisão tecnológica necessária: pesquise e aprove uma decisão ou selecione um modelo .NET explicitamente com --presentation');
-  return presentation;
+  return { interface: inspectInterfaceSelection(selection.interface, sources), status: decision.approval.status === 'approved' ? 'approved' : 'proposed', selection, context_sha256: decision.context_sha256 };
 }

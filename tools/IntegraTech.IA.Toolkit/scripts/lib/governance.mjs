@@ -51,8 +51,10 @@ export function precheck(repo, phase) {
     if (state.technology_decision_path) {
       const decision = JSON.parse(read(state.technology_decision_path));
       const technology = inspectTechnologyDecision({ decision, context, repo, requireApproval: true });
-      const identity = JSON.parse(read('project.json'));
-      if (!linked && (!technology.generator_supported || technology.selection.presentation !== identity.presentation)) throw new Error('decisão tecnológica diverge do projeto');
+      if (!linked) {
+        const identity = JSON.parse(read('project.json'));
+        if (Object.hasOwn(identity, 'presentation') && technology.selection.presentation !== identity.presentation) throw new Error('decisão tecnológica diverge da identidade do projeto');
+      }
     }
     architectureCurrent(repo);
     if (state.plan_gate !== 'approved') throw new Error('plano pendente');

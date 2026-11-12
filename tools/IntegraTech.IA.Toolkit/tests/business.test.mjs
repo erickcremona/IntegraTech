@@ -70,7 +70,13 @@ test('negócio: decisão aplicada não pode divergir do contexto ou da apresenta
   assert.equal(precheck(f.repo, 'business').status, 'ready');
   f.save('project.json', { name: 'Atendimento', provider: 'both', is_model: false, presentation: 'worker' });
   assert.equal(precheck(f.repo, 'business').status, 'blocked');
-  f.save('project.json', { name: 'Atendimento', provider: 'both', is_model: false, presentation: 'api' });
-  f.save('references/technology-decision.json', { ...decision, context_sha256: 'invalid' });
+  f.save('project.json', { name: 'Atendimento', provider: 'both', is_model: false });
+  const neutralDecision = structuredClone(decision);
+  neutralDecision.selected_option = 'static';
+  delete neutralDecision.options[1].presentation;
+  f.save(decision.approval.source_reference, 'Usuário aprovou o catálogo estático.');
+  f.save('references/technology-decision.json', neutralDecision);
+  assert.equal(precheck(f.repo, 'business').status, 'ready');
+  f.save('references/technology-decision.json', { ...neutralDecision, context_sha256: 'invalid' });
   assert.equal(precheck(f.repo, 'business').status, 'blocked');
 });

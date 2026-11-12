@@ -33,6 +33,10 @@ test('CLI: tecnologia informa pesquisa pendente e valida recomendação sem gera
   const repo = mkdtempSync(join(tmpdir(), 'technology-cli-'));
   const contextFile = join(repo, 'context.json'), decisionFile = join(repo, 'decision.json');
   writeFileSync(contextFile, JSON.stringify(context));
+  const help = await main(['help']);
+  assert.doesNotMatch(help, /--presentation\b/);
+  for (const command of ['create-project', 'adopt-project'])
+    await assert.rejects(main([command, '--presentation', 'api']), /comando\/opção desconhecido/);
   const pending = await main(['technology-check', '--context-file', contextFile]);
   assert.equal(pending.status, 'needs_research');
   assert.match(pending.context_sha256, /^[a-f0-9]{64}$/);
@@ -48,7 +52,7 @@ test('CLI: tecnologia informa pesquisa pendente e valida recomendação sem gera
   writeFileSync(join(repo, decision.approval.source_reference = 'references/aceite.md'), 'Aceite para aplicação estática.');
   writeFileSync(decisionFile, JSON.stringify(decision));
   const checked = await main(['technology-check', '--repo', repo, '--context-file', contextFile, '--decision-file', decisionFile]);
-  assert.equal(checked.generator_supported, false);
+  assert.equal(checked.status, 'approved');
   assert.equal(checked.selection.stack, 'static-web');
 });
 

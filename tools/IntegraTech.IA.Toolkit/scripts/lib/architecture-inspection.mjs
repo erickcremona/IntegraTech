@@ -16,7 +16,8 @@ export function architectureCurrent(repo,{requireApproval=true}={}){
  const inspected=inspectArchitectureDecision({repo,context,technologyDecision,decision,requireApproval});
  if((decision.source_binding_sha256??null)!==(sourceBinding(repo)??null))throw new Error('Arquitetura diverge do vínculo do fonte');
  const identity=architectureRead(repo,'project.json');
- if(!linkedProject(repo)&&(decision.layout.name!==identity.name||decision.layout.presentation!==identity.presentation))throw new Error('Arquitetura diverge da identidade do produto');
+ const presentationMismatch = Object.hasOwn(identity, 'presentation') && decision.layout.presentation !== identity.presentation;
+ if (!linkedProject(repo) && (decision.layout.name !== identity.name || presentationMismatch)) throw new Error('Arquitetura diverge da identidade do produto');
  return {state,decision,...inspected};
 }
 // A conservative .NET project-reference check. Semantic/domain fitness still needs native review.

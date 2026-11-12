@@ -11,21 +11,13 @@ function fixture() {
   writeFileSync(join(repo, 'references/aceite-tecnologia.md'), 'Usuário aprovou API .NET para o catálogo.');
   return repo;
 }
-test('tecnologia: decisão pesquisada e aprovada resolve modelo e vincula contexto', async () => {
-  const { inspectTechnologyDecision, selectionForGeneration } = await import(moduleUrl);
+test('tecnologia: decisão pesquisada e aprovada vincula a alternativa ao contexto', async () => {
+  const { inspectTechnologyDecision } = await import(moduleUrl);
   const repo = fixture(), decision = decisionFor();
-  const result = inspectTechnologyDecision({ decision, context, repo });
-  assert.equal(result.generator_supported, true);
-  assert.equal(result.selection.presentation, 'api');
-  assert.equal(selectionForGeneration({ decision, context, repo }), 'api');
-  assert.throws(() => selectionForGeneration({ decision, context: { ...context, problem: 'Outro problema.' }, repo }), /contexto/i);
-  assert.throws(() => selectionForGeneration({ decision, context, repo, presentation: 'worker' }), /diverg/i);
-});
-test('tecnologia: recomendação fora do catálogo não gera aproximação .NET', async () => {
-  const { inspectTechnologyDecision, selectionForGeneration } = await import(moduleUrl);
-  const repo = fixture(), decision = decisionFor(); decision.selected_option = 'static';
-  assert.equal(inspectTechnologyDecision({ decision, context, repo }).generator_supported, false);
-  assert.throws(() => selectionForGeneration({ decision, context, repo }), /suportad/i);
+  const result = inspectTechnologyDecision({ decision, context, repo, requireApproval: true });
+  assert.equal(result.status, 'approved');
+  assert.deepEqual(result.selection, decision.options[0]);
+  assert.throws(() => inspectTechnologyDecision({ decision, context: { ...context, problem: 'Outro problema.' }, repo, requireApproval: true }), /contexto/i);
 });
 test('tecnologia: fontes, datas, alternativas e pesquisa indisponível falham sem inventar evidência', async () => {
   const { inspectTechnologyDecision } = await import(moduleUrl);
@@ -44,16 +36,30 @@ test('tecnologia: fontes, datas, alternativas e pesquisa indisponível falham se
   }
 });
 test('tecnologia: proposta pode ser inspecionada mas não materializada; aceite exige referência local', async () => {
-  const { inspectTechnologyDecision, selectionForGeneration } = await import(moduleUrl);
+  const { inspectTechnologyDecision } = await import(moduleUrl);
   const repo = fixture(), decision = decisionFor(); decision.approval.status = 'proposed';
   assert.equal(inspectTechnologyDecision({ decision, context, repo }).status, 'proposed');
-  assert.throws(() => selectionForGeneration({ decision, context, repo }), /aprova/i);
+  assert.throws(() => inspectTechnologyDecision({ decision, context, repo, requireApproval: true }), /aprova/i);
   decision.approval.status = 'approved';
   for (const reference of ['../escape.md', 'references/missing.md']) {
     decision.approval.source_reference = reference;
-    assert.throws(() => selectionForGeneration({ decision, context, repo }));
+    assert.throws(() => inspectTechnologyDecision({ decision, context, repo, requireApproval: true }));
   }
   decision.approval.source_reference = 'references/aceite-tecnologia.md';
   writeFileSync(join(repo, decision.approval.source_reference), '   ');
-  assert.throws(() => selectionForGeneration({ decision, context, repo }), /aceite/i);
+  assert.throws(() => inspectTechnologyDecision({ decision, context, repo, requireApproval: true }), /aceite/i);
+});
+
+test('decision aceita apresentação contextual sem catálogo de hosts', async () => {
+  const { inspectTechnologyDecision } = await import(moduleUrl);
+  const repo = fixture();
+  const decision = decisionFor();
+  decision.selected_option = 'static';
+  decision.options[1].presentation = 'Catálogo estático publicado na web';
+  const inspect = () => inspectTechnologyDecision({ decision, context, repo, requireApproval: true });
+  assert.deepEqual(inspect().selection, decision.options[1]);
+  assert.equal(inspect().status, 'approved');
+  assert.equal(inspect().context_sha256, decision.context_sha256);
+  delete decision.options[1].presentation;
+  assert.equal(Object.hasOwn(inspect().selection, 'presentation'), false);
 });

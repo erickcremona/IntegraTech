@@ -27,7 +27,7 @@ export function onboarding({ repo, name, context }) {
   questions.push(...assessed.questions.map(q => q.question));
   return { status: questions.length ? 'needs_input' : 'needs_domain_research', questions };
 }
-export function adoptProject({ repo, name, context, dryRun = false, contextFile, presentation, technologyDecision, architectureDecision, preparation, researchRequest, provider, gitExecFileSync = execFileSync }) {
+export function adoptProject({ repo, name, context, dryRun = false, contextFile, technologyDecision, architectureDecision, preparation, researchRequest, provider, gitExecFileSync = execFileSync }) {
   const root = resolve(repo);
   assertNoLinks(root);
   const identity = JSON.parse(readFileSync(transactionPath(root, 'project.json'), 'utf8'));
@@ -50,7 +50,7 @@ export function adoptProject({ repo, name, context, dryRun = false, contextFile,
       throw new Error('modelo canônico protegido: use uma cópia/repositório próprio antes de adotar');
   }
   const initial = normalizeInitialContext(context);
-  const files = prepareProject({ source: root, name, provider: provider ?? identity.provider, presentation, context: initial, technologyDecision, architectureDecision, preparation, researchRequest, decisionRepo: root });
+  const files = prepareProject({ source: root, name, provider: provider ?? identity.provider, context: initial, technologyDecision, architectureDecision, preparation, researchRequest, decisionRepo: root });
   const newIdentity = JSON.parse(files.get('project.json'));
   newIdentity.adoption = { status: 'adopted', context_path: 'references/business-context.json' };
   files.set('project.json', JSON.stringify(newIdentity, null, 2) + '\n');

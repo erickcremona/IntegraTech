@@ -37,15 +37,16 @@ test('gerador: simulação não escreve; rejeita nomes, destino interno e colis�
   symlinkSync(empty, join(linkParent, 'link'), 'junction');
   assert.throws(() => createProject({ name: 'NovaLoja', target: join(linkParent, 'link', 'new'), provider: 'both', presentation: 'worker' }));
 });
-test('gerador: identidades, três apresentações e provedores independentes', async () => {
+test('gerador: materializa identidade e provedores independentes', async () => {
   const { createProject } = await import(generatorUrl);
   for (const [name, presentation, provider] of [['NovaLoja', 'worker', 'both'], ['ClienteLivre', 'api', 'codex'], ['TarefaLivre', 'console', 'claude']]) {
     const target = mkdtempSync(join(tmpdir(), 'model-generated-'));
     const result = createProject({ name, target, provider, presentation });
     assert.equal(result.status, 'created');
-    assert.ok(existsSync(join(target, `${name}.sln`)));
-    assert.equal(read(join(target, 'project.json')).presentation, presentation);
-    assert.ok(readFileSync(join(target, 'docs/arquitetura/base.md'), 'utf8').includes(`Apresentação: ${presentation}`));
+    assert.equal(existsSync(join(target, `${name}.sln`)), false);
+    assert.equal(Object.hasOwn(read(join(target, 'project.json')), 'presentation'), false);
+    assert.equal(read(join(target, 'references/technology-decision.json')).options[0].presentation, presentation);
+    assert.ok(readFileSync(join(target, 'docs/arquitetura/base.md'), 'utf8').includes('references/architecture-decision.json'));
     const state = read(join(target, 'references/project-state.json'));
     assert.equal(state.scope_status, 'pending');
     assert.equal(state.execution_workflow, 'sdd-v2');
@@ -116,7 +117,7 @@ test('gerador: manifesto não inclui arquivo pessoal adicionado à árvore', asy
   } finally { unlinkSync(sentinel); }
 });
 
-test('gerador: contexto sozinho nunca escolhe worker e decisão aprovada gera somente API', async () => {
+test('gerador: contexto sozinho é insuficiente e decisão .NET aprovada fica registrada', async () => {
   const { createProject } = await import(generatorUrl);
   const { context, decisionFor } = await import('./technology-fixture.mjs');
   const { mkdirSync } = await import('node:fs');
@@ -127,9 +128,10 @@ test('gerador: contexto sozinho nunca escolhe worker e decisão aprovada gera so
   mkdirSync(join(repo, 'references'));
   writeFileSync(join(repo, 'references/aceite-tecnologia.md'), 'Usuário aprovou API .NET.');
   createProject({ name: 'Catalogo', target, context, technologyDecision: decisionFor(), decisionRepo: repo });
-  assert.equal(read(join(target, 'project.json')).presentation, 'api');
+  assert.equal(Object.hasOwn(read(join(target, 'project.json')), 'presentation'), false);
+  assert.equal(read(join(target, 'references/technology-decision.json')).options[0].presentation, 'api');
   assert.equal(read(join(target, 'references/business-context.json')).problem, context.problem);
-  assert.equal(existsSync(join(target, 'src/Catalogo.Apresentacao/Catalogo.Apresentacao.Worker')), false);
+  assert.equal(existsSync(join(target, 'src')), false);
   assert.equal(read(join(target, 'references/technology-decision.json')).selected_option, 'web');
   const { main } = await import(pathToFileURL(join(target, 'tools/Catalogo.IA.Toolkit/scripts/toolkit.mjs')));
   const checked = await main(['technology-check', '--repo', target, '--context-file', join(target, 'references/business-context.json'), '--decision-file', join(target, 'references/technology-decision.json')]);
@@ -140,4 +142,24 @@ test('gerador: contexto sozinho nunca escolhe worker e decisão aprovada gera so
   assert.equal(read(join(child, 'references/technology-decision.json')).options[0].presentation, 'console');
   assert.equal(read(join(child, 'references/domain-preparation.json')).context_sha256 === read(join(target, 'references/domain-preparation.json')).context_sha256, false);
   assert.equal(read(join(child, 'references/business-context.json')).problem, fullContext.problem);
+});
+
+test('criação neutra preserva a stack aprovada sem scaffold', async () => {
+  const { context, decisionFor } = await import('./technology-fixture.mjs');
+  const { createProject } = await import(generatorUrl);
+  const target = mkdtempSync(join(tmpdir(), 'model-neutral-'));
+  const decision = decisionFor();
+  decision.selected_option = 'static';
+  decision.options[1].presentation = 'Catálogo estático publicado na web';
+  const result = createProject({ name: 'CatalogoNeutro', target, context, technologyDecision: decision });
+  assert.equal(result.status, 'created');
+  const saved = read(join(target, 'references/technology-decision.json'));
+  assert.deepEqual(saved, { ...decision, approval: { ...decision.approval, source_reference: 'references/technology-approval.md' } });
+  assert.equal(read(join(target, 'references/architecture-decision.json')).layout.stack, 'static-web');
+  assert.equal(Object.hasOwn(read(join(target, 'project.json')), 'presentation'), false);
+  assert.equal(readdirSync(target, { recursive: true }).some(path => /\.(?:sln|csproj)$/i.test(path)), false);
+  for (const path of ['src', 'tests', 'global.json', 'Directory.Build.props']) assert.equal(existsSync(join(target, path)), false, path);
+  for (const path of ['README.md', 'SOLUTION_CONTEXT.md', 'docs/arquitetura/base.md']) {
+    assert.doesNotMatch(readFileSync(join(target, path), 'utf8'), /\bdotnet\s+(?:build|run|test)\b/);
+  }
 });

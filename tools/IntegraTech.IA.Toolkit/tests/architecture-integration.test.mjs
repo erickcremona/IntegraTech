@@ -10,17 +10,17 @@ import {architectureStatus,architectureSourceSnapshot,inspectArchitectureGraph} 
 import {architectureFiles} from '../scripts/lib/architecture-profiles.mjs';
 import {completeArchitecture} from '../scripts/lib/architecture-workflow.mjs';
 const temporary=t=>{const repo=mkdtempSync(join(tmpdir(),'arch-integration-'));t.after(()=>rmSync(repo,{recursive:true,force:true}));return repo;};
-test('actual generator requires architectural approval and produces clean simple and modular products',t=>{
+test('materialization records approved simple and modular architecture for future review',t=>{
  for(const profile of ['simple-application','modular-monolith']){
  const target=temporary(t),args=generationOptions({name:'Product',target,presentation:'api',provider:'all'});
  assert.throws(()=>createProject({...args,architectureDecision:undefined}),/arquitetural/);assert.deepEqual(architectureStatus({repo:target}).status,'assessment_required');
  const d=args.architectureDecision;d.profile=profile;
  if(profile==='modular-monolith')d.requirements.modules=[{name:'Requests',depends_on:[],context_refs:[{pointer:'/scope/0',quote:args.context.scope[0]}]},{name:'Owners',depends_on:['Requests'],context_refs:[{pointer:'/known_rules/0',quote:args.context.known_rules[0]}]}];
  d.approval.decision_sha256=architectureDigest(d);
- createProject(args);assert.equal(existsSync(join(target,'src/Product.Dominio')),false);assert.equal(existsSync(join(target,'src/Product.Apresentacao/Product.Apresentacao.Worker')),false);
- assert.equal(architectureStatus({repo:target}).status,'consistent');
+ createProject(args);assert.equal(existsSync(join(target,'src')),false);
+ assert.equal(architectureStatus({repo:target}).status,'needs_review');
  const before=architectureSourceSnapshot(target);writeFileSync(join(target,'references/unrelated-note.md'),'Control update');assert.equal(architectureSourceSnapshot(target),before);
- const p=[...architectureFiles({...d.layout,profile,modules:d.requirements.modules}).keys()].find(p=>p.endsWith('ApplicationHost.cs'));writeFileSync(join(target,p),readFileSync(join(target,p),'utf8')+'\n// Source evolution');assert.notEqual(architectureSourceSnapshot(target),before);
+ mkdirSync(join(target,'src'));writeFileSync(join(target,'src/evolution.txt'),'Source evolution');assert.notEqual(architectureSourceSnapshot(target),before);
  assert.throws(()=>completeArchitecture({repo:target}),/Nenhuma migração/);
  }
 });

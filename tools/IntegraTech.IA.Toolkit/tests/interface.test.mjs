@@ -195,7 +195,7 @@ test('approved UI roots cover Angular inline TS and native MAUI CSharp even with
   selection.version=framework==='maui'?'8.0.0':'21.0.0';selection.platform=framework==='maui'?'native':'web';selection.rendering=framework==='maui'?'native':'client';selection.source_roots=['src/app'];
   const repo=fixture(decision);
   try{
-   approveBusiness(repo);mkdirSync(join(repo,'src/app'));writeFileSync(join(repo,'src/app',file),'original UI');
+   approveBusiness(repo);mkdirSync(join(repo,'src/app'),{recursive:true});writeFileSync(join(repo,'src/app',file),'original UI');
    const delegation={schema_version:1,task_id:'inline-ui',objective:'Atualizar interface',business_context:'Contexto registrado',technical_context:framework,scope:['src/app'],out_of_scope:[],assigned_agent:'application-engineer',supporting_agents:[],required_inputs:[],expected_deliverables:['UI'],constraints:[],file_ownership:{read:['src/app'],write:['src/app']},risks:[],acceptance_criteria:['Interface funcional'],validation_commands:[],evidence_required:[],deadline_or_priority:'normal',human_gate:'none'};
    startTask({repo,delegation,phase:'business',provider:'codex'});advanceTask({repo,id:'inline-ui',expectedRevision:1,event:{type:'gate_checked'}});advanceTask({repo,id:'inline-ui',expectedRevision:2,event:{type:'gate_checked'}});
    writeFileSync(join(repo,'src/app',file),'changed inline UI');

@@ -144,7 +144,7 @@ test('Cursor: CLI cria e adota com escolha explícita e recuperação', { skip: 
   const inputs = temp('cursor-cli-inputs-');
   const inputArgs = transport.prepare(inputs);
   const created = temp('cursor-cli-create-');
-  assert.equal((await run(['create-project', '--name', 'ViaCursor', '--target', created, '--provider', 'cursor', '--presentation', 'api', '--repo', inputs, ...inputArgs])).status, 'created');
+  assert.equal((await run(['create-project', '--name', 'ViaCursor', '--target', created, '--provider', 'cursor', '--repo', inputs, ...inputArgs])).status, 'created');
   const generatedCli = join(created, 'tools/ViaCursor.IA.Toolkit/scripts/toolkit.mjs');
   const checked = await (await import(pathToFileURL(generatedCli))).main(['validate']);
   assert.equal(checked.status, 'valid');
@@ -159,7 +159,7 @@ test('Cursor: CLI cria e adota com escolha explícita e recuperação', { skip: 
     }
     writeFileSync(join(repo, 'personal.txt'), 'arquivo pessoal');
     const adoptionInputs = transport.prepare(repo,undefined,'ProdutoCursor');
-    const args = ['adopt-project', '--repo', repo, '--name', 'ProdutoCursor', ...adoptionInputs, '--provider', provider, '--presentation', 'api'];
+    const args = ['adopt-project', '--repo', repo, '--name', 'ProdutoCursor', ...adoptionInputs, '--provider', provider];
     assert.equal((await run([...args, '--dry-run'])).status, 'planned');
     assert.equal(read(join(repo, 'project.json')).is_model, true);
     const { toolkitSourceFingerprint } = await import('../scripts/lib/toolkit-audit.mjs');
