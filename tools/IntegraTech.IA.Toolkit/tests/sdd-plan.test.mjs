@@ -88,8 +88,8 @@ const invalidCases = {
   'rejects oversized supplied plan': f => { f.plan.objective = 'x'.repeat(256 * 1024); },
   'rejects extra task dependency field': f => { f.plan.phases[0].tasks[0].depends_on = []; },
   'rejects directory as test path': f => { f.plan.phases[0].tasks[0].test_paths = ['tests']; },
-  'rejects symlinked input': f => { symlinkSync('functional-spec.json', join(f.repo, 'references/link.json')); f.plan.specification_path = 'references/link.json'; },
-  'rejects symlinked ownership ancestor': f => { symlinkSync('tests', join(f.repo, 'linked-tests')); f.plan.phases[0].tasks[0].write_files.push('linked-tests/new.test.mjs'); }
+  'rejects symlinked input': f => { symlinkSync(join(f.repo, 'references'), join(f.repo, 'references/linked'), 'junction'); f.plan.specification_path = 'references/linked/functional-spec.json'; },
+  'rejects symlinked ownership ancestor': f => { symlinkSync(join(f.repo, 'tests'), join(f.repo, 'linked-tests'), 'junction'); f.plan.phases[0].tasks[0].write_files.push('linked-tests/new.test.mjs'); }
 };
 for (const [name, mutate] of Object.entries(invalidCases)) test(`SDD ${name}`, t => {
   const f = fixture(t); mutate(f); assert.throws(() => inspectSDDPlan(f));

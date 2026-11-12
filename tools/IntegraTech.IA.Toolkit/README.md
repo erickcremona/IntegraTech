@@ -6,7 +6,7 @@ Núcleo comum para Codex, Claude Code e Cursor. [Uso no Cursor](../../docs/inici
 
 ## Uso a partir da raiz
 
-Adoção na cópia atual: `onboarding` identifica somente os dados ausentes; `adopt-project --name Nome --context-file PATH --technology-file DECISAO --architecture-file ARQUITETURA --dry-run` simula e o mesmo comando sem --dry-run aplica a identidade e o contexto, preservando a pasta raiz e o Git. Consulte [adoção guiada](../../docs/inicio/adotar-projeto.md). A operação exige baseline sem conflitos e bloqueia remotos canônicos. `restore-adoption --journal PATH` ou o recover.mjs do backup permite recuperação protegida por hashes.
+Adoção na cópia atual: `onboarding` identifica somente os dados ausentes; execute `npm run verify` antes de aplicar. Falhas devem ser corrigidas no modelo e a verificação repetida; a adoção exige evidência aprovada para o conteúdo atual. `adopt-project --name Nome --context-file PATH --technology-file DECISAO --architecture-file ARQUITETURA --dry-run` simula e o mesmo comando sem --dry-run aplica a identidade e o contexto, preservando a pasta raiz e o Git. O resultado inclui o relatório completo de prontidão para apresentação obrigatória antes do trabalho do produto, também salvo em `references/toolkit-readiness.md`. Consulte [adoção guiada](../../docs/inicio/adotar-projeto.md). A operação exige baseline sem conflitos e bloqueia remotos canônicos. `restore-adoption --journal PATH` ou o recover.mjs do backup permite recuperação protegida por hashes.
 
 Ao manter o modelo, qualquer mudança em arquivo controlado exige revisar a mudança e atualizar o baseline antes de publicar: `node tools/IntegraTech.IA.Toolkit/scripts/update-template-baseline.mjs --write`. Sem --write, o comando apenas verifica. Nunca execute essa atualização no onboarding para contornar conflitos. O baseline detecta customizações acidentais; não é uma assinatura criptográfica de autoria. Projetos reais não podem ser adotados novamente por inferência.
 
@@ -66,6 +66,8 @@ Revisor não executa testes: avalia os arquivos e resultados fornecidos. Ausênc
 Contratos delegation/return/review são adaptados da referência. Handoff registra provedor, objetivo, fase, arquivos, validações, evidências, pendências, gate e próximo passo. Para implementação nativa, o CTO preenche esse mesmo contrato manualmente ao trocar de provedor. `resume` valida e exibe; não executa ações.
 
 O validador implementa somente as keywords usadas nos contratos versionados e rejeita keywords novas não suportadas. Não é um motor completo de JSON Schema. Retornos completed exigem testes/evidências e ausência de pendências.
+
+`npm run check` também verifica se todos os esquemas de contrato suportados usam somente keywords implementadas. `toolkit help` lista dinamicamente os tipos de contrato, ações e rotas disponíveis.
 
 ## Grafo de rastreabilidade
 

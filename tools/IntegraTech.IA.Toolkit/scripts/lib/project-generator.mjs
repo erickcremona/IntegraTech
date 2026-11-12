@@ -15,6 +15,7 @@ import { normalizeInitialContext } from './business-context.mjs';
 import { selectedProviders, providerLabel } from './provider-selection.mjs';
 import { initialTraceability } from './traceability-sync.mjs';
 import { providerFiles } from './installer.mjs';
+import { auditToolkit } from './toolkit-audit.mjs';
 
 const sourceRoot = fileURLToPath(new URL('../../../../', import.meta.url));
 export function prepareProject({ name, provider = 'both', presentation, source = sourceRoot, context, technologyDecision, architectureDecision, preparation, researchRequest, decisionRepo = source }) {
@@ -35,6 +36,9 @@ export function prepareProject({ name, provider = 'both', presentation, source =
   const render = text => text.replaceAll(identity.name, name).replaceAll(identity.slug, slug);
   const renderHost = text => render(text).replaceAll(`.Apresentacao.${presentationNames[identity.presentation]}`, `.Apresentacao.${presentationNames[presentation]}`);
   const files = new Map();
+  const readinessReport = auditToolkit(source);
+  if (readinessReport.status === 'blocked') throw new Error(`auditoria estrutural bloqueou a criação: ${readinessReport.issues.join('; ')}`);
+  files.set('references/toolkit-readiness.md', readinessReport.content);
   const sourceSkills = [];
   for (const path of manifest.files) {
     if (typeof path !== 'string' || /(^|\/)(?:\.git|\.scratch|\.vs|bin|obj|secrets|node_modules|qa-artifacts|runtime-publish)(?:\/|$)/i.test(path)) throw new Error('manifesto inválido');
@@ -54,7 +58,10 @@ export function prepareProject({ name, provider = 'both', presentation, source =
   }
   const rolesPath = manifest.files.find(path => path.endsWith('/fabrica/team/catalog.yaml'));
   const roles = JSON.parse(readFileSync(contained(source, rolesPath), 'utf8')).specialists;
-  for (const [path, text] of providerFiles(provider, roles, sourceSkills, {productName:name})) files.set(render(path), render(text));
+  for (const [path, text] of providerFiles(provider, roles, sourceSkills, {productName:name})) {
+    const productEntry = text.replace('Continue o produto existente.', 'Antes de qualquer trabalho de produto na primeira sessão, leia e apresente ao usuário references/toolkit-readiness.md. Continue o produto existente.');
+    files.set(render(path), render(productEntry));
+  }
   for (const [path,text] of architectureFiles({name,presentation,profile:architecture.profile,modules:architecture.profile==='modular-monolith'?architectureDecision.requirements.modules:[]})) files.set(path,text);
   files.set('docs/arquitetura/base.md',files.get('docs/architecture.md'));
   const architectural=structuredClone(architectureDecision);
@@ -125,5 +132,6 @@ export function createProject({ name, target, provider = 'both', presentation, d
     if (removedEmpty && !existsSync(root)) mkdirSync(root);
     throw error;
   } finally { if (existsSync(staging)) rmSync(staging, { recursive: true, force: true }); }
-  return { status: 'created', name, presentation, provider, target: root, files: files.size, next_step: 'Projeto materializado; revisar, otimizar e executar coherence-check antes de concluir o fluxo.' };
+  const readinessReport = auditToolkit(sourceRoot);
+  return { status: 'created', name, presentation, provider, target: root, files: files.size, readiness_report: { status: readinessReport.status, generation_status: 'generated', path: 'references/toolkit-readiness.md', content: readinessReport.content, presentation_required_before_product_work: true }, next_step: 'Apresente integralmente o relatório de prontidão ao usuário antes de iniciar qualquer trabalho do produto.' };
 }

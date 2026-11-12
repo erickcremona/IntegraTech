@@ -65,6 +65,9 @@ test('gerador: identidades, três apresentações e provedores independentes', a
     assert.equal((await main(['precheck', '--phase', 'discovery'])).status, 'ready');
     assert.ok(!readFileSync(join(target, 'README.md'), 'utf8').split('## Autoria da ferramenta')[0].includes('erickcremona'));
     const entrance=readFileSync(join(target,'README.md'),'utf8');
+    assert.ok(entrance.includes('toolkit-readiness.md'));
+    assert.ok(readFileSync(join(target,'references/toolkit-readiness.md'),'utf8').includes('Relatório de prontidão do toolkit'));
+    assert.ok(entrance.includes('antes de iniciar trabalho de produto'));
     assert.ok(entrance.includes(fullContext.problem));
     assert.ok(entrance.includes('Erick Cremona'));
     assert.ok(entrance.includes('https://www.linkedin.com/in/erick-cremona-6983a1383/'));

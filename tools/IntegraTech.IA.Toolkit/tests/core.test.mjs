@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { readFileSync, mkdtempSync, writeFileSync, mkdirSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 const base = new URL('../', import.meta.url);
 const read = name => JSON.parse(readFileSync(new URL(name, base), 'utf8'));
@@ -58,4 +59,31 @@ test('governança: sem escopo, negócio bloqueado e toolkit permitido', async ()
 test('schema: keyword nova não pode ser ignorada', async () => {
   const { assertSupported } = await core();
   assert.throws(() => assertSupported({ type: 'object', oneOf: [] }), /não suportada/);
+});
+
+test('analysis routes have role-specific guidance in the shared planning skill', async () => {
+  const { catalog } = await import(new URL('scripts/lib/governance.mjs', base));
+  const skill = readFileSync(new URL('fabrica/skills/integratech-planejamento/SKILL.md', base), 'utf8');
+  for (const [route, role, heading] of [
+    ['integration-analysis', 'integration-analyst', 'integration-analysis'],
+    ['architecture', 'architecture-analyst', 'architecture analysis'],
+    ['system-design', 'system-design-analyst', 'system design']
+  ]) {
+    assert.equal(catalog.routes[route], role);
+    assert.equal(catalog.specialists.find(item => item.name === role)?.skill, 'integratech-planejamento');
+    assert.match(skill, new RegExp(`## ${heading}`, 'i'));
+  }
+});
+
+test('toolkit readiness audit maps purposes, routes, CLI contracts, and evidence limits', async () => {
+  const { auditToolkit } = await import('../scripts/lib/toolkit-audit.mjs');
+  const report = auditToolkit(fileURLToPath(new URL('../../../', import.meta.url)));
+  assert.equal(report.structural_status, 'passed');
+  assert.match(report.content, /Papéis especializados: 16/);
+  assert.match(report.content, /Rotas catalogadas: 22/);
+  assert.match(report.content, /Comandos documentados na CLI: 69/);
+  assert.match(report.content, /integration-analysis/);
+  assert.match(report.content, /Verificações estruturais executadas/);
+  assert.match(report.content, /npm run verify/);
+  assert.ok(['ready', 'verification_required'].includes(report.status));
 });

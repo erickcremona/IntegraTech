@@ -20,11 +20,13 @@ async function fixture({ git = false, canonical = false } = {}) {
     writeFileSync(join(repo, path), readFileSync(join(root, path)));
   }
   writeFileSync(join(repo, 'personal.txt'), 'Meu arquivo pessoal');
+  let gitExecFileSync;
   if (git) {
-    execFileSync('git', ['init', '--initial-branch=main', repo], { stdio: 'ignore' });
-    execFileSync('git', ['-C', repo, 'remote', 'add', 'origin', canonical ? baseline.canonical_repository : 'https://github.com/example/MeuProjeto.git']);
+    mkdirSync(join(repo, '.git'));
+    writeFileSync(join(repo, '.git/config'), `[remote "origin"]\n\turl = ${canonical ? baseline.canonical_repository : 'https://github.com/example/MeuProjeto.git'}\n`);
+    gitExecFileSync = (_command, args) => args.includes('--get-regexp') ? `remote.origin.url ${canonical ? baseline.canonical_repository : 'https://github.com/example/MeuProjeto.git'}\n` : '';
   }
-  return { repo, baseline, ...module, adoptProject: preparedAdopt };
+  return { repo, baseline, gitExecFileSync, ...module, rawAdoptProject: module.adoptProject, adoptProject: args => preparedAdopt({ gitExecFileSync, ...args }) };
 }
 test('adoção: simula sem escrita e converte nome/contexto na mesma pasta', options, async () => {
   const f = await fixture({ git: true });
@@ -56,6 +58,26 @@ test('adoção: simula sem escrita e converte nome/contexto na mesma pasta', opt
   assert.equal(existsSync(join(f.repo, 'tools/MensagensCliente.IA.Toolkit/scripts/lib/verify-report.mjs')), true);
   assert.equal((await main(['precheck', '--phase', 'business'])).status, 'blocked');
   assert.throws(() => f.adoptProject(args), /real|adotado/i);
+});
+test('adoção: gera relatório de prontidão do toolkit para apresentação antes da operação', options, async () => {
+  const f = await fixture();
+  const result = f.adoptProject({ repo: f.repo, presentation: 'worker', name: 'ProdutoRelatorio', context: 'Organizar atendimento.' });
+  assert.equal(result.readiness_report.status, 'ready');
+  assert.equal(result.readiness_report.generation_status, 'generated');
+  assert.match(result.readiness_report.content, /Relatório de prontidão do toolkit/);
+  assert.match(result.readiness_report.content, /Papéis especializados: 16/);
+  assert.ok(readFileSync(join(f.repo, 'references/toolkit-readiness.md'), 'utf8').includes('Validação dinâmica completa: npm run verify passou em fixture-only'));
+  assert.ok(result.readiness_report.content.includes('Comandos CLI:'));
+  assert.ok(result.readiness_report.content.includes('Propósito declarado'));
+  assert.ok(readFileSync(join(f.repo, 'README.md'), 'utf8').includes('toolkit-readiness.md'));
+});
+test('adoção: exige verificação aprovada vinculada ao conteúdo atual', options, async () => {
+  const f = await fixture();
+  const { generationOptions } = await import('./generation-fixture.mjs');
+  const args = generationOptions({ repo: f.repo, presentation: 'worker', name: 'ProdutoSemVerificacao', context: 'Organizar atendimento.' });
+  assert.throws(() => f.rawAdoptProject(args), /npm run verify/);
+  assert.equal(JSON.parse(readFileSync(join(f.repo, 'project.json'))).is_model, true);
+  assert.equal(existsSync(join(f.repo, '.scratch/adoptions')), false);
 });
 test('adoção: bloqueia origem canônica, alterações locais e colisões antes de escrever', options, async () => {
   for (const kind of ['canonical', 'modified', 'collision', 'missing-problem']) {
@@ -127,7 +149,7 @@ test('adoção: escrita parcial em preparação não trunca o arquivo de destino
   finally { fs.default.writeFileSync = original; syncBuiltinESMExports(); }
   assert.equal(readFileSync(file, 'utf8'), 'conteúdo original íntegro');
 });
-test('adoção: recovery independente e links não contornam a proteção', options, async () => {
+test('adoção: recovery independente e links não contornam a proteção', options, async t => {
   const f = await fixture();
   const { symlinkSync, unlinkSync } = await import('node:fs');
   const original = readFileSync(join(f.repo, 'Directory.Build.props'));
@@ -139,10 +161,18 @@ test('adoção: recovery independente e links não contornam a proteção', opti
   assert.throws(() => f.adoptProject({ repo: join(f.repo, 'linked'), name: 'NovoNome', context: 'Organizar atendimento.' }), /link/i);
   writeFileSync(join(f.repo, 'Directory.Build.props'), original);
   const result = f.adoptProject({ repo: f.repo, presentation: 'worker', name: 'NovoNome', context: 'Organizar atendimento.' });
-  const preview = JSON.parse(execFileSync(process.execPath, [result.recovery, '--dry-run'], { encoding: 'utf8' }));
-  assert.equal(preview.status, 'planned');
-  const restored = JSON.parse(execFileSync(process.execPath, [result.recovery], { encoding: 'utf8' }));
-  assert.equal(restored.status, 'restored');
+  try {
+    const preview = JSON.parse(execFileSync(process.execPath, [result.recovery, '--dry-run'], { encoding: 'utf8' }));
+    assert.equal(preview.status, 'planned');
+    const restored = JSON.parse(execFileSync(process.execPath, [result.recovery], { encoding: 'utf8' }));
+    assert.equal(restored.status, 'restored');
+  } catch (error) {
+    if (error.code !== 'EPERM') throw error;
+    t.diagnostic('Processo Node filho bloqueado por EPERM; executando o mesmo recovery no processo de teste.');
+    const { restoreAdoption } = await import('../scripts/lib/adoption-recovery.mjs');
+    assert.equal(restoreAdoption(result.journal, { dryRun: true }).status, 'planned');
+    assert.equal(restoreAdoption(result.journal).status, 'restored');
+  }
 });
 
 test('adoção: exige seleção explícita em vez de herdar exemplo worker', options, async () => {

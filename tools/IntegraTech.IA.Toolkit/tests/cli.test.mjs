@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { main } from '../scripts/toolkit.mjs';
-import { mkdtempSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, readdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 test('CLI: erro de contexto não inclui seu conteúdo no diagnóstico', async () => {
@@ -14,6 +14,17 @@ test('CLI: rejeita opção desconhecida, duplicada, fase e provedor inválidos',
     await assert.rejects(main(args));
   assert.equal((await main(['route', '--category', 'qa'])).name, 'qa-engineer');
   assert.ok((await main(['help'])).includes('resume'));
+});
+
+test('CLI help enumerates every route, policy action, and contract schema', async () => {
+  const help = await main(['help']);
+  const { catalog } = await import('../scripts/lib/governance.mjs');
+  const { policyConfig } = await import('../scripts/lib/policy.mjs');
+  const contractsDirectory = new URL('../fabrica/team/contracts/', import.meta.url);
+  const contracts = readdirSync(contractsDirectory).filter(name => name.endsWith('.schema.json')).map(name => name.replace(/\.schema\.json$/, ''));
+  for (const route of Object.keys(catalog.routes)) assert.ok(help.includes(route), `help precisa listar a rota ${route}`);
+  for (const action of Object.keys(policyConfig().actions)) assert.ok(help.includes(action), `help precisa listar a ação ${action}`);
+  for (const kind of contracts) assert.ok(help.includes(kind), `help precisa listar o contrato ${kind}`);
 });
 
 test('CLI: tecnologia informa pesquisa pendente e valida recomendação sem gerar arquivos', async () => {

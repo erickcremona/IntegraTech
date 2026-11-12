@@ -79,14 +79,13 @@ test('segredos: padrões detectados sem revelar conteúdo; ações CI têm SHA c
   assert.ok(workflow.includes('persist-credentials: false'));
 });
 test('execução: processo encerrado pode ser fechado sem repetir o trabalho', async () => {
-  const { execFileSync } = await import('node:child_process');
-  const { pathToFileURL } = await import('node:url');
   const { closeInterruptedRun, beginRun, finishRun } = await import('../scripts/lib/runs.mjs');
   const repo = fixture();
-  const moduleUrl = new URL('../scripts/lib/runs.mjs', import.meta.url).href;
-  const code = 'const {beginRun}=await import(process.argv[1]);const r=beginRun({repo:process.argv[2],taskId:"INTERRUPTED",provider:"codex",agent:"code-reviewer",phase:"toolkit"});process.stdout.write(r.id);';
-  const id = execFileSync(process.execPath, ['--input-type=module', '-e', code, moduleUrl, repo], { encoding: 'utf8' });
-  const result = closeInterruptedRun(repo, id);
+  const interrupted = beginRun({ repo, taskId: 'INTERRUPTED', provider: 'codex', agent: 'code-reviewer', phase: 'toolkit' });
+  const interruptedState = JSON.parse(readFileSync(interrupted.state, 'utf8'));
+  interruptedState.pid = 2147483647;
+  writeFileSync(interrupted.state, JSON.stringify(interruptedState));
+  const result = closeInterruptedRun(repo, interrupted.id);
   assert.equal(result.status, 'failed');
   assert.equal(result.automatic_replay, false);
   const current = beginRun({ repo, taskId: 'ALIVE', provider: 'codex', agent: 'code-reviewer', phase: 'toolkit' });
@@ -106,13 +105,15 @@ test('avaliações: identidade vazia ou de tipo inválido não recebe aprovaçã
   }
 });
 test('execução: lock terminal de processo morto é recuperável sem alterar resultado', async () => {
-  const { execFileSync } = await import('node:child_process');
-  const { closeInterruptedRun } = await import('../scripts/lib/runs.mjs');
+  const { closeInterruptedRun, beginRun, finishRun } = await import('../scripts/lib/runs.mjs');
   const repo = fixture();
-  const moduleUrl = new URL('../scripts/lib/runs.mjs', import.meta.url).href;
-  const code = 'import{writeFileSync}from"node:fs";const{beginRun,finishRun}=await import(process.argv[1]);const r=beginRun({repo:process.argv[2],taskId:"TERMINAL",provider:"codex",agent:"code-reviewer",phase:"toolkit"});finishRun(r,{status:"completed"});writeFileSync(r.lock,JSON.stringify({id:r.id}));process.stdout.write(r.id);';
-  const id = execFileSync(process.execPath, ['--input-type=module', '-e', code, moduleUrl, repo], { encoding: 'utf8' });
-  assert.equal(closeInterruptedRun(repo, id).status, 'completed');
+  const terminalRun = beginRun({ repo, taskId: 'TERMINAL', provider: 'codex', agent: 'code-reviewer', phase: 'toolkit' });
+  finishRun(terminalRun, { status: 'completed' });
+  const terminalState = JSON.parse(readFileSync(terminalRun.state, 'utf8'));
+  terminalState.pid = 2147483647;
+  writeFileSync(terminalRun.state, JSON.stringify(terminalState));
+  writeFileSync(terminalRun.lock, JSON.stringify({ id: terminalRun.id }));
+  assert.equal(closeInterruptedRun(repo, terminalRun.id).status, 'completed');
   const { existsSync } = await import('node:fs');
   assert.equal(existsSync(join(repo, 'qa-artifacts/runs/TERMINAL.lock')), false);
 });

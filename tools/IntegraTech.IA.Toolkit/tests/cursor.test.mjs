@@ -6,7 +6,6 @@ import { mkdtempSync, readFileSync, writeFileSync, existsSync, mkdirSync, symlin
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { execFileSync } from 'node:child_process';
 import { install, providerFiles, validateInstalled, repoRoot } from '../scripts/lib/installer.mjs';
 import { catalog } from '../scripts/lib/governance.mjs';
 import { main } from '../scripts/toolkit.mjs';
@@ -147,7 +146,7 @@ test('Cursor: CLI cria e adota com escolha explícita e recuperação', { skip: 
   const created = temp('cursor-cli-create-');
   assert.equal((await run(['create-project', '--name', 'ViaCursor', '--target', created, '--provider', 'cursor', '--presentation', 'api', '--repo', inputs, ...inputArgs])).status, 'created');
   const generatedCli = join(created, 'tools/ViaCursor.IA.Toolkit/scripts/toolkit.mjs');
-  const checked = JSON.parse(execFileSync(process.execPath, [generatedCli, 'validate'], { encoding: 'utf8' }));
+  const checked = await (await import(pathToFileURL(generatedCli))).main(['validate']);
   assert.equal(checked.status, 'valid');
   for (const provider of ['cursor', 'all']) {
     const repo = temp('cursor-cli-adopt-');
@@ -163,11 +162,14 @@ test('Cursor: CLI cria e adota com escolha explícita e recuperação', { skip: 
     const args = ['adopt-project', '--repo', repo, '--name', 'ProdutoCursor', ...adoptionInputs, '--provider', provider, '--presentation', 'api'];
     assert.equal((await run([...args, '--dry-run'])).status, 'planned');
     assert.equal(read(join(repo, 'project.json')).is_model, true);
+    const { toolkitSourceFingerprint } = await import('../scripts/lib/toolkit-audit.mjs');
+    mkdirSync(join(repo, '.scratch'), { recursive: true });
+    writeFileSync(join(repo, '.scratch/toolkit-verification.json'), JSON.stringify({ status: 'passed', completed_at: 'fixture-only', checks: [{ check: 'synthetic_test_fixture', status: 'passed' }], source_sha256: toolkitSourceFingerprint(repo) }));
     const result = await run(args);
     assert.equal(result.status, 'adopted');
     assert.equal(read(join(repo, 'project.json')).provider, provider);
     const ownCli = join(repo, 'tools/ProdutoCursor.IA.Toolkit/scripts/toolkit.mjs');
-    assert.equal(JSON.parse(execFileSync(process.execPath, [ownCli, 'validate'], { encoding: 'utf8' })).status, 'valid');
+    assert.equal((await (await import(pathToFileURL(ownCli))).main(['validate'])).status, 'valid');
     assert.equal(readFileSync(join(repo, 'personal.txt'), 'utf8'), 'arquivo pessoal');
     assert.equal((await run(['restore-adoption', '--journal', result.journal])).status, 'restored');
     assert.equal(read(join(repo, 'project.json')).is_model, true);

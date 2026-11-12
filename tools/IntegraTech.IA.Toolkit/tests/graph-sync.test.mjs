@@ -4,8 +4,6 @@ import {mkdirSync,mkdtempSync,readFileSync,writeFileSync,existsSync,symlinkSync}
 import {dirname,join} from 'node:path';
 import {tmpdir} from 'node:os';
 import {createHash} from 'node:crypto';
-import {spawnSync} from 'node:child_process';
-import {fileURLToPath} from 'node:url';
 import {fullContext} from './domain-fixture.mjs';
 import {decisionFor} from './technology-fixture.mjs';
 const moduleUrl=new URL('../scripts/lib/traceability-sync.mjs',import.meta.url);
@@ -83,12 +81,12 @@ test('sync: caminhos/links/locks e fonte malformada falham sem sobrescrever',asy
  }
 });
 test('sync: CLI e rota do agente são reais e retomada mantém os gates',async()=>{
- const f=fixture(),cli=fileURLToPath(new URL('../scripts/toolkit.mjs',import.meta.url));
- const run=args=>{const r=spawnSync(process.execPath,[cli,...args,'--repo',f.repo],{encoding:'utf8'});return {code:r.status,result:JSON.parse(r.stdout)};};
- assert.equal(run(['graph','sync','--dry-run']).result.status,'planned');assert.equal(run(['graph','sync']).result.status,'synced');
+ const f=fixture();const {main}=await import('../scripts/toolkit.mjs');
+ const run=async args=>({code:0,result:await main([...args,'--repo',f.repo])});
+ assert.equal((await run(['graph','sync','--dry-run'])).result.status,'planned');assert.equal((await run(['graph','sync'])).result.status,'synced');
  f.save('references/project-state.json',{...f.state,scope_status:'pending',plan_gate:'pending'});
- const ready=run(['precheck','--phase','discovery']);assert.equal(ready.result.status,'ready');assert.ok(ready.result.traceability);
- const {main}=await import('../scripts/toolkit.mjs');assert.equal((await main(['route','--category','traceability'])).name,'traceability-maintainer');
+ const ready=await run(['precheck','--phase','discovery']);assert.equal(ready.result.status,'ready');assert.ok(ready.result.traceability);
+ assert.equal((await main(['route','--category','traceability'])).name,'traceability-maintainer');
 });
 test('sync: mapeamento manual confirmado não reaparece como sugestão pendente',async()=>{
  const {syncGraph}=await import(moduleUrl);const f=fixture();syncGraph({repo:f.repo});

@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs';
 // Deliberately limited to the keywords used in the versioned factory contracts.
 // Unsupported keywords fail closed; this is not a general JSON Schema engine.
 const supported = new Set(['$schema', '$id', 'title', 'description', 'type', 'additionalProperties', 'required', 'properties', 'items', 'const', 'enum', 'minLength', 'minimum', 'minItems', 'maxItems', 'allOf', 'if', 'then']);
+export const contractKinds = Object.freeze(['delegation', 'return', 'review', 'handoff', 'business-context', 'business-plan', 'approval', 'technology-decision', 'domain-preparation', 'domain-consultation', 'domain-coherence', 'task-run', 'traceability-graph', 'interface-profile', 'business-plan-v2', 'functional-spec', 'technical-design', 'system-design']);
 export function assertSupported(schema) {
   for (const key of Object.keys(schema)) if (!supported.has(key)) throw new Error(`schema: keyword não suportada: ${key}`);
   for (const child of Object.values(schema.properties ?? {})) assertSupported(child);
@@ -41,7 +42,7 @@ function check(schema, value, path = '$') {
   }
 }
 export function loadSchema(kind) {
-  if (!['delegation', 'return', 'review', 'handoff', 'business-context', 'business-plan', 'approval', 'technology-decision', 'domain-preparation', 'domain-consultation', 'domain-coherence', 'task-run', 'traceability-graph', 'interface-profile', 'business-plan-v2', 'functional-spec', 'technical-design', 'system-design'].includes(kind)) throw new Error('contrato desconhecido');
+  if (!contractKinds.includes(kind)) throw new Error('contrato desconhecido');
   return JSON.parse(readFileSync(new URL(`../../fabrica/team/contracts/${kind}.schema.json`, import.meta.url), 'utf8'));
 }
 export function validateContract(kind, value, expectedTaskId) {

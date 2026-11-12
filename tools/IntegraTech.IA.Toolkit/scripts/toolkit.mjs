@@ -16,7 +16,7 @@ import { readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { catalog, precheck, route, factoryRoot, sha256 } from './lib/governance.mjs';
-import { validateContract, loadSchema, assertSupported } from './lib/contracts.mjs';
+import { validateContract, loadSchema, assertSupported, contractKinds } from './lib/contracts.mjs';
 import { install, validateInstalled, repoRoot } from './lib/installer.mjs';
 import { checkProvider, diagnoseProviders } from './lib/providers.mjs';
 import { dispatch } from './lib/dispatcher.mjs';
@@ -27,7 +27,7 @@ import { assessContext, inspectPreparation } from './lib/domain-specialist.mjs';
 import { collectResearch, verifyResearch } from './lib/domain-research.mjs';
 import { inspectSpecialist, prepareSpecialist, recordConsultation, inspectConsultation, repositorySnapshot, runCoherenceChecks, completeCoherence, inspectCoherence, readDocument } from './lib/domain-workflow.mjs';
 import { restoreAdoption } from './lib/adoption-recovery.mjs';
-import { checkPolicy } from './lib/policy.mjs';
+import { checkPolicy, policyConfig } from './lib/policy.mjs';
 import { inspectRun, closeInterruptedRun } from './lib/runs.mjs';
 import { evaluateLocal, evaluateProtocol } from './lib/evaluations.mjs';
 import { syncGraph } from './lib/traceability-sync.mjs';
@@ -68,7 +68,7 @@ const help = `IntegraTech Toolkit — Node.js >=22
   graph sync [--repo PATH] [--file RELATIVE] [--dry-run] [--accept-changes]
   graph validate [--repo PATH] [--file RELATIVE]
   graph impact --id ID [--repo PATH] [--file RELATIVE]
-  policy-check --action review|implement|adopt|discover|design --agent PAPEL --phase FASE [--repo PATH]
+  policy-check --action ${Object.keys(policyConfig().actions).join('|')} --agent PAPEL --phase FASE [--repo PATH]
   eval --mode local|protocol [--provider codex|claude] [--trials 1..3] [--live]
   run-state --id RUN_ID [--repo PATH]
   loop-start --task PATH --phase FASE --provider codex|claude|cursor [--repo PATH]
@@ -98,12 +98,12 @@ const help = `IntegraTech Toolkit — Node.js >=22
   create-project --name NomeProjeto --target PATH [--repo RAIZ_DO_ACEITE] [--provider codex|claude|cursor|both|all] --context-file PATH --preparation-file PATH --technology-file PATH --architecture-file PATH [--presentation worker|api|console] [--dry-run]
   precheck --phase toolkit|discovery|design|business [--repo PATH]
   route --request "PEDIDO DO USUÁRIO" [--last-asset image|animation|diagram]
-  route --category toolkit|worker|integration|qa|security|data|review|discovery|release|deployment|graphic-design|visual-assets|motion-design
+  route --category ${Object.keys(catalog.routes).join('|')}
   providers
   hash --file PATH
   install --provider codex|claude|cursor|both|all [--target PATH] [--dry-run]
   validate [--provider codex|claude|cursor|both|all] [--repo PATH]
-  contract --kind delegation|return|review|handoff|business-context|business-plan|business-plan-v2|functional-spec|technical-design|approval|technology-decision|system-design|domain-preparation|domain-consultation|domain-coherence|task-run|traceability-graph --file PATH
+  contract --kind ${contractKinds.join('|')} --file PATH
   dispatch --provider codex|claude --task PATH --files PATH --phase toolkit|discovery|design|business [--repo PATH] [--timeout 120000]
   resume --file PATH
 
@@ -269,7 +269,10 @@ export async function main(argv, services = {}) {
     case 'adopt-project': return adoptProject({ provider: options.provider, repo: resolve(options.repo ?? repoRoot), name: options.name, context: readContext(options['context-file']), presentation: options.presentation, technologyDecision: readDecision(options['technology-file']), architectureDecision:readDecision(options['architecture-file']), preparation: readDecision(options['preparation-file']), researchRequest: services.researchRequest, contextFile: options['context-file'] ? resolve(options['context-file']) : undefined, dryRun: options['dry-run'] ?? false });
     case 'restore-adoption': if (!options.journal) throw new Error('journal obrigatório'); return restoreAdoption(resolve(options.journal), { dryRun: options['dry-run'] ?? false });
     case 'hash': return { sha256: sha256(readFileSync(resolve(options.file))) };
-    case 'create-project': return createProject({ name: options.name, target: options.target, provider: options.provider, presentation: options.presentation, context: readContext(options['context-file']), technologyDecision: readDecision(options['technology-file']), architectureDecision:readDecision(options['architecture-file']), preparation: readDecision(options['preparation-file']), researchRequest: services.researchRequest, decisionRepo: resolve(options.repo ?? repoRoot), dryRun: options['dry-run'] ?? false });
+    case 'create-project': {
+      const source = repoRoot;
+      return createProject({ name: options.name, target: options.target, provider: options.provider, presentation: options.presentation, context: readContext(options['context-file']), technologyDecision: readDecision(options['technology-file']), architectureDecision:readDecision(options['architecture-file']), preparation: readDecision(options['preparation-file']), researchRequest: services.researchRequest, decisionRepo: resolve(options.repo ?? repoRoot), dryRun: options['dry-run'] ?? false });
+    }
     case 'precheck': return withTraceability(precheck(resolve(options.repo ?? repoRoot), options.phase));
     case 'route': if(options.request!==undefined){if(options.category!==undefined)throw new Error('Use categoria ou pedido, não ambos');return routeRequest({request:options.request,lastAsset:options['last-asset']});}if(options['last-asset']!==undefined)throw new Error('Contexto visual exige pedido');return route(options.category);
     case 'providers': return Promise.all(['codex', 'claude', 'cursor'].map(provider => checkProvider(provider)));
@@ -279,7 +282,7 @@ export async function main(argv, services = {}) {
     case 'validate': {
       const currentRoot = resolve(options.repo ?? repoRoot);
       const errors = validateInstalled(currentRoot, options.provider);
-      for (const kind of ['delegation', 'return', 'review', 'handoff', 'business-context', 'business-plan', 'approval', 'technology-decision', 'domain-preparation', 'domain-consultation', 'domain-coherence', 'task-run', 'traceability-graph']) assertSupported(loadSchema(kind));
+      for (const kind of contractKinds) assertSupported(loadSchema(kind));
       for (const role of catalog.specialists) {
         readFileSync(new URL(`skills/${role.skill}/SKILL.md`, factoryRoot), 'utf8');
         if (role.kind === 'reviewer' && !role.read_only) errors.push('reviewer deve ser read_only');

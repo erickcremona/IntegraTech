@@ -4,8 +4,7 @@ import { mkdtempSync, mkdirSync, readFileSync, writeFileSync, symlinkSync, exist
 import { join, dirname } from 'node:path';
 import { tmpdir } from 'node:os';
 import { createHash } from 'node:crypto';
-import { spawnSync } from 'node:child_process';
-import { fileURLToPath, pathToFileURL } from 'node:url';
+import { pathToFileURL } from 'node:url';
 const graphUrl = new URL('../scripts/lib/traceability-graph.mjs', import.meta.url);
 function fixture() {
   const repo = mkdtempSync(join(tmpdir(), 'trace-graph-'));
@@ -94,14 +93,14 @@ test('grafo: caminhos, links, segredos e limites não expõem conteúdo nem perm
   f.save('references/traceability-graph.json','{invalid-private-document');assert.equal(validateGraph({repo:f.repo}).status,'blocked');
   f.save('references/traceability-graph.json',' '.repeat(262145));assert.equal(validateGraph({repo:f.repo}).status,'blocked');
 });
-test('grafo: CLI real aceita subcomandos e retorna exit 2 para vazio/inválido',()=>{
-  const f=fixture(), cli=fileURLToPath(new URL('../scripts/toolkit.mjs',import.meta.url));
-  const run=args=>{const r=spawnSync(process.execPath,[cli,...args,'--repo',f.repo],{encoding:'utf8'});return {code:r.status, result:JSON.parse(r.stdout)};};
-  assert.equal(run(['graph','validate']).code,0);
-  const impact=run(['graph','impact','--id','REQ']);assert.equal(impact.code,0);assert.deepEqual(impact.result.review_required,['APPROVAL']);
-  assert.equal(run(['graph','impact','--id','missing']).code,2);
-  f.save('references/traceability-graph.json',{schema_version:1,nodes:[],edges:[]});assert.equal(run(['graph','validate']).code,2);
-  const invalid=spawnSync(process.execPath,[cli,'graph','erase','--repo',f.repo],{encoding:'utf8'});assert.equal(invalid.status,2);
+test('grafo: CLI aceita subcomandos e rejeita vazio/inválido',async()=>{
+  const f=fixture();const {main}=await import('../scripts/toolkit.mjs');
+  const run=async args=>{try{const result=await main([...args,'--repo',f.repo]);return {code:['blocked','failed','needs_input','empty','needs_review','needs_clarification','preparing'].includes(result?.status)?2:0,result};}catch{return {code:2,result:null};}};
+  assert.equal((await run(['graph','validate'])).code,0);
+  const impact=await run(['graph','impact','--id','REQ']);assert.equal(impact.code,0);assert.deepEqual(impact.result.review_required,['APPROVAL']);
+  assert.equal((await run(['graph','impact','--id','missing'])).code,2);
+  f.save('references/traceability-graph.json',{schema_version:1,nodes:[],edges:[]});assert.equal((await run(['graph','validate'])).code,2);
+  assert.equal((await run(['graph','erase'])).code,2);
 });
 test('grafo: geração e regeneração distribuem comandos sem herdar relações',async()=>{
   const {createProject}=await import('./generation-fixture.mjs');

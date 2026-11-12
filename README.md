@@ -175,6 +175,8 @@ dotnet run --project tests/IntegraTech.Arquitetura.Tests --no-build
 
 Em um projeto personalizado, use o nome de sua solução e do projeto de testes. O teste .NET é um executável de ciclo de vida; `dotnet test` sozinho não o executa. `doctor` verifica capacidades das CLIs, sem comprovar autenticação ou disponibilidade de modelo. `npm run verify` executa a verificação reproduzível do toolkit e dos modelos gerados/adotados; não executa avaliações com modelos reais automaticamente.
 
+`npm run toolkit -- help` mostra rotas, ações de política e contratos diretamente das definições do toolkit. `npm run check` valida os adaptadores instalados, os papéis do catálogo e todos os esquemas de contrato suportados.
+
 Para gerar em outra pasta vazia, após preparar contexto completo, pesquisa externa e decisão aprovada:
 
 ```powershell

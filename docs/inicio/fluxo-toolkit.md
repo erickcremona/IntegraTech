@@ -22,7 +22,7 @@ O agente pesquisa referências externas, registra alternativas e recomenda tecno
 
 Worker é opcional: permanece apenas para processamento em segundo plano justificado. Os geradores atuais materializam .NET Worker, API ou Console. Uma recomendação fora dessas stacks não é convertida em aproximação .NET; demanda um gerador próprio. Pesquisa essencial indisponível ou contexto insuficiente interrompem a materialização até resolução.
 
-Com a decisão aprovada, o toolkit pode personalizar sua cópia na mesma pasta ou gerar em outra pasta vazia. Preserva customizações e apresenta conflitos; o repositório canônico continua reutilizável. Consulte [adoção](adotar-projeto.md), [decisão tecnológica](decisao-tecnologica.md) e [especialista de domínio](especialista-dominio.md).
+Com a decisão aprovada, execute npm run verify; corrija falhas no modelo e repita até passar. A adoção só aceita evidência vinculada por hash ao conteúdo verificado. O toolkit pode personalizar sua cópia na mesma pasta ou gerar em outra pasta vazia. Ambos os caminhos geram um relatório de prontidão com papéis, skills, rotas, comandos, contratos, testes e limites; apresente-o ao usuário antes do trabalho do produto. Preserva customizações e apresenta conflitos; o repositório canônico continua reutilizável. Consulte [adoção](adotar-projeto.md), [decisão tecnológica](decisao-tecnologica.md) e [especialista de domínio](especialista-dominio.md).
 
 Se houver interface, o agente registra plataforma/framework/versão e escolhas visuais separadamente do backend. Após o aceite técnico, prepara a especialização de UI; não instala dependências nem gera negócio nessa etapa. Perfis e capacidades são explícitos: orientação de uma stack não implica gerador disponível. Veja [interfaces conforme a tecnologia](interfaces.md).
 
@@ -79,6 +79,8 @@ Se o problema mudar, informe a mudança e peça análise de impacto antes da imp
 | `qa-artifacts/loops/` e `qa-artifacts/agents/` | Tarefas, resultados e pareceres locais; ignorados pelo Git |
 
 O agente prepara os detalhes operacionais. Para operar diretamente, consulte o [manual do toolkit](../../tools/IntegraTech.IA.Toolkit/README.md), o [passo a passo de negócio](primeiro-projeto.md) e a [retomada](../../references/README.md).
+
+Para consultar a superfície CLI vigente, use `npm run toolkit -- help`; categorias de rota, ações de política e tipos de contrato são derivados das definições instaladas. `npm run check` confere adaptadores, papéis e todos os esquemas de contrato suportados.
 
 ## Como este guia acompanha a evolução
 

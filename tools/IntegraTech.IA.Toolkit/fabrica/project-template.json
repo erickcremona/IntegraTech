@@ -200,6 +200,7 @@
     "tools/IntegraTech.IA.Toolkit/scripts/lib/secret-scan.mjs",
     "tools/IntegraTech.IA.Toolkit/scripts/lib/system-design.mjs",
     "tools/IntegraTech.IA.Toolkit/scripts/lib/task-loop.mjs",
+    "tools/IntegraTech.IA.Toolkit/scripts/lib/toolkit-audit.mjs",
     "tools/IntegraTech.IA.Toolkit/scripts/lib/technology-decision.mjs",
     "tools/IntegraTech.IA.Toolkit/scripts/lib/traceability-graph.mjs",
     "tools/IntegraTech.IA.Toolkit/scripts/lib/traceability-sources.mjs",

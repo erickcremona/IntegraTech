@@ -8,6 +8,7 @@ import { normalizeInitialContext } from './business-context.mjs';
 export { normalizeInitialContext } from './business-context.mjs';
 import { assessContext } from './domain-specialist.mjs';
 import { checkPolicy } from './policy.mjs';
+import { auditToolkit } from './toolkit-audit.mjs';
 
 export const baselineHash = data => exactHash(data.toString('utf8').replaceAll('\r\n', '\n'));
 const normalizeRemote = value => {
@@ -26,7 +27,7 @@ export function onboarding({ repo, name, context }) {
   questions.push(...assessed.questions.map(q => q.question));
   return { status: questions.length ? 'needs_input' : 'needs_domain_research', questions };
 }
-export function adoptProject({ repo, name, context, dryRun = false, contextFile, presentation, technologyDecision, architectureDecision, preparation, researchRequest, provider }) {
+export function adoptProject({ repo, name, context, dryRun = false, contextFile, presentation, technologyDecision, architectureDecision, preparation, researchRequest, provider, gitExecFileSync = execFileSync }) {
   const root = resolve(repo);
   assertNoLinks(root);
   const identity = JSON.parse(readFileSync(transactionPath(root, 'project.json'), 'utf8'));
@@ -35,11 +36,14 @@ export function adoptProject({ repo, name, context, dryRun = false, contextFile,
   const baselinePath = `tools/${identity.name}.IA.Toolkit/fabrica/template-baseline.json`;
   const baseline = JSON.parse(readFileSync(transactionPath(root, baselinePath), 'utf8'));
   if (baseline.version !== 1 || !baseline.files || !baseline.canonical_repository) throw new Error('baseline inválido');
+  const readinessReport = auditToolkit(root);
+  if (readinessReport.structural_status === 'blocked') throw new Error(`auditoria estrutural do toolkit bloqueou a adoção: ${readinessReport.issues.join('; ')}`);
+  if (!dryRun && !readinessReport.verification) throw new Error('adoção bloqueada: execute npm run verify, corrija falhas e repita até haver validação aprovada do conteúdo atual do toolkit');
   if (existsSync(join(root, '.git'))) {
     assertNoLinks(join(root, '.git'));
     let remotes;
     try {
-      remotes = execFileSync('git', ['-C', root, 'config', '--get-regexp', '^remote\..*\.(url|pushurl)$'], { encoding: 'utf8', windowsHide: true, stdio: ['ignore', 'pipe', 'pipe'] });
+      remotes = gitExecFileSync('git', ['-C', root, 'config', '--get-regexp', '^remote\..*\.(url|pushurl)$'], { encoding: 'utf8', windowsHide: true, stdio: ['ignore', 'pipe', 'pipe'] });
     } catch (error) { if (error.status === 1) remotes = ''; else throw new Error('não foi possível verificar os remotos Git'); }
     const canonical = normalizeRemote(baseline.canonical_repository);
     if (remotes.split(/\r?\n/).filter(Boolean).some(line => normalizeRemote(line.replace(/^\S+\s+/, '')) === canonical))
@@ -52,6 +56,7 @@ export function adoptProject({ repo, name, context, dryRun = false, contextFile,
   files.set('project.json', JSON.stringify(newIdentity, null, 2) + '\n');
   files.set('references/business-context.json', JSON.stringify(initial, null, 2) + '\n');
   files.set('README.md', files.get('README.md').replace('O problema de negócio ainda não foi definido.', 'Projeto real com contexto inicial registrado em references/business-context.json. Continue a descoberta a partir dos fatos já informados.').replace('Nenhum remoto, credencial, aprovação ou evidência de outro projeto foi herdado.', 'Git, remotos existentes e arquivos pessoais foram preservados. Adoção não autoriza push, deploy ou implementação sem os gates aplicáveis.'));
+  files.set('references/toolkit-readiness.md', readinessReport.content);
   const old = new Set([...Object.keys(baseline.files), baselinePath]);
   const before = new Map();
   for (const path of old) {
@@ -112,5 +117,5 @@ export function adoptProject({ repo, name, context, dryRun = false, contextFile,
     try { restoreAdoption(journalPath); } catch { throw new Error(`adoção interrompida; recuperação local necessária: ${journalPath}`); }
     throw error;
   }
-  return { status: 'adopted', name, root, journal: journalPath, recovery: join(run, 'recover.mjs'), next_step: 'Projeto materializado; revisar, otimizar e executar coherence-check antes de concluir o fluxo.' };
+  return { status: 'adopted', name, root, journal: journalPath, recovery: join(run, 'recover.mjs'), readiness_report: { status: readinessReport.status, generation_status: 'generated', path: 'references/toolkit-readiness.md', content: readinessReport.content, presentation_required_before_product_work: true }, next_step: 'Apresente integralmente o relatório de prontidão ao usuário antes de iniciar qualquer trabalho do produto.' };
 }

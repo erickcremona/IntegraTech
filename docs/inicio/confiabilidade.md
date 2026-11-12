@@ -2,7 +2,7 @@
 
 ## Verificação reproduzível e CI
 
-`npm run verify` executa baseline (somente no modelo), suíte do toolkit, consistência dos adaptadores, avaliações locais, padrões de segredos e build/ciclo da solução. No modelo, também executa geração/consistência/suítes do toolkit/build/ciclo de Worker/API/Console e adoção/consistência/build/ciclo de API/Console. As fontes externas da geração de teste são simuladas por fixtures explícitas; isso não comprova pesquisa de domínio real nem execução de modelos de IA. Requer Git, Node e .NET instalados. É o comando usado em .github/workflows/validate.yml.
+`npm run verify` executa baseline (somente no modelo), suíte completa do toolkit, consistência dos adaptadores, avaliações locais, padrões de segredos e build/ciclo da solução. No modelo, também executa geração/consistência/build/ciclo de Worker/API/Console e adoção/consistência/build/ciclo de API/Console. Os testes de geração e adoção para as apresentações/provedores já rodam na suíte completa do toolkit; projetos gerados recebem validação estrutural e ciclo .NET próprios, sem repetir a suíte inteira em cada cópia. As fontes externas da geração de teste são simuladas por fixtures explícitas; isso não comprova pesquisa de domínio real nem execução de modelos de IA. Requer Git, Node e .NET instalados. É o comando usado em .github/workflows/validate.yml.
 
 O CI usa ações oficiais fixadas por SHA, conteúdo read-only, checkout sem persistir credenciais e nenhum secret de modelo. Não faz deploy nem chama modelos reais. Uma execução local não comprova que o workflow remoto passou; confira GitHub Actions.
 
@@ -50,7 +50,7 @@ Esses registros cobrem o dispatcher de revisão. Eles não são uma máquina de 
 
 ## Escopo de prontidão operacional
 
-Uma verificação local aprovada comprova os alvos executados, não funcionamento integral de serviços externos. Confira `doctor` para as capacidades de cada CLI; available significa flags/versão compatíveis, não autenticação, modelo disponível ou isolamento efetivo. A sessão nativa Codex atual pode funcionar mesmo quando subprocessos independentes não foram validados. Avaliações com modelos reais continuam exigindo solicitação explícita.
+Uma verificação local aprovada comprova os alvos executados, não funcionamento integral de serviços externos. `doctor` verifica as CLIs externas Codex/Claude e suas flags; ele não consulta nem invalida uma sessão nativa do Codex desktop. Available significa flags/versão compatíveis, não autenticação, modelo disponível ou isolamento efetivo. A sessão nativa Codex atual pode funcionar mesmo quando subprocessos independentes não foram validados. Avaliações com modelos reais continuam exigindo solicitação explícita.
 
 A pesquisa obrigatória precisa alcançar as fontes escolhidas com HTTPS e confiança TLS preservados. Um bloqueio da política de rede requer liberação dos domínios ou seleção justificada de fontes oficiais alternativas disponíveis; não simule recibos nem desabilite verificações. Uma coleta HTTP real valida a aquisição/revalidação da fonte, não a qualidade de uma análise completa do negócio.
 

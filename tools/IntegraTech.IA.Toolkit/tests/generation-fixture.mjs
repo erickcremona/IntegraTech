@@ -1,13 +1,14 @@
 import {architectureDigest,architectureTechnologyHash} from '../scripts/lib/architecture-decision.mjs';
 import {fingerprint} from '../scripts/lib/candidate.mjs';
 // Explicit test data: only network I/O is simulated; all production gates run.
-import { mkdtempSync, mkdirSync, writeFileSync, existsSync, lstatSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, unlinkSync, rmdirSync, existsSync, lstatSync, readdirSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { createProject as generate } from '../scripts/lib/project-generator.mjs';
 import { adoptProject as adopt } from '../scripts/lib/project-adoption.mjs';
 import { fullContext, preparationFor, researchRequest } from './domain-fixture.mjs';
 import { decisionFor } from './technology-fixture.mjs';
+import { toolkitSourceFingerprint } from '../scripts/lib/toolkit-audit.mjs';
 export function generationOptions(args) {
   const context = { ...fullContext, ...(typeof args.context === 'string' ? { problem: args.context } : args.context ?? {}) };
   const decisionRepo = args.decisionRepo ?? args.repo ?? mkdtempSync(join(tmpdir(), 'fixture-approval-'));
@@ -26,4 +27,25 @@ export function generationOptions(args) {
   return { ...args, architectureDecision, context, decisionRepo, technologyDecision, preparation: args.preparation ?? preparationFor(context), researchRequest: args.researchRequest ?? researchRequest };
 }
 export const createProject = args => generate(generationOptions(args));
-export const adoptProject = args => adopt(generationOptions(args));
+export const adoptProject = args => {
+  let evidencePath;
+  let createdScratch = false;
+  if (args.repo && !args.dryRun) {
+    const repo = args.repo;
+    const identityPath = join(repo, 'project.json');
+    if (existsSync(identityPath) && JSON.parse(readFileSync(identityPath, 'utf8')).is_model === true) {
+      const evidence = { status: 'passed', completed_at: 'fixture-only', checks: [{ check: 'synthetic_test_fixture', status: 'passed' }], source_sha256: toolkitSourceFingerprint(repo) };
+      const scratch = join(repo, '.scratch');
+      createdScratch = !existsSync(scratch);
+      mkdirSync(scratch, { recursive: true });
+      evidencePath = join(scratch, 'toolkit-verification.json');
+      writeFileSync(evidencePath, JSON.stringify(evidence));
+    }
+  }
+  try { return adopt(generationOptions(args)); }
+  catch (error) {
+    if (evidencePath && existsSync(evidencePath)) unlinkSync(evidencePath);
+    if (createdScratch && args.repo && readdirSync(join(args.repo, '.scratch')).length === 0) rmdirSync(join(args.repo, '.scratch'));
+    throw error;
+  }
+};
