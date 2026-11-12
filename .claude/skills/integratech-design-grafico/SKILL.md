@@ -31,6 +31,18 @@ Registre os campos abaixo com fatos do usuário ou decisões explicitamente prop
 5. Gere, veja o resultado e confronte com o brief. Inspecione em resolução completa e no tamanho de uso; confira números, português/acentos, nomes, conexões, cortes e consistência. Solicite/refaça a geração ou ajuste o vetor quando houver erro relevante. Só registrar como observado o que efetivamente foi inspecionado; sem visualizador, aparência fica não verificada.
 6. Entregue a peça, um texto alternativo útil, versão textual do conteúdo e arquivo fonte quando ele realmente existir. Preserve a imagem gerada original e versões aprovadas. Reutilize a marca/referência aprovada e registre a origem/licença de recursos de terceiros quando usados.
 
+## Contrato visual, geração e revisão
+
+Converta o brief em um contrato curto antes de chamar a ferramenta. Organize-o nesta ordem: **conteúdo obrigatório** (sujeitos/quantidade, ação, expressão e relação); **composição** (orientação, ponto de vista, posições, hierarquia e distância de câmera); **direção visual** (estilo, paleta, luz e cenário); **entrega** (aspecto, tamanho de uso, formato e fundo); **limites** (o que evitar). Use fatos fornecidos pelo usuário para conteúdo; escolhas estéticas podem ser propostas pelo agente. Para um pedido simples, infira valores estéticos seguros e produza sem transformar o brief em um formulário.
+
+Ao traduzir o contrato para prompt, preserve primeiro os requisitos obrigatórios, depois composição e direção. Seja específico sobre enquadramento: mantenha cada sujeito inteiro quando solicitado, incluindo patas, cauda, orelhas e extremidades, com margem de segurança visível entre a silhueta e as bordas. Se texto exato fizer parte da arte, confira se a ferramenta o renderiza com precisão; quando isso não for confiável, produza a imagem sem texto e componha a tipografia em uma ferramenta adequada.
+
+Depois da geração, revise cada requisito obrigatório como **passa** ou **falha** usando a imagem efetivamente produzida, tanto em resolução completa quanto no tamanho previsto de uso. A lista mínima é: conteúdo e ação corretos; expressões e hierarquia legíveis; sujeitos completos e sem cortes proibidos; composição e estilo coerentes; artefatos ou inconsistências visíveis; formato e dimensão corretos. Registre observações, não suposições. Não declare um requisito atendido se a imagem o contradiz; por exemplo, um sujeito cortado na borda falha o requisito de corpo inteiro.
+
+Se um requisito obrigatório falhar, corrija antes de apresentar a peça como pronta. Quando a ferramenta aceitar edição ou imagem de referência, faça uma **edição direcionada** que altere o defeito e preserve os elementos já aprovados. Caso contrário, gere outra versão ajustando somente os pontos que falharam e mantendo o restante do contrato. Se a correção não for possível ou continuar falhando, mostre a limitação e peça ao usuário uma decisão sobre a próxima direção; não esconda a falha sob uma descrição positiva. Feedback como “mais suave” deve alterar a direção indicada sem descartar silenciosamente conteúdo, formato ou decisões visuais aceitas.
+
+Em comparações, mantenha a mesma ferramenta e, quando a sessão expuser essas opções, o mesmo modelo, proporção e condições para as alternativas. Informe apenas a proveniência realmente observada: se o nome/versão do modelo ou seed não estiverem disponíveis, diga que não foi possível confirmá-los. Uma skill melhora briefing, seleção, revisão e refinamento; não implica acesso a um modelo, edição ou renderizador que a sessão não disponibiliza.
+
 ## Animações
 
 Anime para explicar relações, orientar a atenção ou comunicar estado; não usar movimento só por espetáculo. Escolha técnica compatível com o destino: SVG/CSS ou Web Animations para web, Lottie quando houver suporte e exportador, vídeo/GIF somente com ferramentas de render/export realmente disponíveis. Um prompt/storyboard não é vídeo produzido. Gerador de imagens estáticas não implica gerador de animação.
@@ -40,6 +52,8 @@ Antes de implementar, escreva a linha do tempo com início/fim de cada bloco, du
 Exemplo de linha do tempo para mapa de sete grupos em seis segundos: centro 0–0,4 s; grupos iniciam em 0,5 / 1,0 / 1,5 / 2,0 / 2,5 / 3,0 / 3,5 s, cada revelação dura 0,4 s; mapa completo permanece de 3,9–6,0 s e continua visível após o término; sem repetição automática. Se houver reprodução novamente, disponibilizar controle explícito. Reduced motion mostra o quadro final imediatamente. O cronograma é referência, não prova de uma animação renderizada.
 
 Se produzir animação, abrir em browser/player e verificar início, transições, quadro final, pausa/repetição, desempenho e reduced motion. Se o exportador não estiver disponível, entregar o fonte animado e fallback estático, indicando que MP4/WebM/GIF não foram exportados. README pode sanitizar SVG animado ou não executar HTML: usar imagem estática por padrão e link separado para demonstração compatível. Não instalar bibliotecas ou usar CDNs sem necessidade/autorização aplicável.
+
+Para motion gerado, acrescente ao contrato as cenas/quadros-chave, ação por sujeito, trajetória de câmera, duração e continuidade entre quadros. Avalie se os personagens, cenário, direção e escala permanecem coerentes durante todo o clipe, além dos critérios de legibilidade e artefatos. Se só houver gerador estático, entregue ilustrações/quadros-chave ou storyboard identificados como tais; não chame isso de animação renderizada.
 
 ## Contrato de entrega
 

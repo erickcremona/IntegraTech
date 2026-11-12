@@ -228,6 +228,7 @@
     "tools/IntegraTech.IA.Toolkit/tests/engineering-loop.test.mjs",
     "tools/IntegraTech.IA.Toolkit/tests/generation-fixture.mjs",
     "tools/IntegraTech.IA.Toolkit/tests/generator.test.mjs",
+    "tools/IntegraTech.IA.Toolkit/tests/graphic-design.test.mjs",
     "tools/IntegraTech.IA.Toolkit/tests/graph-sync.test.mjs",
     "tools/IntegraTech.IA.Toolkit/tests/graph.test.mjs",
     "tools/IntegraTech.IA.Toolkit/tests/install.test.mjs",

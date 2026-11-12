@@ -8,11 +8,21 @@ O agente deve organizar um brief com objetivo, público, mensagem, conteúdo con
 
 O trabalho inclui hierarquia, tipografia, grid, respiro, paleta, ícones e relações semânticas. No mapa, conectores devem explicar pertencimento ou fluxo real, sem inventar capacidades. Texto essencial precisa continuar legível no tamanho de exibição; detalhes podem ficar em conteúdo textual acessível. Não basta gerar uma imagem e supor que ela ficou boa: o agente deve visualizar, conferir português, cortes e conexões, criticar a composição e refinar quando necessário.
 
+## Brief, geração e refinamento
+
+O brief vira um contrato visual curto: conteúdo obrigatório; composição e enquadramento; direção visual; formato e tamanho de uso; limites do que evitar. Separe requisitos obrigatórios de preferências estéticas. Para pedidos simples, o agente infere as escolhas estéticas seguras sem interrogar o usuário com um formulário. O prompt prioriza conteúdo e composição antes de detalhes decorativos. Quando for necessário manter personagens ou elementos inteiros, especifique margem de segurança em torno de toda a silhueta, incluindo patas, cauda, orelhas e extremidades.
+
+Após gerar, revise cada requisito obrigatório como passa/falha na imagem real, em resolução completa e no tamanho em que será usada. Confira conteúdo, ação, expressões, hierarquia, cortes, coerência visual, artefatos, dimensões e formato. Um requisito que falhou impede apresentar a imagem como pronta: use edição direcionada preservando os elementos aprovados quando a ferramenta permitir; caso contrário, regenere alterando os pontos com falha e mantendo o restante do contrato. Se a ferramenta não permitir corrigir, informe a limitação e peça orientação sobre a próxima tentativa. Nunca diga que algo foi conferido ou atendido quando a imagem mostra o contrário.
+
+Em teste comparativo, fixe a mesma ferramenta e as mesmas condições conhecidas, como modelo e proporção, para distinguir efeito do processo de variação do gerador. Registre apenas o que a sessão realmente expõe; modelo, versão, seed ou edição podem não estar disponíveis. A skill melhora o briefing e o controle de qualidade, mas não instala nem concede capacidade de geração ou edição.
+
 O gerador de imagens disponível pode produzir peças raster; SVG/Mermaid são alternativas para diagramas exatos e editáveis. Não há instalação automática de um serviço de imagem nem garantia de que todo provedor tenha um gerador nativo. Perfis podem restringir ferramentas: o perfil Claude gerado não libera automaticamente um gerador MCP. Se a ferramenta estiver somente na sessão principal, o especialista prepara o brief/prompt e o CTO coordena a geração autorizada, sem ampliar permissões silenciosamente. PNG não é fonte vetorial. A entrega deve informar o formato real, preservar o original e incluir texto alternativo e conteúdo equivalente em texto. Recursos externos precisam de origem e uso compatível.
 
 ## Animações e motion
 
 A animação deve ter função clara, cronograma com tempos de entrada/saída, duração, deslocamentos/easing, quadro final, loop e controles. Revelações devem manter a informação visível após terminar; reduced motion deve disponibilizar o quadro final imediatamente. Evitar flashes e movimento que prejudique leitura; movimento prolongado/repetido exige pausa/controle e alternativa estática.
+
+Quando houver geração de vídeo/motion, especifique cenas e quadros-chave, ação de cada sujeito, movimento de câmera, duração e continuidade. Inspecione coerência de personagens, cenário, escala e direção ao longo do clipe. Sem ferramenta de vídeo/render disponível, quadros estáticos ou storyboard são entregues como tais, não como animação pronta.
 
 SVG/CSS ou Web Animations podem ser implementados na sessão quando houver ferramentas adequadas e precisam ser abertos e inspecionados em navegador. Lottie depende de suporte e exportador. MP4, WebM e GIF só são entregáveis quando houver renderizador/exportador efetivamente utilizado; imagem estática, prompt e storyboard não são animação exportada. Se faltar capacidade, o agente deve entregar o que é possível (brief, fonte animado ou versão estática) e apontar o que não foi verificado.
 
