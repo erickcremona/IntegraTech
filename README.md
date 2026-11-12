@@ -10,9 +10,6 @@ Você conversa com o agente sobre o projeto; ele organiza o trabalho e prepara o
 
 [Abrir mapa em resolução original](docs/imagens/mapa-mental-integratech-v2.png)
 
-[Ver a versão animada do mapa (SVG)](docs/imagens/mapa-mental-integratech-v2-animated.svg)
-
-A animação percorre as oito etapas do fluxo em sequência. Abra o SVG em um navegador para reproduzi-la; o visualizador do GitHub pode exibir apenas um quadro estático.
 
 <details>
 <summary>Versão textual e editável do mapa</summary>
