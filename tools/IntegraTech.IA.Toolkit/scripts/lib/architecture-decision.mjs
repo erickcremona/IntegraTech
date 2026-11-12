@@ -47,7 +47,7 @@ export function inspectArchitectureDecision({repo,context,technologyDecision,dec
     if(!m||!text(m.from_profile)||!/^[a-f0-9]{64}$/.test(m.baseline_sha256)||!list(m.phases)||!list(m.compatibility)||!list(m.rollback)||typeof m.data_changes!=='boolean'||m.irreversible!==false)fail('migração exige baseline, fases, compatibilidade e recuperação reversível');
   }
   if(d.mode==='evolution'&&d.migration.oracle_transition){const t=d.migration.oracle_transition;if(!text(t.task_id)||![t.original_sha256,t.target_sha256].every(v=>typeof v==='string'&&/^[a-f0-9]{64}$/.test(v)))fail('transição de oráculo exige tarefa e hashes explícitos');}
-  if(d.profile!=='distributed'&&d.layout.stack==='dotnet')architectureFiles({...d.layout,profile:d.profile,modules:d.profile==='modular-monolith'?d.requirements.modules:[]});
+  if(d.profile==='modular-monolith'&&!d.requirements.modules.length)fail('declare os módulos do produto');
   if(requireApproval){const a=d.approval;if(a?.status!=='approved'||a.decision_sha256!==architectureDigest(d)||!text(a.approved_by)||!text(a.approved_at)||!Number.isFinite(Date.parse(a.approved_at))||Date.parse(a.approved_at)>Date.now()||!text(a.source_reference))fail('aprovação humana ausente ou obsoleta');if(fingerprint(evidenceBytes(repo,a.source_reference))!==a.source_reference_sha256)fail('referência de aprovação alterada');}
   return {profile:d.profile,mode:d.mode,decision_sha256:architectureDigest(d),generator_supported:d.layout.stack==='dotnet'&&d.profile!=='distributed'};
 }

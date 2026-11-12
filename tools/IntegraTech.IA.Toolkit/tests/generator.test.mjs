@@ -146,20 +146,28 @@ test('gerador: contexto sozinho é insuficiente e decisão .NET aprovada fica re
 
 test('criação neutra preserva a stack aprovada sem scaffold', async () => {
   const { context, decisionFor } = await import('./technology-fixture.mjs');
-  const { createProject } = await import(generatorUrl);
-  const target = mkdtempSync(join(tmpdir(), 'model-neutral-'));
-  const decision = decisionFor();
-  decision.selected_option = 'static';
-  decision.options[1].presentation = 'Catálogo estático publicado na web';
-  const result = createProject({ name: 'CatalogoNeutro', target, context, technologyDecision: decision });
-  assert.equal(result.status, 'created');
-  const saved = read(join(target, 'references/technology-decision.json'));
-  assert.deepEqual(saved, { ...decision, approval: { ...decision.approval, source_reference: 'references/technology-approval.md' } });
-  assert.equal(read(join(target, 'references/architecture-decision.json')).layout.stack, 'static-web');
-  assert.equal(Object.hasOwn(read(join(target, 'project.json')), 'presentation'), false);
-  assert.equal(readdirSync(target, { recursive: true }).some(path => /\.(?:sln|csproj)$/i.test(path)), false);
-  for (const path of ['src', 'tests', 'global.json', 'Directory.Build.props']) assert.equal(existsSync(join(target, path)), false, path);
-  for (const path of ['README.md', 'SOLUTION_CONTEXT.md', 'docs/arquitetura/base.md']) {
-    assert.doesNotMatch(readFileSync(join(target, path), 'utf8'), /\bdotnet\s+(?:build|run|test)\b/);
+  const { createProject } = await import('../scripts/lib/project-generator.mjs');
+  for (const [id, stack, presentation] of [
+    ['static', 'static-web', 'Catálogo estático publicado na web'],
+    ['web', 'dotnet', 'Aplicação web renderizada no servidor'],
+  ]) {
+    const target = mkdtempSync(join(tmpdir(), 'model-neutral-'));
+    const decision = decisionFor();
+    decision.selected_option = id;
+    decision.options.find(option => option.id === id).presentation = presentation;
+    const args = generationOptions({ name: 'CatalogoNeutro', target, context, technologyDecision: decision });
+    const result = createProject(args);
+    assert.equal(result.status, 'created');
+    const saved = read(join(target, 'references/technology-decision.json'));
+    assert.deepEqual(saved, { ...decision, approval: { ...decision.approval, source_reference: 'references/technology-approval.md' } });
+    const savedArchitecture = read(join(target, 'references/architecture-decision.json'));
+    assert.deepEqual(savedArchitecture.layout, { name: 'CatalogoNeutro', stack, presentation });
+    assert.deepEqual(savedArchitecture, { ...args.architectureDecision, approval: { ...args.architectureDecision.approval, source_reference: 'references/architecture-approval.md' } });
+    assert.equal(Object.hasOwn(read(join(target, 'project.json')), 'presentation'), false);
+    assert.equal(readdirSync(target, { recursive: true }).some(path => /\.(?:sln|csproj)$/i.test(path)), false);
+    for (const path of ['src', 'tests', 'global.json', 'Directory.Build.props']) assert.equal(existsSync(join(target, path)), false, path);
+    for (const path of ['README.md', 'SOLUTION_CONTEXT.md', 'docs/arquitetura/base.md']) {
+      assert.doesNotMatch(readFileSync(join(target, path), 'utf8'), /\bdotnet\s+(?:build|run|test)\b/);
+    }
   }
 });
