@@ -12,6 +12,8 @@ Ao manter o modelo, qualquer mudança em arquivo controlado exige revisar a muda
 
 Para iniciar outro produto, use `create-project --name MeuProjeto --target DESTINO --context-file CONTEXTO --preparation-file PESQUISA --technology-file DECISAO --provider all`. Contexto completo, consultas externas e decisão aprovada são obrigatórios, inclusive com --presentation e --dry-run. A geração produz especialista de domínio e adaptadores dos provedores selecionados, sem herdar dados de outro projeto. Siga [especialista de domínio](../../docs/inicio/especialista-dominio.md) para os contratos, pesquisa, consulta por funcionalidade, atualização e otimização global final. Sem acesso às fontes necessárias, bloqueie e retome depois; não há fallback offline.
 
+O coletor de pesquisa funciona em Windows e Linux com DNS do Node.js e `curl`; conexão direta fixa os IPs públicos validados sem perder TLS/SNI. Usa `HTTPS_PROXY`/`https_proxy` ou `ALL_PROXY`/`all_proxy` quando configurados. URLs de proxy com credenciais embutidas são rejeitadas para não expor segredos. A revalidação compara URL final e SHA-256; fontes alteradas precisam de publicação oficial equivalente, achados revisados e nova coleta.
+
 O instalador abaixo continua destinado à instalação/manutenção da fábrica; não equivale ao gerador da solução completa. Para o negócio, siga [o guia de início](../../docs/inicio/primeiro-projeto.md).
 
 ```powershell
