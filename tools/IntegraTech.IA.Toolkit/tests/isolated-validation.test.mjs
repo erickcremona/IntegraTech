@@ -9,16 +9,8 @@ const validateIsolated = options => actualValidateIsolated({...options,oracles:o
 const parentTap='TAP version 13\n# Subtest: registered\nok 1 - registered\n1..1\n# tests 1\n# suites 0\n# pass 1\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 1\n';
 const digest = text => createHash('sha256').update(text).digest('hex');
 async function fixture(fn) { const repo = await mkdtemp(join(tmpdir(), 'isolation-test-')); try { await fn(repo); } finally { await rm(repo,{recursive:true,force:true}); } }
-async function withLinuxBubblewrap(fn) {
- const os = await import('node:os'), fs = await import('node:fs/promises'), path = await import('node:path');
- const { syncBuiltinESMExports } = await import('node:module');
- const originalPlatform = os.default.platform, originalAccess = fs.default.access, originalJoin = path.default.join;
- os.default.platform = () => 'linux';
- fs.default.access = (path, ...args) => String(path) === '/usr/bin/bwrap' ? Promise.resolve() : originalAccess(path, ...args);
- path.default.join = path.posix.join;
- syncBuiltinESMExports();
- try { return await fn(); }
- finally { os.default.platform = originalPlatform; fs.default.access = originalAccess; path.default.join = originalJoin; syncBuiltinESMExports(); }
+async function withHostControl(fn) {
+ return await fn();
 }
 test('rejects arbitrary command profiles without executing candidate', () => fixture(async repo => {
  const r = await validateIsolated({repo,files:{},profile:'sh -c true'}); assert.equal(r.status,'blocked'); assert.equal(r.reason_code,'unsupported_profile');
@@ -34,13 +26,13 @@ test('rejects inventory escapes, symlinks, changed bytes and secrets', () => fix
 test('zero tests are blocked', () => fixture(async repo => {
  await writeFile(join(repo,'readme.md'),'hello'); assert.equal((await validateIsolated({repo,files:{'readme.md':digest('hello')},profile:'node-tests-v1'})).reason_code,'no_tests');
 }));
-test('real boundary never falls back to host when namespace unavailable', () => fixture(async repo => {
+test('real host-controlled runner records local execution without claiming isolation', () => fixture(async repo => {
  const source="import test from 'node:test'; test('one',()=>{});"; await writeFile(join(repo,'one.test.mjs'),source);
  const r=await validateIsolated({repo,files:{'one.test.mjs':digest(source)},profile:'node-tests-v1',timeoutMs:5000});
- assert.ok(['passed','blocked'].includes(r.status)); if(r.status==='passed') assert.equal(r.isolation,'verified'); else assert.equal(r.isolation,'unverified');
+ assert.ok(['passed','blocked'].includes(r.status)); assert.equal(r.isolation,'unverified'); if(r.status==='passed') assert.equal(r.execution_mode,'host_controlled');
  assert.deepEqual(Object.keys(r.environment).sort(),['platform','runtime']); assert.ok(!JSON.stringify(r).includes(repo));
 }));
-test('SIMULATED subprocess boundary checks fixed argv, cleared environment, and canary ordering', () => fixture(repo => withLinuxBubblewrap(async () => {
+test('SIMULATED host executor uses fixed argv, a reduced environment, and a staged copy', () => fixture(repo => withHostControl(async () => {
  const cp=await import('node:child_process'); const {syncBuiltinESMExports}=await import('node:module');
  const {EventEmitter}=await import('node:events'); const {PassThrough}=await import('node:stream');
  const calls=[]; const original=cp.default.spawn;
@@ -51,12 +43,9 @@ test('SIMULATED subprocess boundary checks fixed argv, cleared environment, and 
  try {
   const source="import test from 'node:test'; test('one',()=>{});"; await writeFile(join(repo,'one.test.mjs'),source);
   const r=await validateIsolated({repo,files:{'one.test.mjs':digest(source)},profile:'node-tests-v1'});
-  assert.equal(r.status,'passed'); assert.equal(calls.length,2);
-  for(const call of calls) {assert.equal(call.executable,'/usr/bin/bwrap');assert.deepEqual(call.options.env,{});assert.equal(call.options.shell,false);for(const arg of ['--unshare-all','--clearenv','--die-with-parent','--new-session'])assert.ok(call.args.includes(arg));assert.ok(!call.args.includes(repo));}
-  const a=calls[0].args, wi=a.indexOf('/workspace'); assert.equal(a[wi-2],'--ro-bind');
-  const writable=a.flatMap((v,i)=>v==='--bind'?[a[i+2]]:[]).sort();assert.deepEqual(writable,['/workspace/.scratch','/workspace/qa-artifacts']);
-  assert.ok(a.at(-1).includes('appendFileSync'));assert.ok(a.at(-1).includes('/usr/bin/codex'));
-  assert.ok(calls[0].args.includes('-e'));assert.ok(calls[1].args.includes('--test'));assert.ok(calls[1].args.includes('--test-isolation=process'));assert.ok(!JSON.stringify(r).includes('# pass'));
+  assert.equal(r.status,'passed'); assert.equal(r.isolation,'unverified'); assert.equal(r.execution_mode,'host_controlled');assert.equal(calls.length,1);
+  const call=calls[0];assert.equal(call.executable,process.execPath);assert.equal(call.options.shell,false);assert.ok(call.options.env.PATH!==undefined);assert.ok(call.options.env.TEMP);assert.notEqual(call.options.cwd,repo);assert.ok(!call.options.env.HOME&&!call.options.env.USERPROFILE);
+  assert.ok(call.args.includes('--test'));assert.ok(call.args.includes('--test-isolation=process'));assert.ok(!JSON.stringify(r).includes('# pass'));
  } finally {cp.default.spawn=original;syncBuiltinESMExports();}
 })));
 test('bounded inventory and total timeout fail closed', () => fixture(async repo => {
@@ -64,7 +53,7 @@ test('bounded inventory and total timeout fail closed', () => fixture(async repo
  assert.equal((await validateIsolated({repo,files:{'large.test.mjs':digest(huge)},profile:'node-tests-v1'})).reason_code,'inventory_limit');
  assert.equal((await validateIsolated({repo,files:{},profile:'node-tests-v1',timeoutMs:0})).reason_code,'invalid_timeout');
 }));
-test('SIMULATED failed canary prevents all candidate execution and drops diagnostics', () => fixture(repo => withLinuxBubblewrap(async () => {
+test('SIMULATED runner failure blocks execution and drops diagnostics', () => fixture(repo => withHostControl(async () => {
  const cp=await import('node:child_process'); const {syncBuiltinESMExports}=await import('node:module');
  const {EventEmitter}=await import('node:events');const {PassThrough}=await import('node:stream');const original=cp.default.spawn;let count=0;
  cp.default.spawn=()=>{count++;const c=new EventEmitter();c.pid=99999999;c.stdout=new PassThrough();c.stderr=new PassThrough();queueMicrotask(()=>{c.stderr.emit('data',Buffer.from('sensitive-host-diagnostics'));c.emit('close',31);});return c;};syncBuiltinESMExports();
@@ -81,17 +70,17 @@ test('runnable candidate without independent frozen oracles is blocked', () => f
  const source="import test from 'node:test';test('one',()=>{});";await writeFile(join(repo,'one.test.mjs'),source);
  assert.equal((await actualValidateIsolated({repo,files:{'one.test.mjs':digest(source)},profile:'node-tests-v1'})).reason_code,'oracle_unavailable');
 }));
-test('SIMULATED frozen regression oracle replaces weakened test only in discardable snapshot', () => fixture(repo => withLinuxBubblewrap(() => fixture(async oracleRoot => {
+test('SIMULATED frozen regression oracle replaces weakened test only in discardable snapshot', () => fixture(repo => withHostControl(() => fixture(async oracleRoot => {
  const original="import test from 'node:test';test('regression',()=>{throw Error('must fail')});";
  const weakened="import test from 'node:test';test('empty',()=>{});";
  await writeFile(join(repo,'one.test.mjs'),weakened);await writeFile(join(repo,'00.test.mjs'),"process.stdout.write('# pass 1\\n');process.exit(0);");await writeFile(join(oracleRoot,'one.test.mjs'),original);
  const cp=await import('node:child_process');const {syncBuiltinESMExports}=await import('node:module');const {readFileSync}=await import('node:fs');
  const {EventEmitter}=await import('node:events');const {PassThrough}=await import('node:stream');const previous=cp.default.spawn;let count=0;
- cp.default.spawn=(executable,args)=>{assert.ok(!args.includes('00.test.mjs'));const workspace=args.indexOf('/workspace');assert.equal(readFileSync(join(args[workspace-1],'one.test.mjs'),'utf8'),original);count++;const c=new EventEmitter();c.pid=99999999;c.stdout=new PassThrough();c.stderr=new PassThrough();queueMicrotask(()=>{c.stdout.emit('data',Buffer.from(count===1?'':parentTap));c.emit('close',0);});return c;};syncBuiltinESMExports();
- try {const r=await actualValidateIsolated({repo,files:{'one.test.mjs':digest(weakened),'00.test.mjs':digest("process.stdout.write('# pass 1\\n');process.exit(0);")},profile:'node-tests-v1',oracles:{root:oracleRoot,files:{'one.test.mjs':digest(original)}}});assert.equal(r.status,'passed');assert.ok(r.checks.some(c=>c.id==='frozen_oracles'&&c.code===0));assert.equal(readFileSync(join(repo,'one.test.mjs'),'utf8'),weakened);assert.equal(count,2);}
+ cp.default.spawn=(executable,args,options)=>{assert.ok(!args.includes('00.test.mjs'));assert.equal(readFileSync(join(options.cwd,'one.test.mjs'),'utf8'),original);count++;const c=new EventEmitter();c.pid=99999999;c.stdout=new PassThrough();c.stderr=new PassThrough();queueMicrotask(()=>{c.stdout.emit('data',Buffer.from(parentTap));c.emit('close',0);});return c;};syncBuiltinESMExports();
+ try {const r=await actualValidateIsolated({repo,files:{'one.test.mjs':digest(weakened),'00.test.mjs':digest("process.stdout.write('# pass 1\\n');process.exit(0);")},profile:'node-tests-v1',oracles:{root:oracleRoot,files:{'one.test.mjs':digest(original)}}});assert.equal(r.status,'passed');assert.equal(r.isolation,'unverified');assert.equal(r.execution_mode,'host_controlled');assert.ok(r.checks.some(c=>c.id==='frozen_oracles'&&c.code===0));assert.equal(readFileSync(join(repo,'one.test.mjs'),'utf8'),weakened);assert.equal(count,1);}
  finally{cp.default.spawn=previous;syncBuiltinESMExports();}
 }))));
-test('frozen regression oracle hashes and secrets are checked before sandbox execution', () => fixture(async repo => fixture(async root => {
+test('frozen regression oracle hashes and secrets are checked before local execution', () => fixture(async repo => fixture(async root => {
  const source="import test from 'node:test';test('one',()=>{});";await writeFile(join(repo,'one.test.mjs'),source);await writeFile(join(root,'one.test.mjs'),source);
  const base={repo,files:{'one.test.mjs':digest(source)},profile:'node-tests-v1'};
  assert.equal((await actualValidateIsolated({...base,oracles:{root,files:{'one.test.mjs':digest('different')}}})).reason_code,'inventory_mismatch');
@@ -99,7 +88,7 @@ test('frozen regression oracle hashes and secrets are checked before sandbox exe
  assert.equal((await actualValidateIsolated({...base,oracles:{root,files:{'one.test.mjs':digest(secret)}}})).reason_code,'secret_detected');
 })));
 
-test('SIMULATED import exit-zero fallback cannot pass a frozen oracle', () => fixture(repo => withLinuxBubblewrap(async () => {
+test('SIMULATED import exit-zero fallback cannot pass a frozen oracle', () => fixture(repo => withHostControl(async () => {
  const cp=await import('node:child_process');const {syncBuiltinESMExports}=await import('node:module');const {EventEmitter}=await import('node:events');const {PassThrough}=await import('node:stream');const previous=cp.default.spawn;let count=0;
  cp.default.spawn=()=>{count++;const c=new EventEmitter();c.pid=99999999;c.stdout=new PassThrough();c.stderr=new PassThrough();queueMicrotask(()=>{c.stdout.emit('data',Buffer.from(count===1?'':parentTap.replaceAll('registered','/workspace/one.test.mjs')));c.emit('close',0);});return c;};syncBuiltinESMExports();
  try {const source="import test from 'node:test';test('one',()=>{});";await writeFile(join(repo,'one.test.mjs'),source);const r=await validateIsolated({repo,files:{'one.test.mjs':digest(source)},profile:'node-tests-v1'});assert.equal(r.status,'failed');assert.equal(r.reason_code,'incomplete_oracles');}
@@ -116,33 +105,33 @@ test('frozen helper files in conventional test directory use the same allowlist 
  assert.notEqual(r.reason_code,'invalid_oracles');
 }));
 
-test('SIMULATED SDD requested candidate tests run separately after frozen regressions and attest actual bytes',()=>fixture(repo=>withLinuxBubblewrap(async()=>{
+test('SIMULATED SDD requested candidate tests run separately after frozen regressions and attest actual bytes',()=>fixture(repo=>withHostControl(async()=>{
  const cp=await import('node:child_process');const {syncBuiltinESMExports}=await import('node:module');const {EventEmitter}=await import('node:events');const {PassThrough}=await import('node:stream');const original=cp.default.spawn;const calls=[];
  cp.default.spawn=(exe,args)=>{calls.push(args);const c=new EventEmitter();c.pid=99999999;c.stdout=new PassThrough();c.stderr=new PassThrough();queueMicrotask(()=>{if(calls.length>1)c.stdout.emit('data',Buffer.from('TAP version 13\n# Subtest: assertion\nok 1 - assertion\n1..1\n# tests 1\n# suites 0\n# pass 1\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 1\n'));c.emit('close',0);});return c;};syncBuiltinESMExports();
  try{
   const source="import test from 'node:test';test('assertion',()=>{});";await writeFile(join(repo,'original.test.mjs'),source);await writeFile(join(repo,'new.test.mjs'),source+'\n');
   const r=await validateIsolated({repo,files:{'original.test.mjs':digest(source),'new.test.mjs':digest(source+'\n')},profile:'node-tests-v1',oracles:{root:repo,files:{'original.test.mjs':digest(source)}},requestedTests:['new.test.mjs']});
-  assert.equal(r.status,'passed');assert.equal(calls.length,3);assert.ok(!calls[1].includes('new.test.mjs'));assert.ok(calls[2].includes('new.test.mjs'));assert.ok(r.test_files.some(file=>file.path==='new.test.mjs'&&file.sha256===digest(source+'\n')));
+  assert.equal(r.status,'passed');assert.equal(calls.length,2);assert.ok(!calls[0].includes('new.test.mjs'));assert.ok(calls[1].includes('new.test.mjs'));assert.ok(r.test_files.some(file=>file.path==='new.test.mjs'&&file.sha256===digest(source+'\n')));
  }finally{cp.default.spawn=original;syncBuiltinESMExports();}
 })));
 
-test('SIMULATED skipped requested tests never produce SDD execution attestations',()=>fixture(repo=>withLinuxBubblewrap(async()=>{
+test('SIMULATED skipped requested tests never produce SDD execution attestations',()=>fixture(repo=>withHostControl(async()=>{
  const cp=await import('node:child_process');const {syncBuiltinESMExports}=await import('node:module');const {EventEmitter}=await import('node:events');const {PassThrough}=await import('node:stream');const original=cp.default.spawn;let count=0;
- cp.default.spawn=()=>{count++;const n=count;const c=new EventEmitter();c.pid=99999999;c.stdout=new PassThrough();c.stderr=new PassThrough();queueMicrotask(()=>{if(n>1)c.stdout.emit('data',Buffer.from(n===3?parentTap.replace('# tests 1','# tests 2').replace('# skipped 0','# skipped 1'):parentTap));c.emit('close',0);});return c;};syncBuiltinESMExports();
+ cp.default.spawn=()=>{count++;const n=count;const c=new EventEmitter();c.pid=99999999;c.stdout=new PassThrough();c.stderr=new PassThrough();queueMicrotask(()=>{if(n>1)c.stdout.emit('data',Buffer.from(n===2?parentTap.replace('# tests 1','# tests 2').replace('# skipped 0','# skipped 1'):parentTap));c.emit('close',0);});return c;};syncBuiltinESMExports();
  try{
   const source="import test from 'node:test';test('assertion',()=>{});";await writeFile(join(repo,'original.test.mjs'),source);await writeFile(join(repo,'new.test.mjs'),source);
   const r=await validateIsolated({repo,files:{'original.test.mjs':digest(source),'new.test.mjs':digest(source)},profile:'node-tests-v1',oracles:{root:repo,files:{'original.test.mjs':digest(source)}},requestedTests:['new.test.mjs']});
-  assert.notEqual(r.status,'passed');assert.equal(count,3);assert.ok(!r.test_files?.length);
+  assert.notEqual(r.status,'passed');assert.equal(count,2);assert.ok(!r.test_files?.length);
  }finally{cp.default.spawn=original;syncBuiltinESMExports();}
 })));
 
-test('SIMULATED each requested test file must independently execute leaf tests',()=>fixture(repo=>withLinuxBubblewrap(async()=>{
+test('SIMULATED each requested test file must independently execute leaf tests',()=>fixture(repo=>withHostControl(async()=>{
  const cp=await import('node:child_process');const {syncBuiltinESMExports}=await import('node:module');const {EventEmitter}=await import('node:events');const {PassThrough}=await import('node:stream');const original=cp.default.spawn;const calls=[];
- cp.default.spawn=(exe,args)=>{calls.push(args);const n=calls.length;const c=new EventEmitter();c.pid=99999999;c.stdout=new PassThrough();c.stderr=new PassThrough();queueMicrotask(()=>{if(n>1)c.stdout.emit('data',Buffer.from(n===4?parentTap.replace('# tests 1','# tests 0').replace('# suites 0','# suites 1').replace('# pass 1','# pass 0'):parentTap));c.emit('close',0);});return c;};syncBuiltinESMExports();
+ cp.default.spawn=(exe,args)=>{calls.push(args);const n=calls.length;const c=new EventEmitter();c.pid=99999999;c.stdout=new PassThrough();c.stderr=new PassThrough();queueMicrotask(()=>{if(n>1)c.stdout.emit('data',Buffer.from(n===3?parentTap.replace('# tests 1','# tests 0').replace('# suites 0','# suites 1').replace('# pass 1','# pass 0'):parentTap));c.emit('close',0);});return c;};syncBuiltinESMExports();
  try{
   const source="import test from 'node:test';test('assertion',()=>{});";const files={};
   for(const path of ['original.test.mjs','a.test.mjs','b.test.mjs']){await writeFile(join(repo,path),source);files[path]=digest(source);}
   const r=await validateIsolated({repo,files,profile:'node-tests-v1',oracles:{root:repo,files:{'original.test.mjs':digest(source)}},requestedTests:['a.test.mjs','b.test.mjs']});
-  assert.notEqual(r.status,'passed');assert.equal(calls.length,4);assert.ok(calls[2].includes('a.test.mjs'));assert.ok(!calls[2].includes('b.test.mjs'));assert.ok(calls[3].includes('b.test.mjs'));assert.ok(!r.test_files?.length);
+  assert.notEqual(r.status,'passed');assert.equal(calls.length,3);assert.ok(calls[1].includes('a.test.mjs'));assert.ok(!calls[1].includes('b.test.mjs'));assert.ok(calls[2].includes('b.test.mjs'));assert.ok(!r.test_files?.length);
  }finally{cp.default.spawn=original;syncBuiltinESMExports();}
 })));

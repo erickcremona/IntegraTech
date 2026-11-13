@@ -16,7 +16,7 @@ O toolkit aproveita o que já foi respondido e pergunta o que faltar. Se `projec
 
 ## 2. Entenda o contexto e escolha a base
 
-O agente pesquisa referências externas, registra alternativas e recomenda tecnologias conforme o problema e as restrições. Ele prepara um especialista de domínio, que deverá ser consultado antes do desenho de cada funcionalidade. Você recebe a decisão para revisão e aceite técnico.
+O agente pesquisa referências externas via HTTPS, registra alternativas e recomenda tecnologias conforme o problema e as restrições. O coletor confirma DNS público em Windows e Linux, valida os endereços antes da conexão, preserva TLS e grava SHA-256 para revalidação. Quando uma página muda, escolha uma publicação oficial equivalente, revise os achados e colete novo comprovante. Ele prepara um especialista de domínio, que deverá ser consultado antes do desenho de cada funcionalidade. Você recebe a decisão para revisão e aceite técnico.
 
 > Compare as alternativas para este contexto, explique a recomendação e mostre o que preciso decidir.
 
@@ -50,7 +50,7 @@ Peça status em linguagem comum:
 
 A entrega deve indicar arquivos alterados, verificações executadas, resultados e limitações. No loop, `delivery_valid=true` é a confirmação atual; um status histórico não basta se o código ou as evidências mudaram. Revisões negativas exigem tratamento e nova validação. A conclusão inclui revisão global e os checks de coerência aplicáveis ao projeto real.
 
-Testes isolados dependem de capacidade comprovada do ambiente. O executor disponível usa Linux/Bubblewrap; sem namespaces funcionando, a validação fica bloqueada. Não execute o mesmo perfil no host para contornar esse bloqueio. Os testes originais são preservados como referência de regressão; novos critérios também precisam ser avaliados.
+Os perfis executam no sistema operacional da sessão de desenvolvimento usando comandos fixos, ambiente reduzido, cópia temporária e limites de tempo/saída. A execução tem as permissões do usuário local; o resultado registra `host_controlled` e isolamento `unverified`. Os testes originais são preservados como referência de regressão; novos critérios também precisam ser avaliados.
 
 O dispatcher automatiza revisões Codex/Claude sobre um pacote explícito autorizado, com provedores disponíveis e compatíveis. Cursor usa seus adaptadores e a sessão nativa; não possui dispatcher automatizado. Testes locais ou simulações não comprovam execução nos aplicativos externos. Consulte [loop assistido](loop-engenharia.md) e [confiabilidade](confiabilidade.md).
 

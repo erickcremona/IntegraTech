@@ -2,6 +2,8 @@
   "schema_version": 1,
   "profiles": {
     "node-tests-v1": {
+      "execution_mode": "host_controlled",
+      "isolation": "unverified",
       "runtime": "current-node",
       "command": [
         "node",
@@ -12,20 +14,22 @@
       "criteria": [
         "nonzero-test-files",
         "all-tests-pass",
-        "isolation-canaries-pass",
+        "host-controls-pass",
         "frozen-original-regression-oracles"
       ],
-      "network": "none"
+      "network": "available-to-the-current-user"
     },
     "dotnet-offline-v1": {
-      "runtime": "explicit-safe-sdk-required",
+      "execution_mode": "host_controlled",
+      "isolation": "unverified",
+      "runtime": "current-host-dotnet-sdk-required",
       "commands": [
         [
           "dotnet",
           "restore",
           "<architecture-project>",
           "--source",
-          "/tmp/empty",
+          "<empty-temporary-package-source>",
           "-p:NuGetAudit=false"
         ],
         [
@@ -47,11 +51,11 @@
         "nonzero-architecture-tests",
         "build-pass",
         "tests-pass",
-        "isolation-canaries-pass",
+        "host-controls-pass",
         "frozen-original-regression-oracles"
       ],
-      "network": "none",
-      "availability": "requires-safe-sdk-and-offline-dependencies"
+      "network": "available-to-the-current-user",
+      "availability": "requires-current-host-sdk-and-local-dependencies"
     }
   }
 }

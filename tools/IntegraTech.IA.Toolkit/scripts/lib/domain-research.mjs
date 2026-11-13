@@ -3,13 +3,15 @@ import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { isIP } from 'node:net';
+import { lookup } from 'node:dns';
 import { digest, inspectPreparation } from './domain-specialist.mjs';
 
 const maxBytes = 2 * 1024 * 1024;
 function publicAddress(host) {
   if (isIP(host) === 4) {
     const [a, b] = host.split('.').map(Number);
-    return !(a === 0 || a === 10 || a === 127 || a >= 224 || a === 169 && b === 254 || a === 172 && b >= 16 && b <= 31 || a === 192 && [0, 168].includes(b) || a === 100 && b >= 64 && b <= 127 || a === 198 && [18, 19, 51].includes(b) || a === 203 && b === 0);
+    const [,, c] = host.split('.').map(Number);
+    return !(a === 0 || a === 10 || a === 127 || a >= 224 || a === 169 && b === 254 || a === 172 && b >= 16 && b <= 31 || a === 192 && (b === 0 && c !== 9 && c !== 10 && c !== 66 || b === 168) || a === 100 && b >= 64 && b <= 127 || a === 198 && (b === 18 || b === 19 || b === 51 && c === 100) || a === 203 && b === 0);
   }
   // Reject IPv6 literals: keep supported destinations unambiguous across proxy/DNS stacks.
   return false;
@@ -20,25 +22,42 @@ export function publicHttps(value) {
   if (url.protocol !== 'https:' || url.username || url.password || url.hash || url.port && url.port !== '443' || !host.includes('.') || /(?:^|\.)(?:localhost|local|internal|lan|test|invalid|example)$/.test(host) || host.endsWith('.') || host.startsWith('[') || isIP(host) && !publicAddress(host)) throw new Error('Pesquisa exige destino HTTPS público, sem credenciais ou porta especial.');
   return url;
 }
-export function httpsRequest(value) {
+export function proxyEnvironment(env = process.env) {
+  return env.HTTPS_PROXY || env.https_proxy || env.ALL_PROXY || env.all_proxy || null;
+}
+function resolvePublic(host) {
+  return new Promise((resolve, reject) => lookup(host, { all: true, verbatim: true }, (error, addresses) => {
+    if (error) return reject(new Error(`Falha de DNS ao verificar ${host}.`));
+    const unique = [...new Set(addresses.map(item => item.address))];
+    if (!unique.length || unique.some(address => !publicAddress(address))) return reject(new Error(`Destino rejeitado pelo filtro de endereços: ${host}.`));
+    resolve(unique);
+  }));
+}
+export async function httpsRequest(value, { resolveHost = resolvePublic, runCurl = execFileSync, env = process.env, directoryFactory = () => mkdtempSync(join(tmpdir(), 'domain-research-')) } = {}) {
   const url = publicHttps(value);
-  // Resolve before connecting, including every redirect. The managed proxy also
-  // enforces destination policy. Never fall back to private/direct routes.
-  // In managed environments DNS belongs to the HTTPS proxy; local DNS may be
-  // intentionally unavailable. Such proxies must enforce public-destination policy.
-  const proxy = process.env.HTTPS_PROXY || process.env.https_proxy;
-  if (!proxy && !isIP(url.hostname)) {
-    let addresses;
-    try { addresses = execFileSync('getent', ['ahostsv4', url.hostname], { encoding: 'utf8', timeout: 5000, stdio: ['ignore', 'pipe', 'ignore'] }).trim().split('\n').map(line => line.split(/\s+/)[0]); }
-    catch { throw new Error(`Não foi possível verificar DNS público de ${url.hostname}; pesquisa bloqueada.`); }
-    if (!addresses.length || addresses.some(ip => !publicAddress(ip))) throw new Error('DNS da fonte não é público.');
-  }
-  const directory = mkdtempSync(join(tmpdir(), 'domain-research-'));
+  const proxy = proxyEnvironment(env);
+  const proxyUrl = proxy ? new URL(proxy) : null;
+  if (proxyUrl && (proxyUrl.protocol !== 'http:' && proxyUrl.protocol !== 'https:' || proxyUrl.username || proxyUrl.password)) throw new Error('Proxy inválido ou com credenciais embutidas; configure a autenticação por mecanismo externo seguro.');
+  const addresses = proxy ? null : (isIP(url.hostname) ? [url.hostname] : await resolveHost(url.hostname));
+  const directory = directoryFactory();
   try {
-    const status = execFileSync('curl', ['--silent', '--show-error', '--proto', '=https', '--max-time', '15', '--connect-timeout', '5', '--max-filesize', String(maxBytes), '--dump-header', join(directory, 'headers'), '--output', join(directory, 'body'), '--write-out', '%{http_code}', '--url', url.href], { encoding: 'utf8', timeout: 18000, maxBuffer: 4096, stdio: ['ignore', 'pipe', 'pipe'] });
+    const args = ['--silent', '--show-error', '--proto', '=https', '--max-time', '15', '--connect-timeout', '5', '--max-filesize', String(maxBytes), '--dump-header', join(directory, 'headers'), '--output', join(directory, 'body'), '--write-out', '%{http_code}'];
+    if (proxy) {
+      args.push('--proxy', `${proxyUrl.protocol}//${proxyUrl.host}`);
+    }
+    else args.push('--noproxy', '*', '--resolve', `${url.hostname}:443:${addresses.join(',')}`);
+    args.push('--url', url.href);
+    let status;
+    try { status = runCurl('curl', args, { encoding: 'utf8', timeout: 18000, maxBuffer: 4096, stdio: ['ignore', 'pipe', 'pipe'], env: proxy ? { ...env, HTTPS_PROXY: '', https_proxy: '', ALL_PROXY: '', all_proxy: '' } : env }); }
+    catch (error) {
+      const detail = String(error.stderr ?? error.message ?? '');
+      if (proxy && /\b(5|6|7|8|16|35|52|56|97)\d\d?\b|proxy/i.test(detail)) throw new Error(`Proxy indisponível para consultar ${url.hostname}.`);
+      if (!proxy && /resolve|host name|could not resolve/i.test(detail)) throw new Error(`Falha de DNS ao conectar a ${url.hostname}.`);
+      throw new Error(`Consulta HTTPS falhou em ${url.hostname}; verifique rede, TLS e permissões.`);
+    }
     const headers = readFileSync(join(directory, 'headers'), 'utf8');
     return { status: Number(status), body: readFileSync(join(directory, 'body')), location: [...headers.matchAll(/^location:\s*(.+)\r?$/gim)].at(-1)?.[1].trim() ?? null };
-  } catch { throw new Error(`Consulta HTTPS falhou em ${url.hostname}; verifique rede, TLS e permissões e tente novamente.`); }
+  } catch (error) { throw error; }
   finally { rmSync(directory, { recursive: true, force: true }); }
 }
 function consult(source, request) {
@@ -83,7 +102,7 @@ export function verifyResearch({ context, preparation, request = httpsRequest })
   const current = collectResearch({ context, preparation, request });
   for (const source of current.sources) {
     const old = preparation.sources.find(s => s.id === source.id)?.receipt;
-    if (source.receipt && (!old || old.content_sha256 !== source.receipt.content_sha256 || old.final_url !== source.receipt.final_url)) throw new Error(`Fonte ${source.id} mudou: revise a análise e recolete a evidência antes de continuar.`);
+    if (source.receipt && (!old || old.content_sha256 !== source.receipt.content_sha256 || old.final_url !== source.receipt.final_url)) throw new Error(`Fonte ${source.id} (${source.url}) mudou entre consultas: selecione uma publicação oficial equivalente, revise os achados contra ela e execute research-collect novamente para gerar novo comprovante SHA-256.`);
   }
 }
 

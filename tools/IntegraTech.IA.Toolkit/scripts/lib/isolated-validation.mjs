@@ -1,22 +1,25 @@
 import { spawn } from 'node:child_process';
 import { constants } from 'node:fs';
 import { lstat, readdir, realpath, open, mkdtemp, mkdir, writeFile, rm, access } from 'node:fs/promises';
-import { createHash, randomUUID } from 'node:crypto';
+import { createHash } from 'node:crypto';
 import { tmpdir, platform } from 'node:os';
 import { join, dirname, isAbsolute } from 'node:path';
 import { scanText } from './secret-scan.mjs';
-const DOTNET_RUNTIME='/opt/integratech-dotnet';
 const MAX_FILE = 2 * 1024 * 1024, MAX_TOTAL = 32 * 1024 * 1024, MAX_FILES = 2048;
 function result(status, isolation, checks, reason_code) {
- return {status,isolation,checks,environment:{platform:platform(),runtime:`node-${process.versions.node}`},...(reason_code?{reason_code}:{})};
+ return {status,isolation,execution_mode:'host_controlled',checks,environment:{platform:platform(),runtime:`node-${process.versions.node}`},...(reason_code?{reason_code}:{})};
 }
-// Output uses a bounded transient parser and is never persisted. A detached process group and bwrap's PID
-// namespace together ensure cancellation also terminates candidate descendants.
-async function run(executable,args,deadline,oracleTests) {
+// This runner constrains commands, environment, output and time. It does not isolate
+// candidate code from the current user's OS permissions, network or files.
+async function run(executable,args,deadline,oracleTests,{cwd,env}) {
  return new Promise(resolveRun => {
   let bytes=0, timed=false, overflow=false, child, timer, output="";
-  const stop=()=>{try{process.kill(-child.pid,'SIGKILL');}catch{}};
-  try { child=spawn(executable,args,{env:{},stdio:['ignore','pipe','pipe'],detached:true,shell:false}); }
+  const stop=()=>{
+   if(platform()==='win32'){
+    try { const root=process.env.SystemRoot??process.env.WINDIR??'C:\\Windows';const killer=spawn(join(root,'System32','taskkill.exe'),['/PID',String(child.pid),'/T','/F'],{env:{SystemRoot:root,WINDIR:root},stdio:'ignore',windowsHide:true,shell:false}); killer.unref(); } catch {}
+   } else { try {process.kill(-child.pid,'SIGKILL');}catch{} }
+  };
+  try { child=spawn(executable,args,{cwd,env,stdio:['ignore','pipe','pipe'],detached:platform()!=='win32',shell:false,windowsHide:true}); }
   catch { resolveRun({code:-1}); return; }
   const count=(data,retain)=>{bytes+=data.length;if(bytes>65536){overflow=true;stop();}else if(retain)output+=data.toString('utf8');};
   child.stdout.on('data',data=>count(data,true)); child.stderr.on('data',data=>count(data,false));
@@ -29,7 +32,7 @@ async function run(executable,args,deadline,oracleTests) {
     // Process-isolated Node's stock parent TAP reporter escapes child output.
     // Accept only its terminal aggregate, never a child's isolated '# pass'.
     const summary=output.match(/(?:^|\n)1\.\.(\d+)\n# tests (\d+)\n# suites (\d+)\n# pass (\d+)\n# fail (\d+)\n# cancelled (\d+)\n# skipped (\d+)\n# todo (\d+)\n# duration_ms [0-9.]+\n?$/);
-    const fallback=oracleTests.some(path=>output.split('\n').map(line=>line.replaceAll('\\#','#')).some(line=>[path,join('/workspace',path)].some(label=>line===`# Subtest: ${label}`||/^ok \d+ - /.test(line)&&line.replace(/^ok \d+ - /,'')===label)));
+   const fallback=oracleTests.some(path=>output.split('\n').map(line=>line.replaceAll('\\#','#')).some(line=>[path,join('/workspace',path),cwd?join(cwd,path).replaceAll('\\','/'):path].some(label=>line===`# Subtest: ${label}`||/^ok \d+ - /.test(line)&&line.replace(/^ok \d+ - /,'')===label)));
     incomplete=!summary||fallback||Number(summary[4])<1||Number(summary[5])!==0||Number(summary[6])!==0||Number(summary[7])!==0||Number(summary[8])!==0||Number(summary[2])<oracleTests.length||Number(summary[1])<1||Number(summary[1])>Number(summary[2])||Number(summary[4])+Number(summary[7])!==Number(summary[2]);
     passedTests=incomplete?0:Number(summary[4]);
    }
@@ -107,42 +110,35 @@ export async function validateIsolated({repo,files,profile,timeoutMs=120000,orac
   else {
    const projects=frozenEntries.map(([p])=>p).filter(p=>/^tests\/[^/]*(?:Architecture|Arquitetura)[^/]*\/[^/]+\.csproj$/i.test(p)).sort();
    if(!projects.length) return blocked('no_tests');
-   for(const sdk of ['/usr/share/dotnet','/workspace/.integratech-dotnet']) {
-    try {await safePath('/', sdk.slice(1)+'/dotnet');await access(join(sdk,'dotnet'),constants.X_OK);dotnetRoot=sdk;break;}catch{}
+   const configured=process.env.DOTNET_ROOT;
+   const sdkCandidates=[configured,process.platform==='win32'?'C:/Program Files/dotnet':'/usr/share/dotnet',join(repo,'.integratech-dotnet')].filter(Boolean);
+   for(const sdk of sdkCandidates) {
+    try {const executable=join(sdk,process.platform==='win32'?'dotnet.exe':'dotnet');await access(executable,process.platform==='win32'?constants.F_OK:constants.X_OK);dotnetRoot=sdk;break;}catch{}
    }
-   if(!dotnetRoot) return blocked('safe_offline_dotnet_runtime_unavailable');
+   if(!dotnetRoot) return blocked('dotnet_sdk_unavailable');
    try {await safeSdkTree(dotnetRoot,deadline);}catch(error){return blocked(error.message==='timeout'?'timeout':'unsafe_sdk');}
    commands=projects.flatMap(p=>[
-    [join(DOTNET_RUNTIME,'dotnet'),'restore',p,'--source','/tmp/empty','-p:NuGetAudit=false'],
-    [join(DOTNET_RUNTIME,'dotnet'),'build',p,'--no-restore'],
-    [join(DOTNET_RUNTIME,'dotnet'),'run','--project',p,'--no-build','--no-restore']]);
+    [join(dotnetRoot,process.platform==='win32'?'dotnet.exe':'dotnet'),'restore',p,'--source','<empty-temporary-package-source>','-p:NuGetAudit=false'],
+    [join(dotnetRoot,process.platform==='win32'?'dotnet.exe':'dotnet'),'build',p,'--no-restore'],
+    [join(dotnetRoot,process.platform==='win32'?'dotnet.exe':'dotnet'),'run','--project',p,'--no-build','--no-restore']]);
   }
   checks.push({id:'inventory',code:0});
-  if(platform()!=='linux') return blocked('isolation_unavailable');
-  const bwrap='/usr/bin/bwrap'; await access(bwrap,constants.X_OK);
   staging=await mkdtemp(join(tmpdir(),'integratech-validation-')); const candidate=join(staging,'candidate'); await mkdir(candidate);
   for(const [path,data] of buffers) {if(Date.now()>=deadline)return blocked('timeout');const dest=join(candidate,path);await mkdir(dirname(dest),{recursive:true});await writeFile(dest,data,{flag:'wx',mode:0o600});}
-  const sentinel=join(staging,`host-${randomUUID()}`);await writeFile(sentinel,'host-only');
-  const args=['--unshare-all','--die-with-parent','--new-session','--clearenv'];
-  for(const path of ['/usr','/lib','/lib64']) {try{await access(path);args.push('--ro-bind',path,path);}catch{}}
-  // Only the executable's immutable runtime directory is exposed, never /opt or home.
-  const runtime=dirname(await realpath(process.execPath));
-  if(!runtime.startsWith('/usr/')) args.push('--ro-bind',runtime,runtime);
-  if(dotnetRoot) args.push('--ro-bind',dotnetRoot,DOTNET_RUNTIME);
-  args.push('--ro-bind',candidate,'/workspace','--tmpfs','/tmp','--proc','/proc','--dev','/dev','--chdir','/workspace','--setenv','PATH','/usr/bin:/bin');
-  for(const [i,path] of outputPaths.entries()) {
-   const source=join(staging,'outputs',String(i)); await mkdir(source,{recursive:true}); await mkdir(join(candidate,path),{recursive:true});
-   args.push('--bind',source,join('/workspace',path));
+  const systemRoot=process.env.SystemRoot??process.env.WINDIR??'C:\\Windows';
+  const pathEntries=process.platform==='win32'?[dirname(process.execPath),join(systemRoot,'System32'),...(dotnetRoot?[dotnetRoot]:[])]:[dirname(process.execPath),'/usr/bin','/bin',...(dotnetRoot?[dotnetRoot]:[])];
+  const safeEnv={PATH:pathEntries.join(process.platform==='win32'?';':':'),SystemRoot:systemRoot,WINDIR:systemRoot,TEMP:staging,TMP:staging};
+  if(dotnetRoot) Object.assign(safeEnv,{DOTNET_ROOT:dotnetRoot,DOTNET_CLI_HOME:join(staging,'dotnet-home'),NUGET_PACKAGES:join(staging,'nuget'),DOTNET_SKIP_FIRST_TIME_EXPERIENCE:'1',DOTNET_CLI_TELEMETRY_OPTOUT:'1'});
+  if(profile==='dotnet-offline-v1'){
+   const empty=join(staging,'empty-nuget-source');await mkdir(empty,{recursive:true});
+   for(const command of commands) command[4]=empty;
   }
-  if(dotnetRoot) args.push('--dir','/tmp/home','--dir','/tmp/empty','--setenv','HOME','/tmp/home','--setenv','DOTNET_ROOT',DOTNET_RUNTIME,'--setenv','DOTNET_CLI_HOME','/tmp/home','--setenv','NUGET_PACKAGES','/tmp/packages','--setenv','DOTNET_SKIP_FIRST_TIME_EXPERIENCE','1','--setenv','DOTNET_CLI_TELEMETRY_OPTOUT','1');
-  const canary=`const f=require('node:fs'),o=require('node:os');const denied=${JSON.stringify([sentinel,...(root==='/workspace'?[]:[root]),join(root,'records'),'/home','/root','/workspace/.git','/usr/bin/codex','/usr/bin/claude','/usr/local/bin/codex','/usr/local/bin/claude'])};for(const p of denied){if(f.existsSync(p))process.exit(31)};for(const p of ${JSON.stringify([join('/workspace',entries[0][0]),sentinel])}){let writable=false;try{f.appendFileSync(p,'isolation-write-canary');writable=true}catch{}if(writable)process.exit(34)};if(Object.keys(process.env).some(k=>!['PATH','HOME','DOTNET_ROOT','DOTNET_CLI_HOME','NUGET_PACKAGES','DOTNET_SKIP_FIRST_TIME_EXPERIENCE','DOTNET_CLI_TELEMETRY_OPTOUT'].includes(k)))process.exit(32);if(Object.keys(o.networkInterfaces()).some(k=>k!=='lo'))process.exit(33);`;
-  const probe=await run(bwrap,[...args,process.execPath,'-e',canary],deadline);
-  if(probe.code!==0||probe.timed||probe.overflow) return blocked(probe.timed?'timeout':'isolation_canary_failed');
-  checks.push({id:'isolation_canaries',code:0});
+  for(const path of outputPaths) await mkdir(join(candidate,path),{recursive:true});
+  checks.push({id:'host_controls',code:0});
   if(Date.now()>=deadline) return blocked('timeout');
   let observed;
   for(const command of commands) {
-   observed=await run(bwrap,[...args,...command],deadline,profile==='node-tests-v1'?tests:undefined);
+   observed=await run(command[0],command.slice(1),deadline,profile==='node-tests-v1'?tests:undefined,{cwd:candidate,env:safeEnv});
    if(profile==='dotnet-offline-v1' && ['restore','build'].includes(command[1]) && observed.code===0&&!observed.timed&&!observed.overflow) continue;
    if(observed.code!==0||observed.timed||observed.overflow||observed.passedTests===0) break;
   }
@@ -155,19 +151,18 @@ export async function validateIsolated({repo,files,profile,timeoutMs=120000,orac
     const supplement=join(staging,'supplement');await mkdir(supplement);
     for(const [path,data]of originals){const full=join(supplement,path);await mkdir(dirname(full),{recursive:true});await writeFile(full,data,{flag:'wx',mode:0o600});}
     for(const path of outputPaths)await mkdir(join(supplement,path),{recursive:true});
-    const supplementalArgs=args.map(arg=>arg===candidate?supplement:arg);
     // Each approved file must register at least one passing leaf test itself.
     // Aggregate counts could otherwise hide an empty suite behind another file.
     for(const path of requestedTests){
-     observed=await run(bwrap,[...supplementalArgs,process.execPath,'--test','--test-reporter=tap','--test-isolation=process',path],deadline,[path]);
+     observed=await run(process.execPath,['--test','--test-reporter=tap','--test-isolation=process',path],deadline,[path],{cwd:supplement,env:safeEnv});
      if(observed.code!==0||observed.timed||observed.overflow||observed.passedTests===0)break;
     }
     executed=executed.filter(item=>!requestedTests.includes(item.path)).concat(requestedTests.map(path=>({path,sha256:files[path]})));
    }
   }
   checks.push({id:profile,code:observed.timed?124:observed.overflow?125:observed.code===0&&observed.passedTests>0?0:observed.passedTests===0?2:1});
-  const finalResult=result(observed.code===0&&observed.passedTests>0&&!observed.timed&&!observed.overflow?'passed':'failed','verified',checks,observed.timed?'timeout':observed.overflow?'output_limit':observed.incomplete?'incomplete_oracles':undefined);
+  const finalResult=result(observed.code===0&&observed.passedTests>0&&!observed.timed&&!observed.overflow?'passed':'failed','unverified',checks,observed.timed?'timeout':observed.overflow?'output_limit':observed.incomplete?'incomplete_oracles':undefined);
   return {...finalResult,test_files:finalResult.status==='passed'?executed:[]};
- } catch(error) {return blocked(['unsafe_inventory','invalid_inventory','inventory_limit','inventory_mismatch','secret_detected','timeout'].includes(error.message)?error.message:'isolation_unavailable');}
+ } catch(error) {return blocked(['unsafe_inventory','invalid_inventory','inventory_limit','inventory_mismatch','secret_detected','timeout'].includes(error.message)?error.message:'host_execution_unavailable');}
  finally {if(staging) await rm(staging,{recursive:true,force:true});}
 }

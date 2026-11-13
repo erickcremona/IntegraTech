@@ -144,7 +144,7 @@ O **grafo de rastreabilidade** relaciona documentos e itens explícitos de conte
 
 O **loop assistido** registra o candidato e vincula validação e revisões ao mesmo hash do código. Preserva testes originais, limita tentativas e correções e invalida evidências quando os insumos mudam. A implementação ocorre na sessão nativa; a implementação automática permanece desabilitada. [Funcionamento do loop](docs/inicio/loop-engenharia.md).
 
-Testes isolados exigem ambiente compatível: o executor disponível usa Linux/Bubblewrap e bloqueia quando o isolamento não pode ser comprovado. O dispatcher automatiza revisões Codex/Claude com pacote explícito autorizado e provedor compatível; Cursor usa a sessão nativa e seus adaptadores, sem dispatcher automatizado. Testes locais e simulações não comprovam funcionamento dos serviços externos. [Limites e confiabilidade](docs/inicio/confiabilidade.md).
+Validações usam os perfis fixos no sistema operacional da sessão, com ambiente reduzido, cópia temporária e limites de tempo/saída. Executam com as permissões do usuário local e são registradas como `host_controlled`, com isolamento `unverified`. O dispatcher automatiza revisões Codex/Claude com pacote explícito autorizado e provedor compatível; Cursor usa a sessão nativa e seus adaptadores, sem dispatcher automatizado. Testes locais e simulações não comprovam funcionamento dos serviços externos. [Limites e confiabilidade](docs/inicio/confiabilidade.md).
 
 Você recebe arquivos alterados, resultados observados, limitações e próximos passos. Entrega não publica o produto: push, merge, deploy e outras operações externas exigem autorização aplicável.
 

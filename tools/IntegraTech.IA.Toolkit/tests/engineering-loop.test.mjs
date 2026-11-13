@@ -20,7 +20,7 @@ function fixture() {
   advanceTask({ repo, id: 'cycle', expectedRevision: 2, event: { type: 'gate_checked' } });
   return { repo, id: 'cycle', expectedRevision: 3 };
 }
-const observed = async () => ({ status: 'passed', isolation: 'verified', checks: ['inventory', 'frozen_oracles', 'isolation_canaries', 'node-tests-v1'].map(id => ({ id, code: 0 })), environment: { platform: 'synthetic-test', runtime: 'test' } });
+const observed = async () => ({ status: 'passed', isolation: 'unverified', execution_mode: 'host_controlled', checks: ['inventory', 'frozen_oracles', 'host_controls', 'node-tests-v1'].map(id => ({ id, code: 0 })), environment: { platform: 'synthetic-test', runtime: 'test' } });
 const reviewer = async ({ repo, task, files, candidate }) => {
   const path = join(repo, 'qa-artifacts', `${task.task_id}.json`);
   const report = { schema_version: 1, task_id: task.task_id, review_type: task.assigned_agent === 'code-reviewer' ? 'code' : 'security', verdict: 'approved', findings: [], residual_risk: '' };

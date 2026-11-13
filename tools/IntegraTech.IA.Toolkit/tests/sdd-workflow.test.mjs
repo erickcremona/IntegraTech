@@ -72,7 +72,7 @@ async function simulateValidationAndReviews(f, state, attestTests = true) {
     assert.equal(readFileSync(join(oracles.root, 'src/request.test.mjs'), 'utf8'), frozenTest);
     assert.equal(oracles.files['src/request.test.mjs'], fingerprint(frozenTest));
     assert.equal(files['src/request.mjs'], fingerprint(readFileSync(f.disk('src/request.mjs'))));
-    return { status: 'passed', isolation: 'verified', checks: ['inventory', 'frozen_oracles', 'isolation_canaries', 'node-tests-v1'].map(id => ({ id, code: 0 })), test_files: attestTests ? [{ path: 'src/request.test.mjs', sha256: fingerprint(frozenTest) }] : [], environment: { platform: 'synthetic-test', runtime: 'simulated-node' } };
+    return { status: 'passed', isolation: 'unverified', execution_mode: 'host_controlled', checks: ['inventory', 'frozen_oracles', 'host_controls', 'node-tests-v1'].map(id => ({ id, code: 0 })), test_files: attestTests ? [{ path: 'src/request.test.mjs', sha256: fingerprint(frozenTest) }] : [], environment: { platform: 'synthetic-test', runtime: 'simulated-node' } };
   } });
   assert.equal(state.status, 'review_pending');
   const reviewedTypes = [];
@@ -389,7 +389,7 @@ test('approved two-phase architecture migration preserves regression oracles and
  run=acceptCandidate({repo:f.repo,id:run.id,expectedRevision:run.revision,profile:'dotnet-offline-v1'});
  // Simulated isolation observations below test protocol only. Native build/run tests cover generated target and oracle transition separately.
  run=await validateCandidate({repo:f.repo,id:run.id,expectedRevision:run.revision,validator:async({oracles})=>{
- assert.equal(readFileSync(join(oracles.root,program),'utf8'),target.get(program));return {status:'passed',isolation:'verified',checks:['inventory','frozen_oracles','isolation_canaries','dotnet-offline-v1'].map(id=>({id,code:0})),test_files:[{path:project,sha256:fingerprint(readFileSync(f.disk(project)))}],environment:{platform:'synthetic-test',runtime:'simulated-dotnet'}};
+ assert.equal(readFileSync(join(oracles.root,program),'utf8'),target.get(program));return {status:'passed',isolation:'unverified',execution_mode:'host_controlled',checks:['inventory','frozen_oracles','host_controls','dotnet-offline-v1'].map(id=>({id,code:0})),test_files:[{path:project,sha256:fingerprint(readFileSync(f.disk(project)))}],environment:{platform:'synthetic-test',runtime:'simulated-dotnet'}};
  }});
  run=await reviewCandidate({repo:f.repo,id:run.id,expectedRevision:run.revision,dispatcher:async({task,files,candidate})=>{const path=`qa-artifacts/${task.task_id}.json`;f.save(path,{schema_version:1,task_id:task.task_id,review_type:task.assigned_agent==='code-reviewer'?'code':'security',verdict:'approved',findings:[],residual_risk:''});return {status:'completed',verdict:'approved',output:join(f.repo,path),run_id:task.task_id,candidate_sha256:candidate.sha256,package_sha256:fingerprint(files.map(path=>({path,content:candidate.removed.includes(path)?null:readFileSync(f.disk(path),'utf8')})))};}});
  assert.equal(engineeringStatus({repo:f.repo,id:run.id}).delivery_valid,true);completeSDDTask({repo:f.repo,id:'list-task',runId:run.id});
