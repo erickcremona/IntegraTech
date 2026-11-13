@@ -25,8 +25,8 @@ export function publicHttps(value) {
 export function proxyEnvironment(env = process.env) {
   return env.HTTPS_PROXY || env.https_proxy || env.ALL_PROXY || env.all_proxy || null;
 }
-function resolvePublic(host) {
-  return new Promise((resolve, reject) => lookup(host, { all: true, verbatim: true }, (error, addresses) => {
+export function resolvePublic(host, lookupHost = lookup) {
+  return new Promise((resolve, reject) => lookupHost(host, { all: true, family: 4, verbatim: true }, (error, addresses) => {
     if (error) return reject(new Error(`Falha de DNS ao verificar ${host}.`));
     const unique = [...new Set(addresses.map(item => item.address))];
     if (!unique.length || unique.some(address => !publicAddress(address))) return reject(new Error(`Destino rejeitado pelo filtro de endereços: ${host}.`));

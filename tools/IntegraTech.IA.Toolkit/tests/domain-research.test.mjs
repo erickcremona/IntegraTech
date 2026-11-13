@@ -52,6 +52,16 @@ test('pesquisa: DNS direto valida cada resposta e fixa IP no curl preservando do
   assert.deepEqual(invocation.options.env, {});
   rmSync(invocation.args[invocation.args.indexOf('--output') + 1].replace(/body$/, ''), { recursive: true, force: true });
 });
+test('pesquisa: DNS seleciona somente registros IPv4 para domínios dual-stack', async () => {
+  let observed;
+  const addresses = await research.resolvePublic('www.rfc-editor.org', (host, options, callback) => {
+    observed = { host, options };
+    callback(null, [{ address: '104.18.20.81', family: 4 }]);
+  });
+  assert.equal(observed.host, 'www.rfc-editor.org');
+  assert.equal(observed.options.family, 4);
+  assert.deepEqual(addresses, ['104.18.20.81']);
+});
 test('pesquisa: proxy HTTPS/ALL e nomes minúsculos são reconhecidos sem credenciais no argv', async () => {
   for (const key of ['HTTPS_PROXY', 'https_proxy', 'ALL_PROXY', 'all_proxy']) {
     let invocation;
