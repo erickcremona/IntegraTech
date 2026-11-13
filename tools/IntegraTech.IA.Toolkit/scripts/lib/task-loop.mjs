@@ -80,24 +80,22 @@ export function startTask({ repo, delegation, phase, provider }) {
         throw new Error('identidade da tarefa já vinculada a outra delegação');
       return inspectTask({ repo, id });
     }
-    mkdirSync(paths.dir);
     const baselineFiles = inventory(repo);
     const oracleFiles = baselineFiles.map(item=>({...item})).filter(item => /(^|\/)tests?\//.test(item.path) || /\.(?:test|spec)\.(?:mjs|cjs|js)$/.test(item.path));
-    const transition=taskArchitectureTransition(repo,delegation,baselineFiles);
+    taskArchitectureTransition(repo,delegation,baselineFiles);
+    mkdirSync(paths.dir);
     for (const file of oracleFiles) {
       const target = contained(join(paths.dir, 'oracles'), file.path);
       mkdirSync(resolve(target, '..'), { recursive: true });
       const bytes = readFileSync(sourceFile(repo, file.path));
       if (fingerprint(bytes) !== file.sha256) throw new Error('oráculo alterado durante captura');
-      if(transition?.path===file.path)file.sha256=transition.target_sha256;
-      writeFileSync(target, transition?.path===file.path?transition.content:bytes, { flag: 'wx' });
+      writeFileSync(target, bytes, { flag: 'wx' });
     }
     if (fingerprint(inventory(repo)) !== fingerprint(baselineFiles)) throw new Error('insumos alterados durante criação');
     const state = {
       schema_version: 1, id, task_id: delegation.task_id, provider, phase,
       assigned_agent: delegation.assigned_agent, human_gate: delegation.human_gate,
       ownership: delegation.file_ownership,
-      ...(transition?{architecture_oracle_transition:(({content,...record})=>record)(transition)}:{}),
       status: 'awaiting_gate', revision: 1,
       attempts: 0, correction_count: 0, snapshot: snapshot(repo, delegation),
       delegation_sha256: digest(JSON.stringify(delegation)), baseline_files: baselineFiles, oracle_files: oracleFiles, delegation, events: [

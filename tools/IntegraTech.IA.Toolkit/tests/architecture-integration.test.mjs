@@ -1,13 +1,12 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {mkdtempSync,mkdirSync,writeFileSync,readFileSync,rmSync,existsSync} from 'node:fs';
-import {join,dirname} from 'node:path';
+import {join} from 'node:path';
 import {tmpdir} from 'node:os';
 import {generationOptions} from './generation-fixture.mjs';
 import {createProject} from '../scripts/lib/project-generator.mjs';
-import {architectureDigest} from '../scripts/lib/architecture-decision.mjs';
+import {architectureDigest,architectureTechnologyHash} from '../scripts/lib/architecture-decision.mjs';
 import {architectureStatus,architectureSourceSnapshot,inspectArchitectureGraph} from '../scripts/lib/architecture-inspection.mjs';
-import {architectureFiles} from '../scripts/lib/architecture-profiles.mjs';
 import {completeArchitecture} from '../scripts/lib/architecture-workflow.mjs';
 const temporary=t=>{const repo=mkdtempSync(join(tmpdir(),'arch-integration-'));t.after(()=>rmSync(repo,{recursive:true,force:true}));return repo;};
 test('materialization records approved simple and modular architecture for future review',t=>{
@@ -18,20 +17,37 @@ test('materialization records approved simple and modular architecture for futur
  if(profile==='modular-monolith')d.requirements.modules=[{name:'Requests',depends_on:[],context_refs:[{pointer:'/scope/0',quote:args.context.scope[0]}]},{name:'Owners',depends_on:['Requests'],context_refs:[{pointer:'/known_rules/0',quote:args.context.known_rules[0]}]}];
  d.approval.decision_sha256=architectureDigest(d);
  createProject(args);assert.equal(existsSync(join(target,'src')),false);
- assert.equal(architectureStatus({repo:target}).status,'needs_review');
+ assert.equal(architectureStatus({repo:target}).status,'decision_recorded');
+ assert.equal(architectureStatus({repo:target}).validation_status,'not_run');
  const before=architectureSourceSnapshot(target);writeFileSync(join(target,'references/unrelated-note.md'),'Control update');assert.equal(architectureSourceSnapshot(target),before);
  mkdirSync(join(target,'src'));writeFileSync(join(target,'src/evolution.txt'),'Source evolution');assert.notEqual(architectureSourceSnapshot(target),before);
  assert.throws(()=>completeArchitecture({repo:target}),/Nenhuma migração/);
  }
 });
-test('architectural graph blocks hidden MSBuild references and custom imports',t=>{
- const repo=temporary(t),decision={layout:{name:'Product',presentation:'console',stack:'dotnet'},profile:'simple-application',requirements:{modules:[]}};
- for(const [p,text] of architectureFiles({...decision.layout,profile:decision.profile})){mkdirSync(dirname(join(repo,p)),{recursive:true});writeFileSync(join(repo,p),text);}
- assert.equal(inspectArchitectureGraph(repo,decision).status,'structurally_consistent');
- writeFileSync(join(repo,'Directory.Build.targets'),'<Project><ItemGroup><ProjectReference Include="injected.csproj" /></ItemGroup></Project>');
- assert.throws(()=>inspectArchitectureGraph(repo,decision),/MSBuild/);rmSync(join(repo,'Directory.Build.targets'));
- const p='src/Product.Apresentacao/Product.Apresentacao.Console/Product.Apresentacao.Console.csproj';writeFileSync(join(repo,p),readFileSync(join(repo,p),'utf8').replace('</Project>','<Import Project="hidden.props" /></Project>'));
- assert.throws(()=>inspectArchitectureGraph(repo,decision),/dinâmica/);
+test('decisão arquitetural neutra aceita stack aprovada sem layout gerado',t=>{
+ const target=temporary(t),args=generationOptions({name:'Product',target,presentation:'api'});
+ args.architectureDecision.profile='modular-monolith';
+ args.architectureDecision.layout.stack='rust';
+ args.technologyDecision.options.find(option=>option.id===args.technologyDecision.selected_option).stack='rust';
+ args.architectureDecision.technology_sha256=architectureTechnologyHash(args.technologyDecision);
+ args.architectureDecision.requirements.modules=[
+  {name:'orders-service',depends_on:[],context_refs:[{pointer:'/scope/0',quote:args.context.scope[0]}]},
+  {name:'owner_api',depends_on:['orders-service'],context_refs:[{pointer:'/known_rules/0',quote:args.context.known_rules[0]}]}
+ ];
+ args.architectureDecision.approval.decision_sha256=architectureDigest(args.architectureDecision);
+ createProject(args);
+ const current=architectureStatus({repo:target});
+ assert.equal(JSON.parse(readFileSync(join(target,'references/architecture-decision.json'),'utf8')).layout.stack,'rust');
+ assert.equal(current.status,'decision_recorded');
+ assert.equal(current.validation_status,'not_run');
+ assert.equal(existsSync(join(target,'src')),false);
+});
+test('architecture inspection reports decision and leaves product validation not run',t=>{
+ const repo=temporary(t),decision={layout:{name:'Product',presentation:'console',stack:'some-contextual-stack'},profile:'simple-application',requirements:{modules:[]}};
+ const result=inspectArchitectureGraph(repo,decision);
+ assert.equal(result.status,'not_run');
+ assert.equal(result.validation_status,'not_run');
+ assert.equal(result.source_files,0);
 });
 test('external legacy architecture assessment preserves source and fingerprints its own documents',async t=>{
  const home=temporary(t),manager=join(home,'manager'),source=join(home,'legacy');mkdirSync(manager);mkdirSync(source);mkdirSync(join(source,'references'));writeFileSync(join(source,'legacy.txt'),'Original system');

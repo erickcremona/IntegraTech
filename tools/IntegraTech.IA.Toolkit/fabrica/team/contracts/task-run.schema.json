@@ -684,6 +684,7 @@
       }
     },
     "architecture_oracle_transition": {
+      "description": "Compatibilidade de leitura para execuções arquivadas; novas execuções não geram transições automáticas.",
       "type": "object",
       "additionalProperties": false,
       "required": [

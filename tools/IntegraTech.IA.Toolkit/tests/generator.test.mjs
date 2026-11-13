@@ -6,21 +6,10 @@ import { mkdtempSync, readFileSync, existsSync, readdirSync, writeFileSync, syml
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { pathToFileURL } from 'node:url';
-import { presentationFiles } from '../scripts/lib/presentation-templates.mjs';
 const generatorUrl = new URL('./generation-fixture.mjs', import.meta.url);
 const read = path => JSON.parse(readFileSync(path, 'utf8'));
 const canonicalAuthors = readFileSync(new URL('../../../AUTHORS.md', import.meta.url), 'utf8');
 const originCredit = canonicalAuthors.split('\n').find(line => line.startsWith('Este projeto foi criado com base no '));
-test('gerador: templates qualificam Task, Host e Timeout sem alterar namespaces', () => {
-  for (const name of ['Task', 'Host', 'Timeout']) {
-    const files = presentationFiles(name, 'worker');
-    const source = [...files.values()].join('\n');
-    assert.ok(source.includes(`namespace ${name}.Apresentacao.Worker`));
-    assert.ok(source.includes('global::System.Threading.Tasks.Task'));
-    assert.ok(source.includes('global::System.Threading.Timeout'));
-    assert.ok(source.includes('global::Microsoft.Extensions.Hosting.Host.CreateApplicationBuilder'));
-  }
-});
 test('gerador: simulação não escreve; rejeita nomes, destino interno e colisões', async () => {
   const { createProject } = await import(generatorUrl);
   const { repoRoot } = await import('../scripts/lib/installer.mjs');

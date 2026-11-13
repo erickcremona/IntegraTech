@@ -6,6 +6,19 @@ import { join } from 'node:path';
 import { startTask, inspectTask, advanceTask, recoverTask } from '../scripts/lib/task-loop.mjs';
 import { main } from '../scripts/toolkit.mjs';
 import { checkPolicy } from '../scripts/lib/policy.mjs';
+import { verifyArchitectureOracles } from '../scripts/lib/architecture-oracles.mjs';
+
+test('archived architecture oracle transitions are checked without regeneration', () => {
+  const path = 'tests/Legacy.Arquitetura.Tests/Program.cs';
+  const state = {
+    architecture_oracle_transition: { path, original_sha256: 'a'.repeat(64), target_sha256: 'b'.repeat(64), decision_sha256: 'c'.repeat(64) },
+    baseline_files: [{ path, sha256: 'a'.repeat(64) }],
+    oracle_files: [{ path, sha256: 'b'.repeat(64) }]
+  };
+  assert.equal(verifyArchitectureOracles('unused-for-archived-record', state), true);
+  state.oracle_files[0].sha256 = 'd'.repeat(64);
+  assert.throws(() => verifyArchitectureOracles('unused-for-archived-record', state), /arquivada inválida/);
+});
 
 function fixture() {
   const repo = mkdtempSync(join(tmpdir(), 'task-loop-'));

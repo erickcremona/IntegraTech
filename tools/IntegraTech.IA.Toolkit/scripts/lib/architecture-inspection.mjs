@@ -1,12 +1,11 @@
 import {existsSync,readFileSync,lstatSync,readdirSync} from 'node:fs';
-import {posix} from 'node:path';
 import {inventory,fingerprint} from './candidate.mjs';
 import {contained} from './paths.mjs';
-import {sourceFile,sourceBinding,linkedProject} from './project-locations.mjs';
-import {architectureFiles} from './architecture-profiles.mjs';
+import {sourceBinding,linkedProject} from './project-locations.mjs';
 import {inspectArchitectureDecision,architectureDigest} from './architecture-decision.mjs';
 export function architectureRead(repo,path){const p=contained(repo,path);if(!lstatSync(p).isFile()||lstatSync(p).size>256*1024)throw new Error('Documento arquitetural inválido');return JSON.parse(readFileSync(p,'utf8'));}
-export function architectureSourceSnapshot(repo){const linked=linkedProject(repo);return fingerprint(inventory(repo).filter(f=>linked||! /^(?:references\/|docs\/|tools\/|\.(?:agents|claude|codex|cursor)\/|(?:README|SOLUTION_CONTEXT|AGENTS|CLAUDE)\.md$)/.test(f.path)));}
+export function architectureProductSource(repo){const linked=linkedProject(repo);return inventory(repo).filter(f=>linked||! /^(?:references\/|docs\/|tools\/|\.(?:agents|claude|codex|cursor)\/|(?:README|SOLUTION_CONTEXT|AGENTS|CLAUDE)\.md$)/.test(f.path));}
+export function architectureSourceSnapshot(repo){return fingerprint(architectureProductSource(repo));}
 export function architectureCurrent(repo,{requireApproval=true}={}){
  if(!existsSync(contained(repo,'references/project-state.json')))return null;
  const state=architectureRead(repo,'references/project-state.json');
@@ -20,30 +19,16 @@ export function architectureCurrent(repo,{requireApproval=true}={}){
  if (!linkedProject(repo) && (decision.layout.name !== identity.name || presentationMismatch)) throw new Error('Arquitetura diverge da identidade do produto');
  return {state,decision,...inspected};
 }
-// A conservative .NET project-reference check. Semantic/domain fitness still needs native review.
+// Architecture records do not imply product source generation or validation.
 export function inspectArchitectureGraph(repo,decision){
- if(decision.layout.stack!=='dotnet'||decision.profile==='distributed')throw new Error('Arquitetura sem verificador estrutural implementado; avaliação específica necessária');
- const expected=architectureFiles({...decision.layout,profile:decision.profile,modules:decision.profile==='modular-monolith'?decision.requirements.modules:[]});
- const source=inventory(repo);
- for(const f of source.filter(f=>/\.(?:props|targets)$/i.test(f.path)&&!f.path.startsWith('tools/'))){if(/<!DOCTYPE|<!ENTITY|<(?:ProjectReference|Import|Target|UsingTask)\b/i.test(readFileSync(sourceFile(repo,f.path),'utf8')))throw new Error('MSBuild dinâmico/importado exige verificação específica');}
- const projects=source.map(f=>f.path).filter(p=>p.endsWith('.csproj')&&!p.startsWith('tools/')).sort();
- const wanted=[...expected.keys()].filter(p=>p.endsWith('.csproj')).sort();
- if(JSON.stringify(projects)!==JSON.stringify(wanted))throw new Error('Conjunto de projetos diverge do perfil arquitetural');
- const refs=(path,text)=>{
-  if(/<!DOCTYPE|<!ENTITY|<Import\b|<ProjectReference[^>]*Condition\s*=/i.test(text))throw new Error('Referência dinâmica não verificável');
-  const entries=[...text.matchAll(/<ProjectReference\b([^>]*?)(?:\/>|>)/g)].map(m=>{
-   const match=m[1].match(/\bInclude\s*=\s*["']([^"']+)["']/);if(!match||/[\$*?@]/.test(match[1]))throw new Error('ProjectReference dinâmico não verificável');
-   const target=posix.normalize(posix.join(posix.dirname(path),match[1].replaceAll('\\','/')));if(!wanted.includes(target))throw new Error('Referência externa/desconhecida');return target;
-  }).sort();if(new Set(entries).size!==entries.length)throw new Error('Referências duplicadas');return entries;
- };
- for(const p of projects){const original=refs(p,expected.get(p));const actual=refs(p,readFileSync(sourceFile(repo,p),'utf8'));if(JSON.stringify(original)!==JSON.stringify(actual))throw new Error(`Dependência arquitetural divergente: ${p}`);}
- return {status:'structurally_consistent',projects:projects.length,assurance:'project_references_only_runtime_tests_and_review_required'};
+ const sourceFiles=architectureProductSource(repo);
+ return {status:'not_run',validation_status:'not_run',source_files:sourceFiles.length,reason:'A decisão arquitetural foi registrada; a validação de código depende de um verificador escolhido para a stack e o contexto.'};
 }
 export function architectureStatus({repo}){
  try{
  const current=architectureCurrent(repo);if(!current)return {status:'assessment_required',reason:'Projeto existente preservado; analisar arquitetura atual antes de ativar gestão.'};
- const {decision}=current;let graph;try{graph=inspectArchitectureGraph(repo,decision);}catch(error){graph={status:'needs_review',reason:error.message};}
- return {status:decision.mode==='evolution'?'migration_pending':graph.status==='structurally_consistent'?'consistent':'needs_review',profile:decision.profile,decision_sha256:architectureDigest(decision),source_sha256:architectureSourceSnapshot(repo),graph,limits:'Não certifica domínio, desempenho, isolamento em runtime ou prontidão para produção.'};
+ const {decision}=current,graph=inspectArchitectureGraph(repo,decision);
+ return {status:decision.mode==='evolution'?'migration_pending':'decision_recorded',validation_status:'not_run',profile:decision.profile,decision_sha256:architectureDigest(decision),source_sha256:architectureSourceSnapshot(repo),graph,limits:'A decisão registrada não certifica código, domínio, desempenho, isolamento em runtime ou prontidão para produção.'};
  }catch(error){return {status:'blocked',reason:error.message};}
 }
 
@@ -61,8 +46,6 @@ export function architectureReceiptEvidence(repo,decision,receipt){
   if(v.oracle_sha256!==fingerprint(run.oracle_files)||!run.oracle_files.every(f=>fingerprint(readFileSync(contained(repo,`qa-artifacts/loops/${run.id}/oracles/${f.path}`)))===f.sha256))return false;
   const types=e.required_reviews;if(!Array.isArray(types)||!['code','security'].every(t=>types.includes(t))||new Set(types).size!==types.length)return false;
   if(!types.every(type=>e.reviews?.some(r=>r.type===type&&r.verdict==='approved'&&r.candidate_sha256===e.candidate_sha256&&fingerprint(readFileSync(contained(repo,r.path)))===r.sha256)))return false;
-  const transition=decision.migration?.oracle_transition;
-  if(transition&&!e.files.some(f=>f.path===`tests/${decision.layout.name}.Arquitetura.Tests/Program.cs`&&f.sha256===transition.target_sha256))return false;
   return true;
  }catch{return false;}
 }
