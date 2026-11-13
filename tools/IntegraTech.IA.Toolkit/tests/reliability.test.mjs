@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, mkdirSync, writeFileSync, readFileSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -74,9 +74,21 @@ test('segredos: padrões detectados sem revelar conteúdo; ações CI têm SHA c
   const root = fileURLToPath(new URL('../../../', import.meta.url));
   const workflow = readFileSync(join(root, '.github/workflows/validate.yml'), 'utf8');
   const actions = [...workflow.matchAll(/uses: ([^\s]+)/g)].map(match => match[1]);
-  assert.equal(actions.length, 3);
+  assert.equal(actions.length, 2);
   assert.ok(actions.every(action => /@[a-f0-9]{40}$/.test(action)));
+  assert.ok(actions.some(action => action.startsWith('actions/checkout@')));
+  assert.ok(actions.some(action => action.startsWith('actions/setup-node@')));
+  assert.doesNotMatch(workflow, /setup-dotnet|dotnet-version|\bdotnet\b/i);
   assert.ok(workflow.includes('persist-credentials: false'));
+});
+test('segredos: arquivos removidos do working tree não falham a varredura', async () => {
+  const { scanRepository } = await import('../scripts/lib/secret-scan.mjs');
+  const repo = mkdtempSync(join(tmpdir(), 'factory-secret-scan-'));
+  try {
+    assert.deepEqual(scanRepository(repo, { listFiles: () => ['removed.txt'] }), {
+      status: 'passed', scanned: 0, binary_skipped: 0, findings: [], scope: 'tracked_worktree_patterns_only'
+    });
+  } finally { rmSync(repo, { recursive: true, force: true }); }
 });
 test('execução: processo encerrado pode ser fechado sem repetir o trabalho', async () => {
   const { closeInterruptedRun, beginRun, finishRun } = await import('../scripts/lib/runs.mjs');

@@ -35,7 +35,7 @@ A área de gestão oferece um arquivo project.code-workspace para abrir gestão,
 ## Diagnóstico e plano incremental
 
 1. Leia o contexto informado, os manifests, a documentação e as instruções do sistema. Confirme arquitetura, versões, dependências, integrações, fluxos críticos e testes efetivamente disponíveis. Não transforme inferências em fatos.
-2. Complete o contexto e a pesquisa de domínio na gestão. Prepare o especialista com `specialist-prepare --project ID --preparation-file PATH`, consulte-o e registre a consulta. Registre decisões técnicas quando aplicáveis; stack existente não precisa ter gerador para ser mantida.
+2. Complete o contexto e a pesquisa de domínio na gestão. Prepare o especialista com `specialist-prepare --project ID --preparation-file PATH`, consulte-o e registre a consulta. Registre decisões técnicas quando aplicáveis; a ausência de gerador não impede manutenção, mas capacidades de validação devem ser verificadas para o ambiente disponível.
 3. Prepare uma especificação da mudança, desenho técnico e plano SDD v2. Não é necessário especificar todo o legado de uma vez. Inclua riscos de regressão, testes de caracterização quando necessários, arquivos autorizados, dependências e aceite. O plano anexado precisa de source_binding_sha256 igual ao vínculo retornado por project-status; o agente preenche esse campo antes do aceite.
 4. Após o aceite humano efetivo, use sdd-plan, sdd-task e o loop com --project ID. Caminhos de ownership e test_paths são relativos ao fonte. Documentos e evidências são relativos à gestão. O vínculo entra nos snapshots e no plano aprovado; alterar o destino invalida a continuidade.
 5. Implemente na pasta original e valide o candidato. Faça revisão de código/segurança, e UX quando aplicável. Registre sdd-complete para concluir a tarefa e libere suas dependências. Não inclua segredos ou efeitos externos só porque a pasta está acessível.
@@ -66,7 +66,7 @@ UI existente deve ser analisada e preservada. Uma modernização pode ser propos
 
 Push, merge, migração destrutiva e deploy continuam dependendo de autorização aplicável. Consulte [SDD](sdd.md), [interfaces](interfaces.md) e [fluxo geral](fluxo-toolkit.md).
 
-No modo legado, a área dedicada não contém solução, Worker, API ou Console .NET de exemplo: esses exemplos não são instalados nem usados como fonte do produto. O código .NET pertencente ao legado é preservado. Os templates da instalação compartilhada permanecem disponíveis para criação de outros produtos; não se apagam arquivos de outro sistema ou modelos compartilhados ao registrar um vínculo.
+No modo legado, a área dedicada não instala exemplos de produto. O código e a tecnologia pertencentes ao legado são preservados na origem. Não se apagam arquivos de outro sistema ou modelos compartilhados ao registrar um vínculo.
 
 
 O diagnóstico registra candidatos de interface e mantém sua classificação pendente. O loop também verifica os arquivos atuais: alterações com sinais de UI sem perfil de interface aprovado são bloqueadas, inclusive quando o executor é application-engineer. Registre a decisão técnica e prepare o perfil e o desenho UX antes de tentar o candidato; a detecção é conservadora e não substitui a análise da arquitetura.

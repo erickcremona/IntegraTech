@@ -1,6 +1,6 @@
 # Escolher tecnologias pelo contexto
 
-O nome identifica o projeto; o problema não determina sozinho a stack. Antes de materializar a cópia, a fábrica entende o contexto, pesquisa alternativas e apresenta uma decisão técnica. O worker do repositório é um exemplo executável, não um requisito de novos projetos.
+O nome identifica o projeto; o problema não determina sozinho a stack. Antes de materializar a cópia, a fábrica entende o contexto, pesquisa alternativas e apresenta uma decisão técnica. O modelo não contém uma aplicação de produto que sirva de exemplo ou preferência.
 
 ## Descoberta e pesquisa na sessão
 
@@ -16,7 +16,7 @@ Prepare os arquivos de trabalho em `.scratch/`, fora do Git. A cópia do modelo 
 
 - `context_sha256`: hash do contexto normalizado, obtido com o comando abaixo. Não use `hash --file`: este calcula bytes, enquanto o vínculo tecnológico normaliza os campos do contexto.
 - `drivers`: requisitos e restrições que orientam a escolha.
-- `options`: alternativas com `id`, `stack`, `presentation`, `technologies`, `rationale`, `consequences` e `source_urls`. Registre alternativas plausíveis; quando só houver uma, justifique a restrição.
+- `options`: alternativas com `id`, `stack`, apresentação contextual opcional, `technologies`, `rationale`, `consequences` e `source_urls`. Registre alternativas plausíveis; quando só houver uma, justifique a restrição.
 - `selected_option`: id escolhido; registre também por que componentes como worker, banco ou fila ficaram fora.
 - `research`: fontes e resultados de consulta.
 - `validation`: como demonstrar que a proposta funciona.
@@ -27,15 +27,15 @@ npm run toolkit -- technology-check --context-file .scratch/contexto-inicial.jso
 npm run toolkit -- technology-check --context-file .scratch/contexto-inicial.json --decision-file .scratch/decisao-tecnologica.json
 ```
 
-O segundo comando verifica estrutura, hash, URLs/datas e referência de aceite. A saída distingue `proposed|approved` de `generator_supported`. A consulta é realizada pelo agente na sessão; o CLI não contém um buscador nem um seletor de stack por palavras-chave.
+O segundo comando verifica estrutura, hash, URLs/datas e referência de aceite. A consulta é realizada pelo agente na sessão; o CLI não contém um buscador nem um seletor de stack por palavras-chave.
 
 ## Recomendação e geração têm capacidades diferentes
 
-Recomendações podem abranger qualquer tecnologia justificada. Geradores testados nesta versão: `stack: dotnet`, com `presentation: api|console|worker`, usando .NET 8. O campo `technologies` explica a recomendação; não instala pacotes nem muda a versão fixa do modelo. Antes de aplicar, confirme que a recomendação cabe no modelo e no suporte do runtime; dependências adicionais exigem implementação e validação próprias.
+Recomendações podem abranger qualquer tecnologia justificada. O toolkit não gera código de produto nem exige runtime de produto para criar/adotar; ele preserva a tecnologia aprovada nos registros. O campo `technologies` explica a recomendação e não instala pacotes. Após a aprovação do plano, confirme no ambiente as ferramentas necessárias para implementar e validar a opção selecionada.
 
-Para outras stacks, use `presentation: none` quando não houver apresentação equivalente, e registre a recomendação normalmente. `generator_supported: false` significa que a materialização automática está indisponível. Não gere uma base .NET como aproximação de HTML estático, Python ou outra stack; apresente a recomendação e prepare um trabalho específico para o modelo necessário. Ausência de gerador não invalida uma recomendação apropriada.
+Apresentação é texto contextual opcional, não um catálogo de hosts. Ausência de apresentação não impede a decisão. Não substitua a stack aprovada por outra para satisfazer um gerador; a ausência de ferramenta específica deve ficar explícita no plano de implementação e validação. A decisão pode recomendar .NET quando pesquisa, contexto e aceite sustentarem essa escolha.
 
-Escolha `worker` quando houver processamento em segundo plano que justifique um serviço com esse ciclo de vida. Uma API ou aplicação web não precisa ganhar um worker separado automaticamente. Execuções pontuais podem usar console. UI, banco, autenticação, mensageria e implantação são decisões separadas, não dependências obrigatórias do toolkit.
+Escolha componentes e ciclos de execução apenas quando os requisitos os justificarem. UI, banco, autenticação, mensageria e implantação são decisões separadas, não dependências obrigatórias do toolkit.
 
 ## Interface independente do backend
 
@@ -50,13 +50,13 @@ npm run toolkit -- adopt-project --name MeuProjeto --context-file .scratch/conte
 npm run toolkit -- adopt-project --name MeuProjeto --context-file .scratch/contexto-inicial.json --preparation-file .scratch/pesquisa.json --technology-file .scratch/decisao-tecnologica.json --architecture-file .scratch/arquitetura.json
 ```
 
-A decisão aprovada e seu aceite são preservados em `references/technology-decision.json` e `references/technology-approval.md`; o estado aponta para a decisão. O contexto não pode mudar sem reavaliá-la. O precheck business verifica esse vínculo e a apresentação aplicada, além dos gates funcionais existentes.
+A decisão aprovada e seu aceite são preservados em `references/technology-decision.json` e `references/technology-approval.md`; o estado aponta para a decisão. O contexto não pode mudar sem reavaliá-la. O precheck business verifica esse vínculo, além dos gates funcionais existentes.
 
-A transação remove somente arquivos controlados do modelo, inclusive o host worker substituído, e atualiza solução, referências, código e teste de ciclo de vida para a apresentação escolhida. Qualquer arquivo controlado modificado bloqueia a operação antes de escrever. Arquivos pessoais, remotos e arquivos desconhecidos permanecem; o journal permite recuperação. Diretórios que ficaram vazios após a remoção dos arquivos controlados são retirados. Artefatos locais de builds anteriores e diretórios com arquivos desconhecidos permanecem, pois a operação não apaga recursivamente arquivos fora do manifesto. Não reaplique adoção a um projeto real; evolução posterior é uma tarefa explícita com preservação do trabalho existente.
+A transação remove/substitui somente arquivos controlados do modelo e atualiza a identidade e os registros do produto. Não gera solução, código ou testes de ciclo de vida específicos da stack. Qualquer arquivo controlado modificado bloqueia a operação antes de escrever. Arquivos pessoais, remotos e arquivos desconhecidos permanecem; o journal permite recuperação. Diretórios que ficaram vazios após a remoção dos arquivos controlados são retirados. Não reaplique adoção a um projeto real; evolução posterior é uma tarefa explícita com preservação do trabalho existente.
 
 Para gerar em outra pasta vazia, use `create-project --name MeuProjeto --target DESTINO --context-file .scratch/contexto-inicial.json --preparation-file .scratch/pesquisa.json --technology-file .scratch/decisao-tecnologica.json --architecture-file .scratch/arquitetura.json`; referências de aceite são resolvidas na raiz do modelo que executa o comando. Projetos descendentes não herdam contexto, decisão nem aceite do projeto anterior.
 
-A opção `--presentation api|console|worker` apenas confere a apresentação da decisão aprovada. Não dispensa contexto completo, pesquisa externa verificada ou aprovação. Se a consulta estiver bloqueada, a criação e adoção ficam bloqueadas até conseguir acesso. Prepare o especialista e conclua a otimização global conforme [especialista-dominio.md](especialista-dominio.md).
+Não há opção `--presentation`; eventual descrição de apresentação é contextual e livre. Isso não dispensa contexto completo, pesquisa externa verificada ou aprovação. Se a consulta estiver bloqueada, a criação e adoção ficam bloqueadas até conseguir acesso. Prepare o especialista e conclua a otimização global conforme [especialista-dominio.md](especialista-dominio.md).
 
 ## Referências do desenho
 

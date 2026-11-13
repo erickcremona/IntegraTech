@@ -6,7 +6,7 @@ Abra uma cópia própria do modelo no Codex, Claude Code ou Cursor e informe nom
 
 A fábrica consulta project.json. Enquanto is_model=true, pergunta somente o dado ausente. Ao receber nome e problema, ela prepara o contexto e segue [a decisão tecnológica](decisao-tecnologica.md): pesquisa alternativas, apresenta a escolha para aceite e só então mostra a simulação e aplica a adoção autorizada na mesma pasta. Antes da adoção, execute npm run verify; corrija falhas no modelo e repita até passar. A adoção exige evidência aprovada vinculada ao conteúdo atual. Não é necessário editar JSON ou digitar comandos manualmente. A IA segue instruções; seu comportamento completo em conversa ainda depende da sessão e das permissões do provedor.
 
-O processo renomeia solução, projetos, namespaces, IoC, toolkit e skills. A pasta raiz aberta na IDE não muda de nome. Os fatos do usuário são preservados e lacunas essenciais precisam ser respondidas antes da materialização. project.json passa a is_model=false, com adoption.status=adopted. A adoção gera references/toolkit-readiness.md e devolve o relatório completo no resultado; o agente deve apresentá-lo ao usuário antes de qualquer trabalho do produto. O relatório lista papéis, skills, rotas, comandos, contratos, testes disponíveis e limitações; a execução verificada é vinculada por hash ao estado do toolkit. Nas próximas sessões, a fábrica lê o contexto real e continua discovery, sem repetir o onboarding.
+O processo atualiza a identidade do toolkit e skills, sem gerar solução ou projetos de produto. A pasta raiz aberta na IDE não muda de nome. Os fatos do usuário são preservados e lacunas essenciais precisam ser respondidas antes da materialização. project.json passa a is_model=false, com adoption.status=adopted. A adoção gera references/toolkit-readiness.md e devolve o relatório completo no resultado; o agente deve apresentá-lo ao usuário antes de qualquer trabalho do produto. O relatório lista papéis, skills, rotas, comandos, contratos, testes disponíveis e limitações; a execução verificada é vinculada por hash ao estado do toolkit. Nas próximas sessões, a fábrica lê o contexto real e continua discovery, sem repetir o onboarding.
 
 ## Utilitários usados pela fábrica
 
@@ -20,13 +20,13 @@ npm run toolkit -- adopt-project --name MensagensCliente --context-file .scratch
 
 Use --provider cursor para Cursor isolado ou --provider all para as três ferramentas; sem override, a seleção de project.json é preservada.
 
-Após renomear o toolkit, continue usando npm run toolkit, que já terá o caminho novo. Feche/reabra a solução na IDE se necessário. Execute npm test, npm run check e build/teste de ciclo do projeto real antes de prosseguir.
+Após renomear o toolkit, continue usando npm run toolkit, que já terá o caminho novo. Feche/reabra o workspace na IDE se necessário. Execute npm test e npm run check para o toolkit; valide o produto conforme a estratégia e as ferramentas definidas no plano aprovado.
 
 ## Proteções
 
 O repositório-modelo canônico permanece modelo. Se um remoto da cópia apontar para ele, a adoção é bloqueada: use uma cópia sem Git ou um repositório próprio criado a partir do template. Não há remoção/troca automática de origin. .git, arquivos pessoais, credenciais e configurações locais não são alterados.
 
-Arquivos do modelo precisam corresponder ao baseline versionado. Alterações próprias ou colisões bloqueiam antes de aplicar; o CTO resolve o escopo com o desenvolvedor em vez de sobrescrever. A simulação não escreve. A apresentação vem obrigatoriamente da decisão aprovada; o worker não é herdado automaticamente. Uma nova adoção não sobrescreve um projeto já real.
+Arquivos do modelo precisam corresponder ao baseline versionado. Alterações próprias ou colisões bloqueiam antes de aplicar; o CTO resolve o escopo com o desenvolvedor em vez de sobrescrever. A simulação não escreve. A stack é preservada da decisão aprovada. Uma nova adoção não sobrescreve um projeto já real.
 
 A adoção preserva os gates de escopo e plano funcional. A skill de domínio e sua pesquisa são geradas, mas a conclusão exige revisão e otimização global com coherence-run/coherence-check. Isso não concede autorização para implementar, push ou deploy.
 

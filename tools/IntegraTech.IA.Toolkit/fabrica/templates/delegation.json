@@ -1,6 +1,6 @@
 {
   "schema_version": 1, "task_id": "TASK-PENDING", "objective": "Validar a base do toolkit",
-  "business_context": "Problema de negócio ainda não informado", "technical_context": "Aplicação .NET em camadas; apresentação em project.json",
+  "business_context": "Problema de negócio ainda não informado", "technical_context": "Tecnologia e arquitetura a decidir conforme contexto, pesquisa e aceite",
   "scope": ["toolkit"], "out_of_scope": ["Funcionalidades de negócio", "Git", "Banco", "Deploy"],
   "assigned_agent": "code-reviewer", "supporting_agents": [], "required_inputs": ["README.md"],
   "expected_deliverables": ["Parecer JSON"], "constraints": ["Somente leitura", "Não delegar"],

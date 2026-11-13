@@ -2,7 +2,7 @@
 
 O IntegraTech ajuda a transformar um problema em um projeto com contexto pesquisado, tecnologias justificadas, plano aprovado, implementação, testes e revisão. Funciona com **Codex, Claude Code e Cursor**, usando o mesmo núcleo de agentes, regras e registros.
 
-Você conversa com o agente sobre o projeto; ele organiza o trabalho e prepara os registros. Você esclarece o contexto, revisa as propostas e aprova as decisões necessárias. A base disponível é .NET 8 em camadas, com Worker, API ou Console conforme a necessidade.
+Você conversa com o agente sobre o projeto; ele organiza o trabalho e prepara os registros. Você esclarece o contexto, revisa as propostas e aprova as decisões necessárias. A tecnologia do produto é escolhida pelo contexto, pela pesquisa e pela decisão aprovada; o toolkit não instala nem gera uma stack de produto padrão.
 
 ## Entenda o fluxo
 
@@ -88,7 +88,7 @@ Uma instalação pode manter vários vínculos, selecionados explicitamente por 
 
 No [repositório oficial](https://github.com/erickcremona/IntegraTech), use **Use this template → Create a new repository** ou **Code → Download ZIP**. Abra sua cópia no Codex, Claude Code ou Cursor. O repositório oficial permanece como modelo reutilizável; o GitHub não renomeia namespaces automaticamente.
 
-Requisitos: **Node.js >=22**, **SDK .NET 8** e a ferramenta de IA escolhida com autenticação configurada. A criação não instala dependências nem configura credenciais ou Git.
+Requisitos do toolkit: **Node.js >=22** e a ferramenta de IA escolhida com autenticação configurada. Runtimes e SDKs de produto dependem da tecnologia aprovada e são definidos no plano do produto. A criação não instala dependências nem configura credenciais ou Git.
 
 Envie uma mensagem como:
 
@@ -96,7 +96,7 @@ Envie uma mensagem como:
 
 Não precisa preparar JSON ou conhecer os comandos: o agente deve registrar os fatos informados e perguntar somente o necessário. Se o projeto já foi personalizado, ele lê o contexto existente e continua dali. Veja [adoção da cópia](docs/inicio/adotar-projeto.md) e [primeiro projeto](docs/inicio/primeiro-projeto.md).
 
-Worker é um exemplo opcional, mantido apenas quando processamento em segundo plano fizer sentido. API e Console também estão disponíveis. Outras tecnologias podem ser recomendadas, mas uma stack sem gerador exige implementação própria; não será substituída por uma aproximação .NET. Banco, autenticação, mensageria e integrações entram apenas quando o contexto justificar.
+A criação e a adoção registram a tecnologia e a arquitetura aprovadas, sem gerar código de produto. Após aprovar o plano, a implementação segue essa decisão e as capacidades disponíveis no ambiente. .NET pode ser recomendado quando a pesquisa e o contexto justificarem, como qualquer outra alternativa; não há projeto .NET de exemplo no modelo. Banco, autenticação, mensageria e integrações entram apenas quando o contexto justificar.
 
 Na criação/adoção, `all` inclui as três ferramentas; `both`, padrão existente, inclui somente Codex+Claude. Consulte [uso no Cursor](docs/inicio/cursor.md). O nome do projeto deve ser PascalCase alfanumérico, sem espaços ou nomes reservados.
 
@@ -169,11 +169,9 @@ npm test
 npm run check
 npm run toolkit -- doctor
 npm run toolkit -- precheck --phase discovery
-dotnet build IntegraTech.sln --disable-build-servers -m:1
-dotnet run --project tests/IntegraTech.Arquitetura.Tests --no-build
 ```
 
-Em um projeto personalizado, use o nome de sua solução e do projeto de testes. O teste .NET é um executável de ciclo de vida; `dotnet test` sozinho não o executa. `doctor` verifica capacidades das CLIs, sem comprovar autenticação ou disponibilidade de modelo. `npm run verify` executa a verificação reproduzível do toolkit e dos modelos gerados/adotados; não executa avaliações com modelos reais automaticamente.
+Esses comandos verificam o toolkit. As validações de produto devem ser definidas no plano aprovado e usar ferramentas disponíveis para a tecnologia selecionada. `doctor` verifica capacidades das CLIs, sem comprovar autenticação ou disponibilidade de modelo. `npm run verify` verifica o toolkit, sem exigir o runtime do produto nem executar avaliações com modelos reais automaticamente.
 
 `npm run toolkit -- help` mostra rotas, ações de política e contratos diretamente das definições do toolkit. `npm run check` valida os adaptadores instalados, os papéis do catálogo e todos os esquemas de contrato suportados.
 

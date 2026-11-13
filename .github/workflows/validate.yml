@@ -18,8 +18,5 @@ jobs:
       - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
         with:
           node-version: '24.14.0'
-      - uses: actions/setup-dotnet@26b0ec14cb23fa6904739307f278c14f94c95bf1 # v5
-        with:
-          dotnet-version: '8.0.425'
-      - name: Verify local tooling, evals, architecture and generated hosts
+      - name: Verify toolkit, evals and neutral materialization
         run: npm run verify

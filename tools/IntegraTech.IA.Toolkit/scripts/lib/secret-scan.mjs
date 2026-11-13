@@ -1,5 +1,5 @@
 import { execFileSync } from 'node:child_process';
-import { readFileSync } from 'node:fs';
+import { readFileSync, existsSync } from 'node:fs';
 import { contained } from './paths.mjs';
 export function scanText(text) {
   const rules = {
@@ -11,14 +11,16 @@ export function scanText(text) {
   };
   return Object.entries(rules).filter(([, pattern]) => pattern.test(text)).map(([name]) => name);
 }
-export function scanRepository(repo) {
-  const files = execFileSync('git', ['-C', repo, 'ls-files', '--cached', '-z'], { encoding: 'utf8', windowsHide: true }).split('\0').filter(Boolean);
+export function scanRepository(repo, { listFiles = () => execFileSync('git', ['-C', repo, 'ls-files', '--cached', '-z'], { encoding: 'utf8', windowsHide: true }).split('\0').filter(Boolean) } = {}) {
+  const files = listFiles();
   const findings = [];
   let scanned = 0, binary_skipped = 0;
   for (const path of files) {
     if (/(^|\/)(?:\.scratch|qa-artifacts|runtime-publish|bin|obj|secrets)(\/|$)|\.(?:pem|pfx|key|log|trx)$/i.test(path)
       || /(^|\/)\.env(?:\.|$)/i.test(path) && !path.endsWith('.env.example')) findings.push({ path, rule: 'local_or_sensitive_file' });
-    const data = readFileSync(contained(repo, path));
+    const full = contained(repo, path);
+    if (!existsSync(full)) continue;
+    const data = readFileSync(full);
     let text;
     try { text = new TextDecoder('utf-8', { fatal: true }).decode(data); if (text.includes('\0')) throw new Error('binary'); }
     catch { binary_skipped++; continue; }

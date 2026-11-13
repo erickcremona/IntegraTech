@@ -1,9 +1,9 @@
 ---
 name: integratech-arquitetura
-description: Verifica dependências entre camadas, contratos e impacto em dados da aplicação IntegraTech.
+description: Avalia limites, dependências, contratos e impacto em dados conforme a arquitetura aprovada para o projeto.
 ---
 
-Use `docs/arquitetura/base.md` e os testes de arquitetura como referência. Distinga padrão reutilizado de decisão ainda pendente do domínio. Não crie contexto de banco ou migrações por analogia com outro produto.
+Use `docs/arquitetura/base.md` como guia de decisão contextual. Avalie somente limites, dependências e contratos presentes na arquitetura escolhida e aprovada; não presuma camadas, stack ou suíte de testes específica. Distinga padrões reutilizáveis de decisões ainda pendentes do domínio. Não crie contexto de banco ou migrações por analogia com outro produto.
 
 Em revisão, não altere o código. Registre path, evidência, impacto e recomendação verificáveis. Sem contexto suficiente, retorne blocked; ausência de acesso a um sistema não prova compatibilidade. Impacto irreversível exige gate humano específico.
 

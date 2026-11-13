@@ -26,7 +26,7 @@ Depois de revisar o contexto com o responsável pelo produto, registre `scope_st
 npm run toolkit -- precheck --phase design
 ```
 
-Peça à fábrica alternativas de solução e um plano faseado. Tecnologias e apresentação devem seguir a decisão pesquisada, não o worker de exemplo. Alterar arquitetura materialmente requer decisão documentada e nova validação do contexto. Banco, autenticação, integrações e mensageria não são obrigatórios.
+Peça à fábrica alternativas de solução e um plano faseado. Tecnologia e arquitetura seguem as decisões pesquisadas e aprovadas; o modelo não fornece uma aplicação de exemplo como padrão. Alterar arquitetura materialmente requer decisão documentada e nova validação do contexto. Banco, autenticação, integrações e mensageria não são obrigatórios.
 
 ## 3. Registre o plano e o aceite humano
 

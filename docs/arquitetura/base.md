@@ -1,21 +1,10 @@
 # Arquitetura da base
 
-## Camadas e referências
+## Decisões arquiteturais
 
-| Camada | Referencia |
-|---|---|
-| Apresentação.Worker | Aplicação, Infra.CrossCutting.IoC |
-| Aplicação | Domínio |
-| Domínio | Nenhum projeto |
-| Infra.Data | Domínio |
-| Infra.Service | Aplicação, Domínio |
-| Infra.CrossCutting.IoC | Aplicação, Domínio, Infra.Data, Infra.Service |
+O toolkit não prescreve camadas, apresentação, linguagem, framework ou runtime para os produtos criados. Avalie limites de domínio, requisitos funcionais e operacionais, equipe, implantação e manutenção; registre alternativas pesquisadas e a decisão aprovada em cada projeto. Consulte [arquitetura contextual](../inicio/arquitetura-contextual.md).
 
-O modelo atual usa apresentação Worker. Novos produtos podem escolher Worker, Api ou Console e um dos três perfis aprovados: aplicação simples, monólito modular ou monólito em camadas. Apenas o perfil em camadas usa os projetos abaixo; consulte [arquitetura contextual](../inicio/arquitetura-contextual.md). Bibliotecas sem conteúdo permanecem vazias até o domínio ser informado; não há classes de negócio fictícias.
-
-O Worker usa Generic Host e BackgroundService; IoC centraliza a composição futura. O método AddIntegraTech não registra conectores nesta base. A inicialização só registra o Worker inativo, que aguarda cancelamento. Configuração e logging usam mecanismos nativos do Host, sem connection string ou segredo predefinidos.
-
-O alvo inicial é net8.0. O SDK é 8.0.425 com rollForward latestFeature. Antes de implantação, revisar plataforma e dependências conforme ambiente e cronograma. Não há referência automática a EF Core, MySQL, JWT, MediatR ou AutoMapper; adicionar apenas quando os casos de uso justificarem.
+Criação e adoção registram decisões, mas não materializam um scaffold de produto. A implementação e sua validação devem seguir o plano aprovado, a tecnologia escolhida e as ferramentas disponíveis no ambiente.
 
 ## Fábrica
 
@@ -23,6 +12,6 @@ O núcleo em tools/IntegraTech.IA.Toolkit/fabrica contém governança, catálogo
 
 Implementação utiliza os recursos nativos da sessão escolhida, sob os gates do CTO. O dispatcher cobre revisores read-only; ele não anuncia um runtime universal de implementação.
 
-O gerador create-project copia somente arquivos explicitamente permitidos pelo manifesto e materializa o host escolhido. project.json identifica nome, apresentação e provedores. references/business-context.json começa em branco; contexto, plano e aceite são próprios de cada projeto.
+O fluxo de criação prepara a instalação do toolkit e os registros próprios do projeto. `project.json` identifica nome e provedores; o contexto, a apresentação, as decisões e o plano são definidos conforme cada projeto.
 
 Os pareceres automatizados avaliam um pacote textual explícito; não executam os testes e não descobrem arquivos privados. Revisão sobre pacote insuficiente deve ficar bloqueada. Segurança de arquivos, ferramentas e configuração depende também das permissões efetivas do provedor.

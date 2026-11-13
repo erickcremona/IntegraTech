@@ -2,7 +2,7 @@
 
 ## Verificação reproduzível e CI
 
-`npm run verify` executa baseline (somente no modelo), suíte completa do toolkit, consistência dos adaptadores, avaliações locais, padrões de segredos e build/ciclo da solução. No modelo, também executa geração/consistência/build/ciclo de Worker/API/Console e adoção/consistência/build/ciclo de API/Console. Os testes de geração e adoção para as apresentações/provedores já rodam na suíte completa do toolkit; projetos gerados recebem validação estrutural e ciclo .NET próprios, sem repetir a suíte inteira em cada cópia. As fontes externas da geração de teste são simuladas por fixtures explícitas; isso não comprova pesquisa de domínio real nem execução de modelos de IA. Requer Git, Node e .NET instalados. É o comando usado em .github/workflows/validate.yml.
+`npm run verify` executa o baseline (somente no modelo), suíte do toolkit, consistência dos adaptadores, avaliações locais e padrões de segredos. Não compila nem cria produtos de exemplo e não exige runtime de produto. Os testes de criação e adoção usam decisões e fontes simuladas por fixtures explícitas; isso não comprova pesquisa de domínio real nem execução de modelos de IA. Requer Node.js; outros utilitários podem depender de recursos locais documentados. É o comando usado em `.github/workflows/validate.yml`.
 
 O CI usa ações oficiais fixadas por SHA, conteúdo read-only, checkout sem persistir credenciais e nenhum secret de modelo. Não faz deploy nem chama modelos reais. Uma execução local não comprova que o workflow remoto passou; confira GitHub Actions.
 

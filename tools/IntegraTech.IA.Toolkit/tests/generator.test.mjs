@@ -10,6 +10,11 @@ const generatorUrl = new URL('./generation-fixture.mjs', import.meta.url);
 const read = path => JSON.parse(readFileSync(path, 'utf8'));
 const canonicalAuthors = readFileSync(new URL('../../../AUTHORS.md', import.meta.url), 'utf8');
 const originCredit = canonicalAuthors.split('\n').find(line => line.startsWith('Este projeto foi criado com base no '));
+test('skills de arquitetura não dependem dos scaffolds de produto removidos', () => {
+  const skill = readFileSync(new URL('../fabrica/skills/integratech-arquitetura/SKILL.md', import.meta.url), 'utf8');
+  assert.match(skill, /arquitetura escolhida e aprovada/);
+  assert.doesNotMatch(skill, /testes de arquitetura|dependências entre camadas/i);
+});
 test('gerador: simulação não escreve; rejeita nomes, destino interno e colisões', async () => {
   const { createProject } = await import(generatorUrl);
   const { repoRoot } = await import('../scripts/lib/installer.mjs');
@@ -158,5 +163,25 @@ test('criação neutra preserva a stack aprovada sem scaffold', async () => {
     for (const path of ['README.md', 'SOLUTION_CONTEXT.md', 'docs/arquitetura/base.md']) {
       assert.doesNotMatch(readFileSync(join(target, path), 'utf8'), /\bdotnet\s+(?:build|run|test)\b/);
     }
+  }
+});
+
+test('cópia gerada documenta decisão tecnológica sem instruções de stack fixa', async () => {
+  const { context, decisionFor } = await import('./technology-fixture.mjs');
+  const { createProject } = await import('../scripts/lib/project-generator.mjs');
+  const target = mkdtempSync(join(tmpdir(), 'model-neutral-docs-'));
+  const decision = decisionFor();
+  decision.selected_option = 'static';
+  decision.options.find(option => option.id === 'static').presentation = 'Site estático com publicação gerenciada';
+  createProject(generationOptions({ name: 'DocsNeutras', target, context, technologyDecision: decision }));
+  for (const path of [
+    'README.md', 'SOLUTION_CONTEXT.md', 'docs/inicio/fluxo-toolkit.md',
+    'docs/inicio/decisao-tecnologica.md', 'tools/DocsNeutras.IA.Toolkit/README.md',
+    'tools/DocsNeutras.IA.Toolkit/fabrica/toolkit-manual.md',
+    'tools/DocsNeutras.IA.Toolkit/fabrica/governance.md',
+  ]) {
+    const text = readFileSync(join(target, path), 'utf8');
+    assert.match(text, /decisão tecnológica aprovada|tecnologia aprovada|contexto.*pesquisa/i, path);
+    assert.doesNotMatch(text, /SDK \.NET 8|base disponível é \.NET 8|dotnet build IntegraTech\.sln|Aplicação \.NET em camadas/i, path);
   }
 });

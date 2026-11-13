@@ -53,6 +53,12 @@ test('coerência: comando falho não permite conclusão', () => {
   const result = workflow.runCoherenceChecks({ repo: f.repo, execute: () => ({ status: 1, stdout: '', stderr: 'Falha' }) });
   assert.equal(result.status, 'blocked');
 });
+test('coerência: verificações do toolkit não exigem uma stack de produto predefinida', () => {
+  const f = fixture(), commands = [];
+  workflow.runCoherenceChecks({ repo: f.repo, execute: (command, args) => { commands.push([command, ...args]); return { status: 0, stdout: 'PASS', stderr: '' }; } });
+  assert.deepEqual(commands, [['npm', 'test'], ['npm', 'run', 'check']]);
+  assert.equal(commands.flat().some(value => /dotnet|\.sln|\.csproj/i.test(value)), false);
+});
 test('especialista: migração de projeto existente reconsulta e preserva identidade', () => {
   const f = fixture();
   assert.equal(workflow.prepareSpecialist({ repo: f.repo, preparation: preparationFor(), request: researchRequest }).status, 'prepared');

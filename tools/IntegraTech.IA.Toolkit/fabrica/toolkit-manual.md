@@ -1,6 +1,6 @@
 # IntegraTech.IA.Toolkit
 
-Núcleo comum para Codex, Claude Code e Cursor. [Uso no Cursor](../../docs/inicio/cursor.md). Requer Node.js >=22 e, para o produto, SDK .NET 8. A implementação ocorre na sessão nativa; o dispatcher automatiza exclusivamente revisões independentes, como na arquitetura de referência.
+Núcleo comum para Codex, Claude Code e Cursor. [Uso no Cursor](../../docs/inicio/cursor.md). Requer Node.js >=22 para operar o toolkit. Runtimes e SDKs do produto seguem a tecnologia aprovada e o plano do produto. A implementação ocorre na sessão nativa; o dispatcher automatiza exclusivamente revisões independentes.
 
 [Orientação ao usuário e fluxo completo](../../docs/inicio/fluxo-toolkit.md). Este manual detalha a operação direta; o README principal apresenta o uso pela conversa. Mudanças de comportamento devem atualizar ambos, os guias afetados e o mapa mental quando o fluxo mudar.
 
@@ -10,7 +10,7 @@ Adoção na cópia atual: `onboarding` identifica somente os dados ausentes; `ad
 
 Ao manter o modelo, qualquer mudança em arquivo controlado exige revisar a mudança e atualizar o baseline antes de publicar: `node tools/IntegraTech.IA.Toolkit/scripts/update-template-baseline.mjs --write`. Sem --write, o comando apenas verifica. Nunca execute essa atualização no onboarding para contornar conflitos. O baseline detecta customizações acidentais; não é uma assinatura criptográfica de autoria. Projetos reais não podem ser adotados novamente por inferência.
 
-Para iniciar outro produto, use `create-project --name MeuProjeto --target DESTINO --context-file CONTEXTO --preparation-file PESQUISA --technology-file DECISAO --provider all`. Contexto completo, consultas externas e decisão aprovada são obrigatórios, inclusive com --presentation e --dry-run. A geração produz especialista de domínio e adaptadores dos provedores selecionados, sem herdar dados de outro projeto. Siga [especialista de domínio](../../docs/inicio/especialista-dominio.md) para os contratos, pesquisa, consulta por funcionalidade, atualização e otimização global final. Sem acesso às fontes necessárias, bloqueie e retome depois; não há fallback offline.
+Para iniciar outro produto, use `create-project --name MeuProjeto --target DESTINO --context-file CONTEXTO --preparation-file PESQUISA --technology-file DECISAO --architecture-file ARQUITETURA --provider all`. Contexto completo, consultas externas e decisões aprovadas são obrigatórios. A criação materializa toolkit, registros, decisões e adaptadores, sem código ou estrutura de produto. O plano aprovado define a implementação conforme contexto e capacidades disponíveis. Siga [especialista de domínio](../../docs/inicio/especialista-dominio.md) para pesquisa e consulta por funcionalidade. Sem acesso às fontes necessárias, bloqueie e retome depois; não há fallback offline.
 
 O coletor de pesquisa funciona em Windows e Linux com DNS do Node.js e `curl`; conexão direta fixa os IPs públicos validados sem perder TLS/SNI. Usa `HTTPS_PROXY`/`https_proxy` ou `ALL_PROXY`/`all_proxy` quando configurados. URLs de proxy com credenciais embutidas são rejeitadas para não expor segredos. A revalidação compara URL final e SHA-256; fontes alteradas precisam de publicação oficial equivalente, achados revisados e nova coleta.
 
@@ -80,7 +80,7 @@ Preenchimento automático: `graph sync --dry-run` inspeciona e `graph sync` apli
 
 Use ui-capabilities, ui-prepare --dry-run/ui-prepare e ui-status em projeto real com seleção estruturada aprovada. create/adopt preparam a especialização sem frontend quando a UI foi declarada. ui-generate --dry-run/ui-generate exige gates de negócio e preserva customizações. Somente React/Vite possui gerador neste incremento; Next/Vue/Angular/Blazor/MAUI têm orientação específica. ui-recover reconcilia preparação interrompida após comprovar escritor encerrado.
 
-ui-validate bloqueia a execução isolada não disponível; ui-validate --local executa diagnóstico explícito de build/browser com dependências já preparadas. Esse relatório nunca promove delivery_valid. UI exige revisão UX adicional e evidências isoladas específicas no loop; Node/.NET genéricos não bastam. [Guia completo](../../docs/inicio/interfaces.md).
+ui-validate bloqueia a execução isolada não disponível; ui-validate --local executa diagnóstico explícito de build/browser com dependências já preparadas. Esse relatório nunca promove delivery_valid. UI exige revisão UX adicional e evidências isoladas específicas no loop; verificações genéricas do toolkit não bastam. [Guia completo](../../docs/inicio/interfaces.md).
 
 
 Execução SDD: em produtos novos, use especificação funcional e desenho técnico vinculados ao contexto, plano business v2 com tarefas/dependências antes do aceite e os comandos sdd-plan, sdd-task, sdd-complete e sdd-status após aprovação. Consulte [docs/inicio/sdd.md](../../docs/inicio/sdd.md). Planos v1 são legados e não equivalem a esse fluxo; não migrar ou aprovar automaticamente.

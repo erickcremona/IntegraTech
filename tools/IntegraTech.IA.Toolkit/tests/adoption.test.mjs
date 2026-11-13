@@ -83,9 +83,9 @@ test('adoção: exige verificação aprovada vinculada ao conteúdo atual', opti
 test('adoção: bloqueia origem canônica, alterações locais e colisões antes de escrever', options, async () => {
   for (const kind of ['canonical', 'modified', 'collision', 'missing-problem']) {
     const f = await fixture({ git: kind === 'canonical', canonical: kind === 'canonical' });
-    if (kind === 'modified') writeFileSync(join(f.repo, 'Directory.Build.props'), 'alteração pessoal');
+    if (kind === 'modified') writeFileSync(join(f.repo, 'README.md'), 'alteração pessoal');
     if (kind === 'collision') writeFileSync(join(f.repo, 'references/technology-decision.json'), 'registro pessoal');
-    assert.throws(() => f.adoptProject({ repo: f.repo, presentation: 'worker', name: 'MensagensCliente', context: { problem: kind === 'missing-problem' ? '' : 'Organizar mensagens dos atendentes.' } }));
+    assert.throws(() => f.adoptProject({ repo: f.repo, presentation: 'worker', name: 'MensagensCliente', context: { problem: kind === 'missing-problem' ? '' : 'Organizar mensagens dos atendentes.' } }), undefined, `case: ${kind}`);
     assert.equal(JSON.parse(readFileSync(join(f.repo, 'project.json'))).is_model, true);
     assert.equal(existsSync(join(f.repo, '.scratch')), false);
   }
@@ -99,7 +99,8 @@ test('adoção: restaura snapshot preservando arquivos pessoais e recusa trabalh
   const staged = join(dirname(result.journal), 'after/project.json');
   writeFileSync(join(f.repo, 'project.json'), readFileSync(staged));
   assert.equal(restoreAdoption(result.journal).status, 'restored');
-  assert.ok(existsSync(join(f.repo, 'IntegraTech.sln')));
+  assert.ok(existsSync(join(f.repo, 'README.md')));
+  assert.equal(existsSync(join(f.repo, 'IntegraTech.sln')), false);
   assert.equal(existsSync(join(f.repo, 'NovoProduto.sln')), false);
   assert.equal(readFileSync(join(f.repo, 'personal.txt'), 'utf8'), 'Meu arquivo pessoal');
 });
@@ -153,14 +154,14 @@ test('adoção: escrita parcial em preparação não trunca o arquivo de destino
 test('adoção: recovery independente e links não contornam a proteção', options, async t => {
   const f = await fixture();
   const { symlinkSync, unlinkSync } = await import('node:fs');
-  const original = readFileSync(join(f.repo, 'Directory.Build.props'));
+  const original = readFileSync(join(f.repo, 'README.md'));
   const outside = mkdtempSync(join(tmpdir(), 'adoption-link-'));
   writeFileSync(join(outside, 'props'), original);
-  unlinkSync(join(f.repo, 'Directory.Build.props'));
+  unlinkSync(join(f.repo, 'README.md'));
   // Directory junction works without elevated symbolic-file privileges on Windows.
   symlinkSync(outside, join(f.repo, 'linked'), 'junction');
   assert.throws(() => f.adoptProject({ repo: join(f.repo, 'linked'), name: 'NovoNome', context: 'Organizar atendimento.' }), /link/i);
-  writeFileSync(join(f.repo, 'Directory.Build.props'), original);
+  writeFileSync(join(f.repo, 'README.md'), original);
   const result = f.adoptProject({ repo: f.repo, presentation: 'worker', name: 'NovoNome', context: 'Organizar atendimento.' });
   try {
     const preview = JSON.parse(execFileSync(process.execPath, [result.recovery, '--dry-run'], { encoding: 'utf8' }));
@@ -183,14 +184,14 @@ test('adoção: exige decisão tecnológica aprovada', options, async () => {
   assert.equal(existsSync(join(f.repo, '.scratch')), false);
   assert.equal(f.onboarding({ repo: f.repo, name: 'Catalogo', context: fullContext }).status, 'needs_domain_research');
 });
-test('adoção: preserva o exemplo controlado quando foi modificado', options, async () => {
+test('adoção: preserva arquivo controlado modificado e bloqueia a conversão', options, async () => {
   const f = await fixture();
-  const worker = join(f.repo, 'src/IntegraTech.Apresentacao/IntegraTech.Apresentacao.Worker/IntegrationWorker.cs');
-  writeFileSync(worker, 'implementação pessoal');
-  assert.throws(() => f.adoptProject({ repo: f.repo, name: 'Catalogo', context: fullContext, presentation: 'api' }), /alterado/);
+  const controlled = join(f.repo, 'README.md');
+  writeFileSync(controlled, 'personalização local');
+  assert.throws(() => f.adoptProject({ repo: f.repo, name: 'Catalogo', context: fullContext, presentation: 'worker' }), /alterado/);
   assert.equal(existsSync(join(f.repo, '.scratch')), false);
   assert.equal(JSON.parse(readFileSync(join(f.repo, 'project.json'))).is_model, true);
-  assert.equal(readFileSync(worker, 'utf8'), 'implementação pessoal');
+  assert.equal(readFileSync(controlled, 'utf8'), 'personalização local');
 });
 test('adoção neutra remove exemplo controlado e preserva arquivos desconhecidos', options, async () => {
   const { context, decisionFor } = await import('./technology-fixture.mjs');
@@ -199,12 +200,13 @@ test('adoção neutra remove exemplo controlado e preserva arquivos desconhecido
   decision.selected_option = 'static';
   decision.options[1].presentation = 'Catálogo estático publicado na web';
   const example = 'src/IntegraTech.Apresentacao/IntegraTech.Apresentacao.Worker/IntegrationWorker.cs';
-  const personalSource = join(dirname(join(f.repo, example)), 'minhas-notas.txt');
+  const personalSource = join(f.repo, 'src/Customizado/minhas-notas.txt');
+  mkdirSync(dirname(personalSource), { recursive: true });
   writeFileSync(personalSource, 'Preservar anotações locais');
   const args = { repo: f.repo, name: 'CatalogoNeutro', context, technologyDecision: decision };
   const preview = f.adoptProject({ ...args, dryRun: true });
-  assert.ok(preview.operations.some(op => op.path === example && op.action === 'remove'));
-  assert.equal(existsSync(join(f.repo, example)), true);
+  assert.equal(preview.operations.some(op => op.path === example), false);
+  assert.equal(existsSync(join(f.repo, example)), false);
   const result = f.adoptProject(args);
   assert.equal(result.status, 'adopted');
   const identity = JSON.parse(readFileSync(join(f.repo, 'project.json'), 'utf8'));
@@ -221,6 +223,6 @@ test('adoção neutra remove exemplo controlado e preserva arquivos desconhecido
   assert.doesNotMatch(readFileSync(join(f.repo, 'README.md'), 'utf8'), /\bdotnet\s+(?:build|run|test)\b/);
   const { restoreAdoption } = await import('../scripts/lib/adoption-recovery.mjs');
   assert.equal(restoreAdoption(result.journal).status, 'restored');
-  assert.equal(existsSync(join(f.repo, example)), true);
+  assert.equal(existsSync(join(f.repo, example)), false);
   assert.equal(readFileSync(personalSource, 'utf8'), 'Preservar anotações locais');
 });

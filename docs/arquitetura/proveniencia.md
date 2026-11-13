@@ -4,10 +4,10 @@ A base do IntegraTech é mantida integralmente neste repositório. Compilação,
 
 | Componente | Reutilização |
 |---|---|
-| Grafo dos seis projetos e nomes das camadas | Preservado, com API substituída por Worker |
+| Estrutura arquitetural de produto | Não copiada; cada projeto registra sua própria decisão contextual |
 | Contratos delegation, return e review | Copiados e adaptados para identidade IntegraTech |
 | Entrada CTO, profundidade, ownership e gates | Adaptados da governança |
-| Catálogo, agentes e roteamento | Definidos para Worker e integração entre sistemas |
+| Catálogo, agentes e roteamento | Definidos para apoiar projetos de diferentes contextos e tecnologias |
 | Scripts de validação, instalação e despacho | Implementação nova em Node.js, com wrappers PowerShell |
 | Skills | Novas, específicas da base neutra e compartilhadas entre provedores |
 | Código de domínio, banco, autenticação, QA e configurações | Não transferidos |

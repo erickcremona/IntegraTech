@@ -4,7 +4,7 @@ Este guia acompanha o modelo e os projetos criados a partir dele. Você descreve
 
 ## 1. Abra sua cópia e apresente a ideia
 
-Crie seu próprio repositório a partir do template ou baixe uma cópia. Configure Node.js >=22, SDK .NET 8 e a ferramenta de IA escolhida com sua autenticação. Abra a pasta do projeto. Para incluir os três conjuntos de adaptadores ao criar/adotar, peça `--provider all`; `both` inclui Codex e Claude, sem Cursor.
+Crie seu próprio repositório a partir do template ou baixe uma cópia. Configure Node.js >=22 para o toolkit e a ferramenta de IA escolhida com sua autenticação. Runtimes/SDKs do produto dependem da tecnologia que vier a ser aprovada. Abra a pasta do projeto. Para incluir os três conjuntos de adaptadores ao criar/adotar, peça `--provider all`; `both` inclui Codex e Claude, sem Cursor.
 
 Exemplo de primeira mensagem:
 
@@ -20,7 +20,7 @@ O agente pesquisa referências externas via HTTPS, registra alternativas e recom
 
 > Compare as alternativas para este contexto, explique a recomendação e mostre o que preciso decidir.
 
-Worker é opcional: permanece apenas para processamento em segundo plano justificado. Os geradores atuais materializam .NET Worker, API ou Console. Uma recomendação fora dessas stacks não é convertida em aproximação .NET; demanda um gerador próprio. Pesquisa essencial indisponível ou contexto insuficiente interrompem a materialização até resolução.
+O toolkit não inclui uma stack ou scaffold de produto. Criação e adoção preservam as decisões pesquisadas e aprovadas e preparam os registros e a governança. Após a aprovação do plano do produto, a implementação segue a tecnologia escolhida e as capacidades observadas; .NET continua elegível quando o contexto justificar. Pesquisa essencial indisponível ou contexto insuficiente interrompem a materialização até resolução.
 
 Com a decisão aprovada, execute npm run verify; corrija falhas no modelo e repita até passar. A adoção só aceita evidência vinculada por hash ao conteúdo verificado. O toolkit pode personalizar sua cópia na mesma pasta ou gerar em outra pasta vazia. Ambos os caminhos geram um relatório de prontidão com papéis, skills, rotas, comandos, contratos, testes e limites; apresente-o ao usuário antes do trabalho do produto. Preserva customizações e apresenta conflitos; o repositório canônico continua reutilizável. Consulte [adoção](adotar-projeto.md), [decisão tecnológica](decisao-tecnologica.md) e [especialista de domínio](especialista-dominio.md).
 

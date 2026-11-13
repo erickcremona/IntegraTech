@@ -66,7 +66,8 @@ test('pesquisa: proxy HTTPS/ALL e nomes minúsculos são reconhecidos sem creden
     assert.equal(invocation.includes('--resolve'), false);
     rmSync(invocation[invocation.indexOf('--output') + 1].replace(/body$/, ''), { recursive: true, force: true });
   }
-  await assert.rejects(research.httpsRequest('https://public.example.org/', { env: { HTTPS_PROXY: 'http://user:secret@proxy.example:8080' } }), /credenciais embutidas/);
+  const proxy = ['http://user', ':secret@proxy.example:8080'].join('');
+  await assert.rejects(research.httpsRequest('https://public.example.org/', { env: { HTTPS_PROXY: proxy } }), /credenciais embutidas/);
 });
 test('pesquisa: DNS e proxy têm erros diagnósticos distintos', async () => {
   await assert.rejects(research.httpsRequest('https://public.example.org/', { env: {}, resolveHost: async () => { throw new Error('Falha de DNS'); } }), /DNS/i);

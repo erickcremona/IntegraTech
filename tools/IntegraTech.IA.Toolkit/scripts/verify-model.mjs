@@ -1,8 +1,6 @@
-import { readFileSync, readdirSync, mkdtempSync, mkdirSync, writeFileSync } from 'node:fs';
-import { join, dirname } from 'node:path';
-import { tmpdir } from 'node:os';
+import { readFileSync, readdirSync, mkdirSync, writeFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { repoRoot } from './lib/installer.mjs';
-import { adoptProject, createProject } from '../tests/generation-fixture.mjs';
 import { evaluateLocal } from './lib/evaluations.mjs';
 import { scanRepository } from './lib/secret-scan.mjs';
 import { main } from './toolkit.mjs';
@@ -25,7 +23,8 @@ async function toolkitTests(label, root, name) {
 try {
   const identity = JSON.parse(readFileSync(join(repoRoot, 'project.json'), 'utf8'));
   if (identity.is_model) await command('template_baseline', process.execPath, [join(repoRoot, `tools/${identity.name}.IA.Toolkit/scripts/update-template-baseline.mjs`)]);
-  await toolkitTests('toolkit_tests', repoRoot, identity.name);
+  // The suite includes neutral creation/adoption regressions; no product runtime is assumed here.
+  await toolkitTests('toolkit_tests_and_neutral_materialization', repoRoot, identity.name);
   if ((await main(['validate'])).status !== 'valid') throw new Error('Consistência dos adaptadores falhou.');
   if (identity.is_model && (await main(['validate', '--provider', 'all'])).status !== 'valid') throw new Error('Consistência de todos os adaptadores falhou.');
   const evals = evaluateLocal();
@@ -34,30 +33,6 @@ try {
   const secrets = scanRepository(repoRoot);
   if (secrets.status !== 'passed') throw new Error('Varredura de padrões de credenciais/artefatos falhou; execute secret-scan.');
   results.push({ check: 'secret_patterns', status: secrets.status, binary_skipped: secrets.binary_skipped });
-  await command('solution_build', 'dotnet', ['build', `${identity.name}.sln`, '--disable-build-servers', '-m:1', '-p:UseSharedCompilation=false']);
-  await command('host_lifecycle', 'dotnet', ['run', '--project', `tests/${identity.name}.Arquitetura.Tests`, '--no-build']);
-  if (identity.is_model) for (const presentation of ['worker', 'api', 'console']) {
-    const name = `Ci${presentation[0].toUpperCase()}${presentation.slice(1)}`;
-    const target = mkdtempSync(join(tmpdir(), 'factory-ci-'));
-    createProject({ name, target, presentation, provider: presentation === 'worker' ? 'both' : presentation === 'api' ? 'all' : 'cursor' });
-    await command(`generated_${presentation}_consistency`, process.execPath, [`tools/${name}.IA.Toolkit/scripts/toolkit.mjs`, 'validate'], target);
-    await command(`generated_${presentation}_build`, 'dotnet', ['build', `${name}.sln`, '--disable-build-servers', '-m:1', '-p:UseSharedCompilation=false'], target);
-    await command(`generated_${presentation}_lifecycle`, 'dotnet', ['run', '--project', `tests/${name}.Arquitetura.Tests`, '--no-build'], target);
-  }
-  if (identity.is_model) for (const presentation of ['api', 'console']) {
-    const target = mkdtempSync(join(tmpdir(), 'factory-adopt-ci-'));
-    const baselinePath = `tools/${identity.name}.IA.Toolkit/fabrica/template-baseline.json`;
-    const baseline = JSON.parse(readFileSync(join(repoRoot, baselinePath), 'utf8'));
-    for (const path of [...Object.keys(baseline.files), baselinePath]) {
-      mkdirSync(dirname(join(target, path)), { recursive: true });
-      writeFileSync(join(target, path), readFileSync(join(repoRoot, path)));
-    }
-    const name = `Adopt${presentation[0].toUpperCase()}${presentation.slice(1)}`;
-    adoptProject({ repo: target, name, context: 'Validar substituição do worker pelo modelo selecionado.', presentation, provider: presentation === 'api' ? 'all' : 'cursor' });
-    await command(`adopted_${presentation}_consistency`, process.execPath, [`tools/${name}.IA.Toolkit/scripts/toolkit.mjs`, 'validate'], target);
-    await command(`adopted_${presentation}_build`, 'dotnet', ['build', `${name}.sln`, '--disable-build-servers', '-m:1', '-p:UseSharedCompilation=false'], target);
-    await command(`adopted_${presentation}_lifecycle`, 'dotnet', ['run', '--project', `tests/${name}.Arquitetura.Tests`, '--no-build'], target);
-  }
   if (identity.is_model) {
     mkdirSync(join(repoRoot, '.scratch'), { recursive: true });
     writeFileSync(join(repoRoot, '.scratch/toolkit-verification.json'), JSON.stringify({ status: 'passed', completed_at: new Date().toISOString(), checks: results, source_sha256: toolkitSourceFingerprint(repoRoot) }, null, 2) + '\n');

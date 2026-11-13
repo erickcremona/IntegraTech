@@ -127,7 +127,7 @@ function validationCommands(repo) {
   const link=linkedProject(repo);if(link)return [['sdd-checkpoints',link.id]];
   const identity = readDocument(repo, 'project.json');
   if (!/^[A-Z][A-Za-z0-9]{0,49}$/.test(identity.name)) throw new Error('Identidade inválida.');
-  return [['npm', 'test'], ['npm', 'run', 'check'], ['dotnet', 'build', `${identity.name}.sln`, '--disable-build-servers', '-m:1', '-p:UseSharedCompilation=false'], ['dotnet', 'run', '--project', `tests/${identity.name}.Arquitetura.Tests`, '--no-build']];
+  return [['npm', 'test'], ['npm', 'run', 'check']];
 }
 export function runCoherenceChecks({ repo, execute = (command, args, options) => spawnSync(command, args, options) }) {
   inspectSpecialist(repo);
