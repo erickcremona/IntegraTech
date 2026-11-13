@@ -109,15 +109,15 @@ function uiValidationChecks(repo,state){
  return meta.selection.platform==='web'?['ui_build','ui_browser','ui_accessibility']:['ui_build','ui_native'];
 }
 function validValidation(value, profile, extraChecks=[]) {
-  return value?.status === 'passed' && value.isolation === 'verified'
+  return value?.status === 'passed' && value.execution_mode === 'host_controlled' && value.isolation === 'unverified'
     && Array.isArray(value.checks) && value.checks.length > 0 && value.checks.every(check => check.code === 0)
-    && ['inventory', 'frozen_oracles', 'isolation_canaries', profile,...extraChecks].every(id => value.checks.some(check => check.id === id && check.code === 0))
+    && ['inventory', 'frozen_oracles', 'host_controls', profile,...extraChecks].every(id => value.checks.some(check => check.id === id && check.code === 0))
     && value.environment && typeof value.environment.platform === 'string' && typeof value.environment.runtime === 'string';
 }
 function sanitizeValidation(result, profile, extraChecks=[]) {
-  const status = validValidation(result, profile, extraChecks) ? 'passed' : result?.status === 'failed' && result.isolation === 'verified' ? 'failed' : 'blocked';
+  const status = validValidation(result, profile, extraChecks) ? 'passed' : result?.status === 'failed' && result.execution_mode === 'host_controlled' ? 'failed' : 'blocked';
   const checks = Array.isArray(result?.checks) ? result.checks.slice(0, 50).map(item => ({ id: /^[a-z0-9_-]{1,80}$/.test(item.id) ? item.id : 'criterion', code: Number.isInteger(item.code) ? item.code : null })) : [];
-  return { status, test_files:Array.isArray(result?.test_files)?result.test_files.filter(item=>typeof item.path==='string'&&typeof item.sha256==='string').slice(0,2048):[], reason_code: typeof result?.reason_code === 'string' && /^[a-z0-9_]{1,100}$/.test(result.reason_code) ? result.reason_code : status === 'blocked' ? 'validation_unavailable_or_candidate_changed' : 'criteria_observed', isolation: result?.isolation === 'verified' ? 'verified' : 'unverified', checks,
+  return { status, test_files:Array.isArray(result?.test_files)?result.test_files.filter(item=>typeof item.path==='string'&&typeof item.sha256==='string').slice(0,2048):[], reason_code: typeof result?.reason_code === 'string' && /^[a-z0-9_]{1,100}$/.test(result.reason_code) ? result.reason_code : status === 'blocked' ? 'validation_unavailable_or_candidate_changed' : 'criteria_observed', isolation: 'unverified', execution_mode: result?.execution_mode === 'host_controlled' ? 'host_controlled' : 'unknown', checks,
     environment: { platform: typeof result?.environment?.platform === 'string' && /^[a-zA-Z0-9._-]{1,100}$/.test(result.environment.platform) ? result.environment.platform : 'unknown', runtime: typeof result?.environment?.runtime === 'string' && /^[a-zA-Z0-9._-]{1,100}$/.test(result.environment.runtime) ? result.environment.runtime : 'unknown' } };
 }
 export async function validateCandidate({ repo, id, expectedRevision, validator = validateIsolated }) {

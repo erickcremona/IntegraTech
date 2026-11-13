@@ -520,6 +520,10 @@
                 "unverified"
               ]
             },
+            "execution_mode": {
+              "type": "string",
+              "enum": ["host_controlled", "unknown"]
+            },
             "checks": {
               "type": "array",
               "items": {

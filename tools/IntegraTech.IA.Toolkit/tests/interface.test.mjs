@@ -146,7 +146,7 @@ test('UI candidate fixes UX review requirement before dispatch in addition to co
   writeFileSync(join(repo,'frontend/src/App.tsx'),readFileSync(join(repo,'frontend/src/App.tsx'),'utf8')+'\n// revised UI\n');
   const state=acceptCandidate({repo,id:'ui-loop',expectedRevision:3,profile:'node-tests-v1'});
   assert.deepEqual(state.engineering.required_reviews,['code','security','ux_accessibility']);
-  const validated=await validateCandidate({repo,id:'ui-loop',expectedRevision:state.revision,validator:async()=>({status:'passed',isolation:'verified',checks:['inventory','frozen_oracles','isolation_canaries','node-tests-v1'].map(id=>({id,code:0})),environment:{platform:'synthetic',runtime:'test'}})});
+  const validated=await validateCandidate({repo,id:'ui-loop',expectedRevision:state.revision,validator:async()=>({status:'passed',isolation:'unverified',execution_mode:'host_controlled',checks:['inventory','frozen_oracles','host_controls','node-tests-v1'].map(id=>({id,code:0})),environment:{platform:'synthetic',runtime:'test'}})});
   assert.equal(validated.status,'validation_blocked');
  }finally{rmSync(repo,{recursive:true,force:true});}
 });
@@ -201,7 +201,7 @@ test('approved UI roots cover Angular inline TS and native MAUI CSharp even with
    writeFileSync(join(repo,'src/app',file),'changed inline UI');
    const state=acceptCandidate({repo,id:'inline-ui',expectedRevision:3,profile:'node-tests-v1'});
    assert.ok(state.engineering.required_reviews.includes('ux_accessibility'));
-   const validated=await validateCandidate({repo,id:'inline-ui',expectedRevision:state.revision,validator:async()=>({status:'passed',isolation:'verified',checks:['inventory','frozen_oracles','isolation_canaries','node-tests-v1'].map(id=>({id,code:0})),environment:{platform:'synthetic',runtime:'test'}})});
+   const validated=await validateCandidate({repo,id:'inline-ui',expectedRevision:state.revision,validator:async()=>({status:'passed',isolation:'unverified',execution_mode:'host_controlled',checks:['inventory','frozen_oracles','host_controls','node-tests-v1'].map(id=>({id,code:0})),environment:{platform:'synthetic',runtime:'test'}})});
    assert.equal(validated.status,'validation_blocked');
   }finally{rmSync(repo,{recursive:true,force:true});}
  }

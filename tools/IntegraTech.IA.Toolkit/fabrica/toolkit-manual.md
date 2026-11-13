@@ -14,6 +14,8 @@ Para iniciar outro produto, use `create-project --name MeuProjeto --target DESTI
 
 O coletor de pesquisa funciona em Windows e Linux com DNS do Node.js e `curl`; conexão direta fixa os IPs públicos validados sem perder TLS/SNI. Usa `HTTPS_PROXY`/`https_proxy` ou `ALL_PROXY`/`all_proxy` quando configurados. URLs de proxy com credenciais embutidas são rejeitadas para não expor segredos. A revalidação compara URL final e SHA-256; fontes alteradas precisam de publicação oficial equivalente, achados revisados e nova coleta.
 
+Os perfis de validação usam o sistema operacional da sessão ativa, com comandos fixos, ambiente reduzido, cópia temporária e limites de saída/tempo. Executam sob as permissões do usuário local e registram `execution_mode=host_controlled` com `isolation=unverified`; não comprovam isolamento de arquivos ou rede. O coletor de pesquisa usa DNS do Node.js e `curl`; conexão direta fixa os IPs públicos validados sem perder TLS/SNI. Usa `HTTPS_PROXY`/`https_proxy` ou `ALL_PROXY`/`all_proxy` quando configurados. URLs de proxy com credenciais embutidas são rejeitadas para não expor segredos. A revalidação compara URL final e SHA-256; fontes alteradas precisam de publicação oficial equivalente, achados revisados e nova coleta.
+
 O instalador abaixo continua destinado à instalação/manutenção da fábrica; não equivale ao gerador da solução completa. Para o negócio, siga [o guia de início](../../docs/inicio/primeiro-projeto.md).
 
 ```powershell

@@ -12,10 +12,9 @@ Ao manter o modelo, qualquer mudança em arquivo controlado exige revisar a muda
 
 Para iniciar outro produto, use `create-project --name MeuProjeto --target DESTINO --context-file CONTEXTO --preparation-file PESQUISA --technology-file DECISAO --architecture-file ARQUITETURA --provider all`. Contexto completo, consultas externas e decisões aprovadas são obrigatórios. A criação materializa o toolkit, os registros do produto, as decisões e os adaptadores selecionados; não gera código ou estrutura de produto. O plano aprovado define a implementação conforme o contexto e as capacidades disponíveis. Siga [especialista de domínio](../../docs/inicio/especialista-dominio.md) para pesquisa e consulta por funcionalidade. Sem acesso às fontes necessárias, bloqueie e retome depois; não há fallback offline.
 
-O coletor de pesquisa funciona em Windows e Linux com DNS do Node.js e `curl`; conexão direta fixa os IPs públicos validados sem perder TLS/SNI. Usa `HTTPS_PROXY`/`https_proxy` ou `ALL_PROXY`/`all_proxy` quando configurados. URLs de proxy com credenciais embutidas são rejeitadas para não expor segredos. A revalidação compara URL final e SHA-256; fontes alteradas precisam de publicação oficial equivalente, achados revisados e nova coleta.
+O executor dos perfis acompanha o sistema operacional da sessão de desenvolvimento e registra execução controlada no host, sem alegar isolamento do usuário ou da rede. O coletor de pesquisa funciona em Windows e Linux com DNS do Node.js e `curl`; conexão direta fixa os IPs públicos validados sem perder TLS/SNI. Usa `HTTPS_PROXY`/`https_proxy` ou `ALL_PROXY`/`all_proxy` quando configurados. URLs de proxy com credenciais embutidas são rejeitadas para não expor segredos. A revalidação compara URL final e SHA-256; fontes alteradas precisam de publicação oficial equivalente, achados revisados e nova coleta.
 
-O instalador abaixo é destinado à instalação/manutenção da fábrica. Para o negócio, siga [o guia de início](../../docs/inicio/primeiro-projeto.md) e a tecnologia aprovada no contexto do produto.
-
+O instalador abaixo é destinado à instalação e manutenção da fábrica; não gera a solução completa do produto. Para o negócio, siga [o guia de início](../../docs/inicio/primeiro-projeto.md) e a tecnologia aprovada no contexto do produto.
 ```powershell
 npm test
 npm run check

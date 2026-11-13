@@ -41,7 +41,7 @@ Para preencher/manter o índice, encaminhe a traceability-maintainer (rota trace
 
 ## Loop assistido
 
-Para tarefas autorizadas, siga docs/inicio/loop-engenharia.md. Use candidato explícito, oráculos originais congelados, validação isolada por perfil e revisões de código/segurança vinculadas ao digest. Consulte delivery_valid em loop-status antes de concluir. Candidato obsoleto, ausência de progresso, orçamento esgotado, isolamento indisponível ou revisão interrompida sem término dos descendentes comprovado bloqueiam. Não remova registros/locks nem repita revisões do mesmo candidato. Implementação automática continua desabilitada; testes/simulações locais não habilitam provedores.
+Para tarefas autorizadas, siga docs/inicio/loop-engenharia.md. Use candidato explícito, oráculos originais congelados, perfis de validação no host da sessão e revisões de código/segurança vinculadas ao digest. A validação local registra `host_controlled` e `isolation=unverified`; não comprova confinamento do sistema operacional. Consulte delivery_valid em loop-status antes de concluir. Candidato obsoleto, ausência de progresso, orçamento esgotado ou revisão interrompida sem término dos descendentes comprovado bloqueiam. Não remova registros/locks nem repita revisões do mesmo candidato. Implementação automática continua desabilitada; testes/simulações locais não habilitam provedores.
 
 
 ## Orientação ao usuário sempre atualizada

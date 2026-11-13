@@ -50,7 +50,7 @@ Peça status em linguagem comum:
 
 A entrega deve indicar arquivos alterados, verificações executadas, resultados e limitações. No loop, `delivery_valid=true` é a confirmação atual; um status histórico não basta se o código ou as evidências mudaram. Revisões negativas exigem tratamento e nova validação. A conclusão inclui revisão global e os checks de coerência aplicáveis ao projeto real.
 
-Testes isolados dependem de capacidade comprovada do ambiente. O executor disponível usa Linux/Bubblewrap; sem namespaces funcionando, a validação fica bloqueada. Não execute o mesmo perfil no host para contornar esse bloqueio. Os testes originais são preservados como referência de regressão; novos critérios também precisam ser avaliados.
+Os perfis executam no sistema operacional da sessão de desenvolvimento usando comandos fixos, ambiente reduzido, cópia temporária e limites de tempo/saída. A execução tem as permissões do usuário local; o resultado registra `host_controlled` e isolamento `unverified`. Os testes originais são preservados como referência de regressão; novos critérios também precisam ser avaliados.
 
 O dispatcher automatiza revisões Codex/Claude sobre um pacote explícito autorizado, com provedores disponíveis e compatíveis. Cursor usa seus adaptadores e a sessão nativa; não possui dispatcher automatizado. Testes locais ou simulações não comprovam execução nos aplicativos externos. Consulte [loop assistido](loop-engenharia.md) e [confiabilidade](confiabilidade.md).
 

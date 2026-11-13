@@ -72,7 +72,7 @@ async function simulateValidationAndReviews(f, state, attestTests = true) {
     assert.equal(readFileSync(join(oracles.root, 'src/request.test.mjs'), 'utf8'), frozenTest);
     assert.equal(oracles.files['src/request.test.mjs'], fingerprint(frozenTest));
     assert.equal(files['src/request.mjs'], fingerprint(readFileSync(f.disk('src/request.mjs'))));
-    return { status: 'passed', isolation: 'verified', checks: ['inventory', 'frozen_oracles', 'isolation_canaries', 'node-tests-v1'].map(id => ({ id, code: 0 })), test_files: attestTests ? [{ path: 'src/request.test.mjs', sha256: fingerprint(frozenTest) }] : [], environment: { platform: 'synthetic-test', runtime: 'simulated-node' } };
+    return { status: 'passed', isolation: 'unverified', execution_mode: 'host_controlled', checks: ['inventory', 'frozen_oracles', 'host_controls', 'node-tests-v1'].map(id => ({ id, code: 0 })), test_files: attestTests ? [{ path: 'src/request.test.mjs', sha256: fingerprint(frozenTest) }] : [], environment: { platform: 'synthetic-test', runtime: 'simulated-node' } };
   } });
   assert.equal(state.status, 'review_pending');
   const reviewedTypes = [];

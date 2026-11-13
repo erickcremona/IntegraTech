@@ -7,11 +7,11 @@ import { startTask, advanceTask } from '../scripts/lib/task-loop.mjs';
 import { fingerprint } from '../scripts/lib/candidate.mjs';
 import * as engineering from '../scripts/lib/engineering-loop.mjs';
 
-function fixture() {
+function fixture({ includeTest = true } = {}) {
   const repo = mkdtempSync(join(tmpdir(), 'engineering-loop-'));
   mkdirSync(join(repo, 'src')); mkdirSync(join(repo, 'references'));
   writeFileSync(join(repo, 'src/main.mjs'), 'export const value = 1;');
-  writeFileSync(join(repo, 'src/main.test.mjs'), "import test from 'node:test'; test('original assertion', () => {});");
+  if (includeTest) writeFileSync(join(repo, 'src/main.test.mjs'), "import test from 'node:test'; test('original assertion', () => {});");
   writeFileSync(join(repo, 'references/project-state.json'), JSON.stringify({ scope_status: 'pending', plan_gate: 'pending' }));
   writeFileSync(join(repo, 'references/business-context.json'), '{}');
   const delegation = { schema_version: 1, task_id: 'cycle', objective: 'Maintain test fixture', business_context: '', technical_context: '', scope: ['src'], out_of_scope: [], assigned_agent: 'platform-engineer', supporting_agents: [], required_inputs: [], expected_deliverables: ['code'], constraints: [], file_ownership: { read: ['.'], write: ['src'] }, risks: [], acceptance_criteria: ['tests pass'], validation_commands: [], evidence_required: [], deadline_or_priority: 'normal', human_gate: 'none' };
@@ -20,7 +20,7 @@ function fixture() {
   advanceTask({ repo, id: 'cycle', expectedRevision: 2, event: { type: 'gate_checked' } });
   return { repo, id: 'cycle', expectedRevision: 3 };
 }
-const observed = async () => ({ status: 'passed', isolation: 'verified', checks: ['inventory', 'frozen_oracles', 'isolation_canaries', 'node-tests-v1'].map(id => ({ id, code: 0 })), environment: { platform: 'synthetic-test', runtime: 'test' } });
+const observed = async () => ({ status: 'passed', isolation: 'unverified', execution_mode: 'host_controlled', checks: ['inventory', 'frozen_oracles', 'host_controls', 'node-tests-v1'].map(id => ({ id, code: 0 })), environment: { platform: 'synthetic-test', runtime: 'test' } });
 const reviewer = async ({ repo, task, files, candidate }) => {
   const path = join(repo, 'qa-artifacts', `${task.task_id}.json`);
   const report = { schema_version: 1, task_id: task.task_id, review_type: task.assigned_agent === 'code-reviewer' ? 'code' : 'security', verdict: 'approved', findings: [], residual_risk: '' };
@@ -127,7 +127,7 @@ test('concurrent operations cannot dispatch twice; budgets survive inspection', 
 
 test('CLI exposes candidate and isolated validation without caller-provided commands or success', async () => {
   const { main } = await import('../scripts/toolkit.mjs');
-  const f = fixture();
+  const f = fixture({ includeTest: false });
   try {
     writeFileSync(join(f.repo, 'src/main.mjs'), 'export const value = 3;');
     const state = await main(['loop-candidate', '--repo', f.repo, '--id', f.id, '--revision', '3', '--profile', 'node-tests-v1']);

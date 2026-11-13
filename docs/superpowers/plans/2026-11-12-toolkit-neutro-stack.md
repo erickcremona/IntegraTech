@@ -38,6 +38,7 @@
 - Modify: `tools/IntegraTech.IA.Toolkit/scripts/lib/product-entry.mjs`
 - Modify: `tools/IntegraTech.IA.Toolkit/scripts/toolkit.mjs`
 - Modify: `tools/IntegraTech.IA.Toolkit/scripts/lib/governance.mjs`
+- Modify: `tools/IntegraTech.IA.Toolkit/scripts/lib/architecture-inspection.mjs` only to stop requiring an absent `project.json.presentation` for new neutral products while preserving checks when the legacy field exists
 - Modify: `tools/IntegraTech.IA.Toolkit/fabrica/team/contracts/technology-decision.schema.json`
 - Test: `tools/IntegraTech.IA.Toolkit/tests/technology.test.mjs`
 - Test: `tools/IntegraTech.IA.Toolkit/tests/generator.test.mjs`
@@ -48,10 +49,10 @@
 - `prepareProject(...)` consumes the approved technology and architecture decisions and returns a map containing toolkit/product records only.
 - CLI `create-project` and `adopt-project` keep research/decision/approval inputs; remove `--presentation`, `presentation` from generated `project.json`, and the Worker/API/Console enum. Keep an optional contextual presentation description in technology alternatives as free text, without a default.
 
-- [ ] **Step 1: Add failing regressions** named `decision aceita apresentação contextual sem catálogo de hosts`, `criação neutra preserva a stack aprovada sem scaffold` and `adoção neutra remove exemplo controlado e preserva arquivos desconhecidos`. Assert approved decision fields remain equivalent, an unrecognized contextual presentation string validates, generated `project.json` has no presentation default, no `.sln`, `.csproj` or `dotnet` instructions are emitted, and unknown files survive adoption.
-- [ ] **Step 2: Run the focused tests** with `node --test --test-isolation=none` on the three test files. Confirm the new cases fail against current generator/presentation requirements.
-- [ ] **Step 3: Remove presentation/generator gates** from decision inspection, CLI usage/options, governance, generator/adoption and generated product documents. Materialization requires approved researched decisions but does not require a built-in stack generator.
-- [ ] **Step 4: Run focused tests** and confirm existing source-preservation, adoption-recovery and approval-binding regressions still pass.
+- [x] **Step 1: Add failing regressions** named `decision aceita apresentação contextual sem catálogo de hosts`, `criação neutra preserva a stack aprovada sem scaffold` and `adoção neutra remove exemplo controlado e preserva arquivos desconhecidos`. Assert approved decision fields remain equivalent, an unrecognized contextual presentation string validates, generated `project.json` has no presentation default, no `.sln`, `.csproj` or `dotnet` instructions are emitted, and unknown files survive adoption.
+- [x] **Step 2: Run the focused tests** with `node --test --test-isolation=none` on the three test files. Confirm the new cases fail against current generator/presentation requirements.
+- [x] **Step 3: Remove presentation/generator gates** from decision inspection, CLI usage/options, governance, generator/adoption and generated product documents. In `architectureCurrent`, compare a legacy `project.json.presentation` only when present; keep name and decision bindings. Materialization requires approved researched decisions but does not require a built-in stack generator.
+- [x] **Step 4: Run focused tests** and confirm existing source-preservation, adoption-recovery and approval-binding regressions still pass.
 
 ### Task 2: Remove architecture-specific product scaffolds
 
@@ -71,11 +72,11 @@
 - Architecture inspection reports contextual decision validity; it never reports a generated scaffold unless one was generated and validated by a separately supported capability.
 - `architectureStatus({ repo })` reports `decision_recorded` and `validation_status: "not_run"` for a prepared product with no product source; it does not claim structural consistency or delivery.
 
-- [ ] **Step 1: Add failing tests** named `decisão arquitetural neutra aceita stack aprovada sem layout gerado` and `mudança de arquitetura não cria nem compara scaffold .NET`. Assert arbitrary stack names remain recorded, and unsupported source-generation transition paths return explicit capability limits without altering code.
-- [ ] **Step 2: Run architecture and SDD focused tests** to observe failures in the current .NET template coupling.
-- [ ] **Step 3: Remove calls that create/compare fixed C# source layouts** from architecture assessment, source graph inspection and SDD oracle transitions; retain context, module graph, approval, baseline, rollback and compatibility gates as records/checks independent from emitted C#.
-- [ ] **Step 4: Update status and task-run contracts** so an approved but unimplemented architecture reports `decision_recorded`/`not_run`, never `consistent` or delivered. Preserve ordinary frozen regression oracles; remove only auto-generated C# scaffold transitions.
-- [ ] **Step 5: Run architecture, traceability, task-loop and SDD test files**. Keep optional isolated product validators only where they validate user-selected source; they must not be part of creation or model verification.
+- [x] **Step 1: Add failing tests** named `decisão arquitetural neutra aceita stack aprovada sem layout gerado` and `mudança de arquitetura não cria nem compara scaffold .NET`. Assert arbitrary stack names remain recorded, and unsupported source-generation transition paths return explicit capability limits without altering code.
+- [x] **Step 2: Run architecture and SDD focused tests** to observe failures in the current .NET template coupling.
+- [x] **Step 3: Remove calls that create/compare fixed C# source layouts** from architecture assessment, source graph inspection and SDD oracle transitions; retain context, module graph, approval, baseline, rollback and compatibility gates as records/checks independent from emitted C#.
+- [x] **Step 4: Update status and task-run contracts** so an approved but unimplemented architecture reports `decision_recorded`/`not_run`, never `consistent` or delivered. Preserve ordinary frozen regression oracles; remove only auto-generated C# scaffold transitions.
+- [x] **Step 5: Run architecture, traceability, task-loop and SDD test files**. Keep optional isolated product validators only where they validate user-selected source; they must not be part of creation or model verification.
 
 ### Task 3: Remove the root .NET example and neutralize model verification
 
@@ -90,10 +91,10 @@
 - `npm run verify` reports toolkit checks plus neutral create/adopt validation and writes hash-bound evidence only after every required check passes.
 - The verification sequence does not invoke `dotnet` or create Worker/API/Console sample descendants.
 
-- [ ] **Step 1: Add a failing verification-plan regression** named `verificação integral não requer runtime nem projetos de produto`; assert command inventory includes Node toolkit tests/checks and excludes dotnet and sample presentations. Add a repository-template assertion that the manifest does not list deleted project files.
-- [ ] **Step 2: Run the focused test** and observe that current verification schedules solution builds and generated .NET examples.
-- [ ] **Step 3: Remove root example projects and product build/sample stages**. Keep Node test suite, provider/adaptor validation, local evaluations and secret scanning; keep CI dependencies limited to the toolkit runtime.
-- [ ] **Step 4: Run `npm run verify`** on Windows and record the final check inventory and status. If runtime cannot finish, record the observed blocking stage without claiming full success.
+- [x] **Step 1: Add a failing verification-plan regression** named `verificação integral não requer runtime nem projetos de produto`; assert command inventory includes Node toolkit tests/checks and excludes dotnet and sample presentations. Add a repository-template assertion that the manifest does not list deleted project files.
+- [x] **Step 2: Run the focused test** and observe that current verification schedules solution builds and generated .NET examples.
+- [x] **Step 3: Remove root example projects and product build/sample stages**. Keep Node test suite, provider/adaptor validation, local evaluations and secret scanning; keep CI dependencies limited to the toolkit runtime.
+- [x] **Step 4: Run `npm run verify`** on Windows and record the final check inventory and status. If runtime cannot finish, record the observed blocking stage without claiming full success.
 
 ### Task 4: Remove technology bias from manuals, generated guides and baselines
 
@@ -104,8 +105,8 @@
 - Regenerate: `tools/IntegraTech.IA.Toolkit/fabrica/template-baseline.json`
 - Test: `tools/IntegraTech.IA.Toolkit/tests/generator.test.mjs`, `tests/cursor.test.mjs`, `tests/adoption.test.mjs`
 
-- [ ] **Step 1: Add documentation/generation assertions** that fresh model copies contain no stack-specific product build commands or example product structure and explain how product planning follows the approved decision.
-- [ ] **Step 2: Run the focused regression tests** and confirm current README/generated-product claims fail.
-- [ ] **Step 3: Update manuals and provider instructions** to say stack choice comes from context/research/approval; distinguish toolkit Node requirements from product runtimes/capabilities; remove .NET Worker/API/Console availability claims while permitting .NET as a researched option when context supports it.
-- [ ] **Step 4: Update the controlled-file manifest and regenerate the baseline** with `node tools/IntegraTech.IA.Toolkit/scripts/update-template-baseline.mjs --write`.
-- [ ] **Step 5: Run final verification**: `npm run verify`, `npm run check`, `node tools/IntegraTech.IA.Toolkit/scripts/update-template-baseline.mjs`, and `git diff --check`; verify at least one approved non-.NET technology decision creates/adopts without stack-specific scaffold and confirm all existing user changes remain present.
+- [x] **Step 1: Add documentation/generation assertions** that fresh model copies contain no stack-specific product build commands or example product structure and explain how product planning follows the approved decision.
+- [x] **Step 2: Run the focused regression tests** and confirm current README/generated-product claims fail.
+- [x] **Step 3: Update manuals and provider instructions** to say stack choice comes from context/research/approval; distinguish toolkit Node requirements from product runtimes/capabilities; remove .NET Worker/API/Console availability claims while permitting .NET as a researched option when context supports it.
+- [x] **Step 4: Update the controlled-file manifest and regenerate the baseline** with `node tools/IntegraTech.IA.Toolkit/scripts/update-template-baseline.mjs --write`.
+- [x] **Step 5: Run final verification**: `npm run verify`, `npm run check`, `node tools/IntegraTech.IA.Toolkit/scripts/update-template-baseline.mjs`, and `git diff --check`; verify at least one approved non-.NET technology decision creates/adopts without stack-specific scaffold and confirm all existing user changes remain present.

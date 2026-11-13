@@ -43,7 +43,7 @@ export function verifyReceipt(repo,action,id,seen=new Set()){
  if(fingerprint(run.text)!==receipt.run_sha256||run.value.status!=='ready_for_delivery')throw new Error('execução de checkpoint SDD alterada');
  if(receipt.candidate_sha256!==run.value.engineering?.candidate_sha256||receipt.candidate_sha256!==fingerprint(run.value.engineering?.files)||!Array.isArray(run.value.baseline_files))throw new Error('candidato de checkpoint SDD divergente');
  const expectedEvidence=run.value.engineering?.reviews?.map(item=>({path:item.path,sha256:item.sha256}));
- if(!isDeepStrictEqual(receipt.evidence,expectedEvidence)||!expectedEvidence?.length||run.value.engineering.validation?.status!=='passed'||run.value.engineering.validation?.isolation!=='verified')throw new Error('checkpoint sem evidências consistentes');
+ if(!isDeepStrictEqual(receipt.evidence,expectedEvidence)||!expectedEvidence?.length||run.value.engineering.validation?.status!=='passed'||run.value.engineering.validation?.execution_mode!=='host_controlled'||run.value.engineering.validation?.isolation!=='unverified')throw new Error('checkpoint sem evidências consistentes');
  for(const item of receipt.evidence??[])if(fingerprint(readFileSync(contained(repo,item.path)))!==item.sha256)throw new Error('evidência de checkpoint alterada');
  return receipt;
 }
