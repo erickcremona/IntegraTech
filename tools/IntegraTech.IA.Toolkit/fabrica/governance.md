@@ -8,6 +8,8 @@ Não adote o repositório canônico compartilhado. Se o remoto ainda apontar par
 
 Se is_model=false, este já é o projeto real. Leia o contexto existente, não reinicie onboarding nem sugira outro nome por inferência. Continue discovery a partir dos fatos e dúvidas registrados. Adoção não é aprovação de negócio e não libera business automaticamente.
 
+Após a adoção, verifique no contexto e na decisão técnica a necessidade de instalar Playwright, Supabase, Strix, SkillUI e Context7. Trate-os como candidatos, não como dependências automáticas: instale somente os justificados pelo escopo aprovado, usando a fonte e instruções oficiais atuais e as permissões do ambiente. Se a instalação estiver indisponível, registre o bloqueio e prossiga com trabalho independente.
+
 Trabalho material exige objetivo, owner, escopo, exclusões, ownership, aceite, validação e evidência. Execute apenas a fase autorizada. Especialistas não delegam; profundidade máxima CTO → especialista. Paralelismo somente com independência de dados e arquivos.
 
 O escopo de negócio começa pendente. O desenvolvedor informa o problema em references/business-context.json com apoio do analista de negócio. Fluxo: discovery → design → aprovação → business → testes/revisão → entrega. Pode-se manter a base técnica em toolkit. Integração, banco, autenticação e agendamento só entram se o contexto os justificar.

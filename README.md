@@ -98,6 +98,8 @@ Não precisa preparar JSON ou conhecer os comandos: o agente deve registrar os f
 
 A criação e a adoção registram a tecnologia e a arquitetura aprovadas, sem gerar código de produto. Após aprovar o plano, a implementação segue essa decisão e as capacidades disponíveis no ambiente. .NET pode ser recomendado quando a pesquisa e o contexto justificarem, como qualquer outra alternativa; não há projeto .NET de exemplo no modelo. Banco, autenticação, mensageria e integrações entram apenas quando o contexto justificar.
 
+Depois que a cópia for adotada como projeto real (`is_model=false`), avalie se o contexto justifica Playwright, Supabase, Strix, SkillUI ou Context7. Esses itens não são instalados por padrão; use apenas os necessários ao escopo aprovado. Consulte [o fluxo de adoção](docs/inicio/adotar-projeto.md).
+
 Na criação/adoção, `all` inclui as três ferramentas; `both`, padrão existente, inclui somente Codex+Claude. Consulte [uso no Cursor](docs/inicio/cursor.md). O nome do projeto deve ser PascalCase alfanumérico, sem espaços ou nomes reservados.
 
 Após a criação ou adoção, os documentos de entrada passam a apresentar seu produto: problema, público, resultados, decisões e próximo passo. Os agentes continuam o projeto existente; os manuais de criação do toolkit ficam como referência secundária. Os resumos devem acompanhar a evolução e o estado atual é conferido em references/project-state.json.

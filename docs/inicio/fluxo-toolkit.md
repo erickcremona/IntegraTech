@@ -14,6 +14,8 @@ Informe, quando souber, quem usa, como trabalha hoje, o resultado esperado, rest
 
 O toolkit aproveita o que já foi respondido e pergunta o que faltar. Se `project.json` indicar um projeto real, continua o contexto existente; não reinicia onboarding ou renomeação.
 
+Após a adoção (`is_model=false`), avalie pelo contexto e pela decisão técnica a necessidade de Playwright, Supabase, Strix, SkillUI e Context7. Instale somente os que o escopo aprovado justificar, depois de conferir fontes oficiais, compatibilidade e permissões; registre os que forem adiados e qualquer bloqueio de instalação. Veja [adoção](adotar-projeto.md).
+
 ## 2. Entenda o contexto e escolha a base
 
 O agente pesquisa referências externas via HTTPS, registra alternativas e recomenda tecnologias conforme o problema e as restrições. O coletor confirma DNS público em Windows e Linux, valida os endereços antes da conexão, preserva TLS e grava SHA-256 para revalidação. Quando uma página muda, escolha uma publicação oficial equivalente, revise os achados e colete novo comprovante. Ele prepara um especialista de domínio, que deverá ser consultado antes do desenho de cada funcionalidade. Você recebe a decisão para revisão e aceite técnico.

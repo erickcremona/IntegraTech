@@ -8,6 +8,8 @@
 
 Novos projetos não herdam resultados, contexto, evidências ou aprovações do modelo. Integrações, persistência e autenticação só entram quando necessárias ao problema.
 
+Após `project.json` deixar de ser modelo (`is_model=false`), avalie se o contexto e a decisão aprovada justificam instalar Playwright, Supabase, Strix, SkillUI ou Context7. Instale somente os necessários; confira fonte oficial, compatibilidade e permissões e registre adiamentos ou bloqueios. Veja `docs/inicio/adotar-projeto.md`.
+
 Rastreabilidade: mantenha traceability-graph.json como índice dos documentos existentes; consulte graph impact antes de mudar itens registrados e graph validate após atualizar vínculos. Índice vazio não valida cobertura nem autoriza tarefas. Veja docs/inicio/grafo-rastreabilidade.md.
 
 Preenchimento: o agente traceability-maintainer usa graph sync --dry-run/graph sync. Revise needs_review e aprovações afetadas antes de reconhecer atualizações de fontes; inferências ficam em propostas separadas.

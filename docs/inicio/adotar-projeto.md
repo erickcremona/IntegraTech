@@ -8,6 +8,10 @@ A fábrica consulta project.json. Enquanto is_model=true, pergunta somente o dad
 
 O processo atualiza a identidade do toolkit e skills, sem gerar solução ou projetos de produto. A pasta raiz aberta na IDE não muda de nome. Os fatos do usuário são preservados e lacunas essenciais precisam ser respondidas antes da materialização. project.json passa a is_model=false, com adoption.status=adopted. A adoção gera references/toolkit-readiness.md e devolve o relatório completo no resultado; o agente deve apresentá-lo ao usuário antes de qualquer trabalho do produto. O relatório lista papéis, skills, rotas, comandos, contratos, testes disponíveis e limitações; a execução verificada é vinculada por hash ao estado do toolkit. Nas próximas sessões, a fábrica lê o contexto real e continua discovery, sem repetir o onboarding.
 
+## Verificar plugins e ferramentas após a adoção
+
+Quando `project.json` passar a `is_model=false`, avalie no contexto e na decisão técnica se o produto precisa de **Playwright, Supabase, Strix, SkillUI ou Context7**. São candidatos para avaliação, não itens a instalar automaticamente. Instale somente os que forem justificados pelo escopo aprovado; confira a fonte oficial, suporte ao sistema operacional, permissões, acesso de rede e requisitos de credenciais. Registre o motivo para instalar ou adiar cada candidato. Se um bloqueio de ambiente impedir uma instalação autorizada, informe o bloqueio sem simular sucesso.
+
 ## Utilitários usados pela fábrica
 
 O CTO pode preparar um arquivo temporário ignorado, como .scratch/contexto-inicial.json, contendo apenas os fatos fornecidos. A decisão em .scratch/decisao-tecnologica.json deve estar pesquisada, vinculada ao contexto e aprovada conforme o guia. O contexto deve estar completo e estruturado; texto parcial inicia apenas descoberta. Prepare também .scratch/pesquisa.json conforme [especialista-dominio.md](especialista-dominio.md). Pesquisa indisponível bloqueia a materialização. Não incluir segredos, tokens ou dados pessoais reais.
