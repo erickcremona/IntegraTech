@@ -2,6 +2,8 @@
 
 Se você ainda está numa cópia do modelo (project.json com is_model=true), informe o nome do projeto e o problema para a fábrica. Ela entende o contexto e pesquisa [a decisão tecnológica](decisao-tecnologica.md) antes de seguir [a adoção guiada](adotar-projeto.md), sem exigir comandos ou edição manual de JSON. Se já é projeto real, leia o contexto existente e continue abaixo; não repita onboarding ou renomeação.
 
+Na primeira interação, a fábrica executa `npm run toolkit -- doctor --quick` para identificar Node/curl e verificar se os agentes e skills selecionados estão presentes. Falta de adaptador gera um comando protegido para restaurá-lo. O CTO usa a skill canônica ou executa diretamente se o agente especializado não estiver disponível, sem interromper discovery ou tarefas independentes.
+
 ## 1. Descreva o problema
 
 Abra o projeto no Codex, Claude Code ou Cursor e informe o problema em suas palavras. Exemplo de pedido:

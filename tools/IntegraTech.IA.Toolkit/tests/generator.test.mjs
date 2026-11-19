@@ -56,6 +56,10 @@ test('gerador: materializa identidade e provedores independentes', async () => {
     assert.ok(existsSync(join(toolkit, 'fabrica/team/contracts/task-run.schema.json')));
     const { main } = await import(pathToFileURL(join(toolkit, 'scripts/toolkit.mjs')));
     assert.equal((await main(['validate'])).status, 'valid');
+    const readiness = await main(['doctor', '--quick'], { environmentRunner: async () => ({ code: 0, stdout: 'curl 8.5.0', timedOut: false }) });
+    assert.equal(readiness.status, 'ready');
+    assert.deepEqual(readiness.adapters.missing_agents, []);
+    assert.deepEqual(readiness.adapters.missing_skills, []);
     assert.equal((await main(['precheck', '--phase', 'business'])).status, 'blocked');
     assert.equal((await main(['precheck', '--phase', 'discovery'])).status, 'ready');
     assert.ok(!readFileSync(join(target, 'README.md'), 'utf8').split('## Autoria da ferramenta')[0].includes('erickcremona'));
@@ -73,6 +77,8 @@ test('gerador: materializa identidade e provedores independentes', async () => {
     assert.ok(entrance.includes('Próximo passo'));
     assert.ok(readFileSync(join(target,'references/README.md'),'utf8').includes(name));
     const entry=readFileSync(join(target,provider==='claude'?'CLAUDE.md':'AGENTS.md'),'utf8');
+    assert.ok(entry.includes('doctor --quick'));
+    assert.match(entry, /não encerre discovery|não interrompe discovery/i);
     assert.ok(!entry.includes('Se is_model=true'));
     assert.ok(entry.includes('produto em desenvolvimento'));
     assert.ok(readFileSync(join(target,`tools/${name}.IA.Toolkit/README.md`),'utf8').includes('Fábrica dedicada'));

@@ -42,6 +42,8 @@ node tools/IntegraTech.IA.Toolkit/scripts/toolkit.mjs install --provider claude 
 
 O instalador gera agentes e skills a partir do núcleo. Codex: AGENTS.md, .agents/skills e .codex/agents. Claude Code: CLAUDE.md, .claude/skills e .claude/agents. Cursor: AGENTS.md, .cursor/rules, .cursor/skills e .cursor/agents. both permanece Codex+Claude; all inclui as três ferramentas. Não cria repositório Git e não instala nem autentica os provedores. Não instala a solução de produto em outro destino.
 
+No início do uso, `npm run toolkit -- doctor --quick` verifica Node.js, curl e os agentes/skills do provedor selecionado. Se faltar adaptador, o diagnóstico mostra preview e comando de recuperação; `install` restaura somente arquivos esperados e recusa sobrescrever personalizações. Se faltar um agente mas a skill canônica existir, o CTO pode executar diretamente e continuar discovery/trabalho independente. `doctor` completo também verifica as CLIs, sem comprovar autenticação; Cursor opera pela sessão nativa.
+
 Arquivo existente diferente sem ownership comprovado causa conflito antes das escritas. Atualizações só substituem arquivos ainda iguais ao hash da instalação anterior. Alterações manuais são preservadas. Links/junctions no caminho são rejeitados. Edição do núcleo requer regenerar os adaptadores; `validate` detecta deriva. Não execute instaladores simultâneos no mesmo destino.
 
 ## Revisão independente
@@ -102,6 +104,8 @@ Publicação: release-init --id ID prepara rascunho; release-check --id ID --sta
 
 
 Design gráfico: rota graphic-design/visual-assets/motion-design aciona graphic-designer e a skill integratech-design-grafico para imagens e animações conforme as ferramentas disponíveis. Veja [guia de design gráfico](../../docs/inicio/design-grafico.md).
+
+Engenharia enxuta: durante implementação/refatoração, o CTO carrega a skill `ponytail` junto ao especialista para favorecer a menor solução completa que cumpra o plano. Ela não remove escopo, critérios, testes, segurança ou gates; hooks/plugins upstream não são instalados. Consulte [skill](fabrica/skills/ponytail/SKILL.md) e [licença/proveniência](../../THIRD-PARTY-NOTICES.md).
 
 
 Consulte [arquitetura contextual](../../docs/inicio/arquitetura-contextual.md) para escolher o menor perfil adequado, registrar decisão/aceite e reavaliar evolução. Criação/adoção exigem `--architecture-file PATH`; planos SDD de produtos com arquitetura gerenciada exigem `architecture_sha256`. Migrações dependem de aprovação, fases, compatibilidade, recuperação e entrega validada antes de distribuição.

@@ -6,6 +6,8 @@ Este guia acompanha o modelo e os projetos criados a partir dele. Você descreve
 
 Crie seu próprio repositório a partir do template ou baixe uma cópia. Configure Node.js >=22 para o toolkit e a ferramenta de IA escolhida com sua autenticação. Runtimes/SDKs do produto dependem da tecnologia que vier a ser aprovada. Abra a pasta do projeto. Para incluir os três conjuntos de adaptadores ao criar/adotar, peça `--provider all`; `both` inclui Codex e Claude, sem Cursor.
 
+No primeiro uso, o agente executa `npm run toolkit -- doctor --quick`. O comando verifica runtime, ferramenta de pesquisa e presença das skills/agentes selecionados. Se faltar um arquivo de adaptador, fornece preview e comando `install` protegido contra sobrescrita de personalizações. O CTO pode usar a skill canônica diretamente ou trabalhar sem delegar enquanto o adaptador é recuperado; a ausência de um especialista não interrompe discovery ou tarefas independentes. `curl` ausente bloqueia apenas pesquisa externa até instalação; o agente deve seguir a regra de pesquisa indisponível e não inventar fontes.
+
 Exemplo de primeira mensagem:
 
 > Meu projeto se chamará AgendaFacil. Quero resolver o problema de agendamentos feitos por mensagens, com horários duplicados e dificuldade para confirmar atendimentos. Ajude-me a entender o contexto e pesquise as tecnologias adequadas antes de implementar.
@@ -23,6 +25,8 @@ O agente pesquisa referências externas via HTTPS, registra alternativas e recom
 > Compare as alternativas para este contexto, explique a recomendação e mostre o que preciso decidir.
 
 O toolkit não inclui uma stack ou scaffold de produto. Criação e adoção preservam as decisões pesquisadas e aprovadas e preparam os registros e a governança. Após a aprovação do plano do produto, a implementação segue a tecnologia escolhida e as capacidades observadas; .NET continua elegível quando o contexto justificar. Pesquisa essencial indisponível ou contexto insuficiente interrompem a materialização até resolução.
+
+Na implementação e refatoração, a fábrica carrega a skill Ponytail para preferir a menor solução completa que cumpra o plano, reutilizando padrões e recursos nativos antes de adicionar abstrações/dependências. Ela complementa os especialistas: não retira escopo aprovado, testes, segurança, acessibilidade ou gates. A fábrica não instala hooks/plugins do Ponytail nem persiste modos globais.
 
 Com a decisão aprovada, execute npm run verify; corrija falhas no modelo e repita até passar. A adoção só aceita evidência vinculada por hash ao conteúdo verificado. O toolkit pode personalizar sua cópia na mesma pasta ou gerar em outra pasta vazia. Ambos os caminhos geram um relatório de prontidão com papéis, skills, rotas, comandos, contratos, testes e limites; apresente-o ao usuário antes do trabalho do produto. Preserva customizações e apresenta conflitos; o repositório canônico continua reutilizável. Consulte [adoção](adotar-projeto.md), [decisão tecnológica](decisao-tecnologica.md) e [especialista de domínio](especialista-dominio.md).
 

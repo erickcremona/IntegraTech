@@ -5,6 +5,8 @@ description: Use when implementing an approved .NET application with Worker, API
 
 Leia project.json, SOLUTION_CONTEXT.md e docs/arquitetura/base.md. A apresentação inicial é uma escolha técnica, não define o negócio. Execute precheck business antes de implementar funcionalidades.
 
+Carregue também a skill `ponytail` para aplicar engenharia enxuta: menor solução completa e segura, respeitando requisitos, arquitetura aprovada e validações do plano. Ela complementa esta skill; não reduz escopo aprovado nem remove controles.
+
 Se a decisão aprovada contiver interface, consulte ui-status e encaminhe o trabalho de UI a ui-engineer conforme o catálogo; preserve o backend e use a especialização registrada, sem escolher frontend por menção textual. Perfil ausente ou divergente bloqueia a implementação de interface.
 
 Para apresentação Worker, carregue também a skill `integratech-worker`. Não a carregue para API ou Console.

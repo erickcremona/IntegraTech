@@ -25,13 +25,14 @@ A política versionada em fabrica/policy.json é consultada pelo dispatcher e pe
 npm run toolkit -- eval --mode local
 npm run toolkit -- eval --mode protocol --provider codex
 npm run toolkit -- doctor
+npm run toolkit -- doctor --quick
 ```
 
 O modo local mede funções e estado real de onboarding/gates com cenários sintéticos. Não executa IA. O modo protocol sem --live retorna not_executed. A execução opcional `eval --mode protocol --provider codex --live --trials 1` (ou claude) usa somente cenários sintéticos embutidos, sem anexar código/contexto do projeto, e pode consumir o saldo do provedor. Deve ser solicitada explicitamente. Requer instalação e autenticação próprias.
 
 Protocolo avalia decisões JSON, preservação do problema e perguntas necessárias; não comprova adoção ou desenvolvimento autônomo pelo modelo. Resultados com runner simulado ficam identificados como simulated_provider. Tentativas podem ser repetidas até três vezes por cenário, dentro do limite total de tempo; não há retry silencioso de ações. Ausência/erro do provedor não se transforma em aprovação.
 
-doctor verifica executável, flags e versão detectável. Autenticação, modelo e isolamento efetivo permanecem não verificados até testes específicos no ambiente autorizado. Não imprime credenciais.
+`doctor --quick` verifica Node.js >=22, curl e skills, agentes e entradas nativas do provedor selecionado; informa estado degradado, comandos de recuperação protegidos e tarefas que podem continuar. Não instala nem autentica ferramentas. `doctor` completo acrescenta executável, flags e versão detectável das CLIs Codex/Claude. Autenticação, modelo e isolamento efetivo permanecem não verificados até testes específicos no ambiente autorizado. Não imprime credenciais. A ausência de CLI não significa que uma sessão nativa do provedor não esteja disponível.
 
 ## Execução durável e rastreabilidade
 

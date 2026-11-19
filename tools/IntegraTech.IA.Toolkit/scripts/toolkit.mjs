@@ -19,6 +19,7 @@ import { catalog, precheck, route, factoryRoot, sha256 } from './lib/governance.
 import { validateContract, loadSchema, assertSupported, contractKinds } from './lib/contracts.mjs';
 import { install, validateInstalled, repoRoot } from './lib/installer.mjs';
 import { checkProvider, diagnoseProviders } from './lib/providers.mjs';
+import { diagnoseLocalSetup } from './lib/environment-readiness.mjs';
 import { dispatch } from './lib/dispatcher.mjs';
 import { createProject } from './lib/project-generator.mjs';
 import { adoptProject, onboarding } from './lib/project-adoption.mjs';
@@ -64,7 +65,7 @@ const help = `IntegraTech Toolkit — Node.js >=22
   ui-status [--repo PATH]
   ui-generate [--repo PATH] [--dry-run]
   ui-validate [--repo PATH] [--local]
-  doctor
+  doctor [--quick] [--repo PATH]
   graph sync [--repo PATH] [--file RELATIVE] [--dry-run] [--accept-changes]
   graph validate [--repo PATH] [--file RELATIVE]
   graph impact --id ID [--repo PATH] [--file RELATIVE]
@@ -129,7 +130,7 @@ export async function main(argv, services = {}) {
     if (!/^--[a-z-]+$/.test(args[i])) throw new Error('argumento inválido');
     const name = args[i].slice(2);
     if (Object.hasOwn(options, name)) throw new Error('argumento duplicado');
-    if (['dry-run', 'live', 'accept-changes', 'local'].includes(name)) options[name] = true;
+    if (['dry-run', 'live', 'accept-changes', 'local', 'quick'].includes(name)) options[name] = true;
     else {
       if (!args[i + 1] || args[i + 1].startsWith('--')) throw new Error('valor de argumento ausente');
       options[name] = args[++i];
@@ -145,7 +146,7 @@ export async function main(argv, services = {}) {
     help: [], 'create-project': ['repo', 'name', 'target', 'provider', 'dry-run', 'context-file', 'technology-file', 'preparation-file'], precheck: ['repo', 'phase'], route: ['category','request','last-asset'], providers: [], hash: ['file'],
     onboarding: ['repo', 'name', 'context-file'], 'adopt-project': ['repo', 'name', 'context-file', 'dry-run', 'technology-file', 'provider', 'preparation-file'], 'technology-check': ['repo', 'context-file', 'decision-file'], 'restore-adoption': ['journal', 'dry-run'],
     'research-collect': ['context-file', 'preparation-file', 'output'], 'specialist-check': ['context-file', 'preparation-file'], 'specialist-prepare': ['repo', 'preparation-file'], 'specialist-status': ['repo'], 'consultation-record': ['repo', 'file'], 'consultation-check': ['repo', 'file'], 'coherence-snapshot': ['repo'], 'coherence-run': ['repo'], 'coherence-check': ['repo', 'report-file'], 'coherence-status': ['repo'],
-    doctor: [], 'policy-check': ['action', 'agent', 'phase', 'repo'], eval: ['mode', 'provider', 'trials', 'live'], 'run-state': ['id', 'repo'], 'close-interrupted-run': ['id', 'repo'], 'secret-scan': ['repo'],
+    doctor: ['quick', 'repo'], 'policy-check': ['action', 'agent', 'phase', 'repo'], eval: ['mode', 'provider', 'trials', 'live'], 'run-state': ['id', 'repo'], 'close-interrupted-run': ['id', 'repo'], 'secret-scan': ['repo'],
     install: ['provider', 'target', 'dry-run'], validate: ['provider', 'repo'],
     contract: ['kind', 'file'], dispatch: ['provider', 'task', 'files', 'phase', 'repo', 'timeout'], resume: ['file'],
     'loop-handoff': ['id', 'revision', 'provider', 'repo'], 'loop-candidate': ['id', 'revision', 'profile', 'repo'], 'loop-validate': ['id', 'revision', 'repo'], 'loop-review': ['id', 'revision', 'files', 'repo'],
@@ -212,7 +213,10 @@ export async function main(argv, services = {}) {
     case 'release-check':return checkRelease({repo:resolve(options.repo??repoRoot),id:options.id,stage:options.stage});
     case 'release-deploy':return deployRelease({repo:resolve(options.repo??repoRoot),id:options.id,stage:options.stage,approvalFile:options['approval-file'],dryRun:options['dry-run']??false});
     case 'help': return help;
-    case 'doctor': return diagnoseProviders();
+    case 'doctor': {
+      const local = await diagnoseLocalSetup({ repo: resolve(options.repo ?? repoRoot), runner: services.environmentRunner });
+      return options.quick ? local : { ...local, provider_clis: await diagnoseProviders() };
+    }
     case 'policy-check': return checkPolicy({ repo: resolve(options.repo ?? repoRoot), action: options.action, agent: options.agent, phase: options.phase });
     case 'eval': if (options.mode === 'local') return evaluateLocal(); if (options.mode === 'protocol') return evaluateProtocol({ provider: options.provider, live: options.live ?? false, trials: options.trials ? Number(options.trials) : 1 }); throw new Error('modo de avaliação inválido');
     case 'run-state': return inspectRun(resolve(options.repo ?? repoRoot), options.id);

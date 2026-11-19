@@ -74,7 +74,7 @@ mindmap
 | Pesquisa e tecnologia | Esclarece restrições e revisa alternativas | Fontes externas, especialista de domínio e recomendação técnica |
 | Criação ou adoção | Aprova a base e escolhe sua cópia/destino | Identidade, estrutura e adaptadores dos provedores selecionados |
 | Plano SDD | Revisa requisitos, cenários, desenho, fases e tarefas; aprova o plano | Decomposição com dependências, testes e aceite vinculado à versão |
-| Implementação | Solicita a fase aprovada | Tarefa, arquivos autorizados, código na sessão nativa e grafo atualizado |
+| Implementação | Solicita a fase aprovada | Tarefa, arquivos autorizados, skill Ponytail para engenharia enxuta, código na sessão nativa e grafo atualizado |
 | Validação e revisão | Acompanha resultados e resolve decisões pendentes | Testes, pareceres vinculados à versão do código e análise de bloqueios |
 | Entrega e evolução | Revisa a entrega e informa mudanças | Resumo verificável, próximos passos, handoff e análise de impacto |
 
@@ -89,6 +89,8 @@ Uma instalação pode manter vários vínculos, selecionados explicitamente por 
 No [repositório oficial](https://github.com/erickcremona/IntegraTech), use **Use this template → Create a new repository** ou **Code → Download ZIP**. Abra sua cópia no Codex, Claude Code ou Cursor. O repositório oficial permanece como modelo reutilizável; o GitHub não renomeia namespaces automaticamente.
 
 Requisitos do toolkit: **Node.js >=22** e a ferramenta de IA escolhida com autenticação configurada. Runtimes e SDKs de produto dependem da tecnologia aprovada e são definidos no plano do produto. A criação não instala dependências nem configura credenciais ou Git.
+
+No primeiro uso, a fábrica verifica se o runtime, `curl` e os agentes/skills do provedor selecionado estão disponíveis (`npm run toolkit -- doctor --quick`). Se um adaptador estiver ausente, mostra como restaurá-lo sem sobrescrever personalizações; o CTO pode usar a skill canônica e seguir com discovery e tarefas independentes enquanto isso. Instalações e autenticação de ferramentas globais continuam sob controle do usuário.
 
 Envie uma mensagem como:
 
@@ -117,6 +119,8 @@ Após a criação ou adoção, os documentos de entrada passam a apresentar seu 
 | Retomar | “Retome pelos registros existentes e confirme o próximo passo sem repetir ações anteriores.” |
 
 A aprovação técnica da base e a aprovação do plano de negócio são decisões distintas. Alterações no contexto/plano podem invalidar aceites e evidências anteriores. O agente principal atua como CTO e encaminha o trabalho aos especialistas; você não precisa invocar cada agente manualmente.
+
+Durante implementação e refatoração, a fábrica também carrega a skill **Ponytail**: busca a menor solução completa e segura, reutiliza padrões existentes e evita abstrações sem benefício. Ela não reduz requisitos aceitos, testes, segurança, acessibilidade ou gates. A integração é adaptada ao IntegraTech e não instala hooks ou plugins globais. [Proveniência e licença](THIRD-PARTY-NOTICES.md).
 
 ## Interfaces modernas conforme o contexto
 
