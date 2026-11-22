@@ -9,6 +9,7 @@ export { normalizeInitialContext } from './business-context.mjs';
 import { assessContext } from './domain-specialist.mjs';
 import { checkPolicy } from './policy.mjs';
 import { auditToolkit } from './toolkit-audit.mjs';
+import { formatInstallationRequest } from './host-dependencies.mjs';
 
 export const baselineHash = data => exactHash(data.toString('utf8').replaceAll('\r\n', '\n'));
 const normalizeRemote = value => {
@@ -38,6 +39,7 @@ export function adoptProject({ repo, name, context, dryRun = false, contextFile,
   if (baseline.version !== 1 || !baseline.files || !baseline.canonical_repository) throw new Error('baseline inválido');
   const readinessReport = auditToolkit(root);
   if (readinessReport.structural_status === 'blocked') throw new Error(`auditoria estrutural do toolkit bloqueou a adoção: ${readinessReport.issues.join('; ')}`);
+  if (!dryRun && ['installation_required', 'verification_required'].includes(readinessReport.dependencies.status)) throw new Error(formatInstallationRequest(readinessReport.dependencies));
   if (!dryRun && !readinessReport.verification) throw new Error('adoção bloqueada: execute npm run verify, corrija falhas e repita até haver validação aprovada do conteúdo atual do toolkit');
   if (existsSync(join(root, '.git'))) {
     assertNoLinks(join(root, '.git'));
@@ -79,7 +81,7 @@ export function adoptProject({ repo, name, context, dryRun = false, contextFile,
   }
   const operations = [...new Set([...old, ...files.keys()])].sort((a, b) => a === 'project.json' ? 1 : b === 'project.json' ? -1 : a.localeCompare(b))
     .map(path => ({ path, before: before.has(path) ? exactHash(before.get(path)) : null, after: files.has(path) ? exactHash(Buffer.from(files.get(path), 'utf8')) : null }));
-  if (dryRun) return { status: 'planned', name, root, operations: operations.map(op => ({ path: op.path, action: op.after === null ? 'remove' : op.before === null ? 'create' : 'replace' })) };
+  if (dryRun) return { status: 'planned', name, root, dependencies: readinessReport.dependencies, operations: operations.map(op => ({ path: op.path, action: op.after === null ? 'remove' : op.before === null ? 'create' : 'replace' })) };
   const parent = join(root, '.scratch/adoptions');
   assertNoLinks(parent);
   mkdirSync(parent, { recursive: true });

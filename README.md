@@ -34,6 +34,8 @@ mindmap
       System design quando necessário
       UX/UI e referência visual
       Criação ou adoção dedicada
+        Pré-checagem de ferramentas
+        Solicitação antes de instalar
     Plano SDD
       Especificação e cenários
       Desenho técnico
@@ -88,7 +90,7 @@ Uma instalação pode manter vários vínculos, selecionados explicitamente por 
 
 No [repositório oficial](https://github.com/erickcremona/IntegraTech), use **Use this template → Create a new repository** ou **Code → Download ZIP**. Abra sua cópia no Codex, Claude Code ou Cursor. O repositório oficial permanece como modelo reutilizável; o GitHub não renomeia namespaces automaticamente.
 
-Requisitos do toolkit: **Node.js >=22** e a ferramenta de IA escolhida com autenticação configurada. Runtimes e SDKs de produto dependem da tecnologia aprovada e são definidos no plano do produto. A criação não instala dependências nem configura credenciais ou Git.
+Requisitos do toolkit: **Node.js >=22**, npm, `curl` para pesquisa HTTPS e a CLI/flags do provedor selecionado quando aplicável. Use `npm run toolkit -- dependencies --provider <codex|claude|cursor|both|all>` para verificar o ambiente. O diagnóstico informa ferramentas ausentes/incompatíveis com fonte oficial e comando sugerido, mas não as instala; a instalação depende de autorização explícita. Quando o ambiente impedir uma inspeção, a adoção aguarda nova verificação. Autenticação não é verificada automaticamente; Cursor usa a sessão nativa. Runtimes e SDKs de produto dependem da tecnologia aprovada e são definidos no plano do produto. Plugins externos/MCPs só são necessários quando o plano aprovado os exigir.
 
 No primeiro uso, a fábrica verifica se o runtime, `curl` e os agentes/skills do provedor selecionado estão disponíveis (`npm run toolkit -- doctor --quick`). Se um adaptador estiver ausente, mostra como restaurá-lo sem sobrescrever personalizações; o CTO pode usar a skill canônica e seguir com discovery e tarefas independentes enquanto isso. Instalações e autenticação de ferramentas globais continuam sob controle do usuário.
 

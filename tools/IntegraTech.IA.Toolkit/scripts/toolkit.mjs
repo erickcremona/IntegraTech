@@ -20,6 +20,7 @@ import { validateContract, loadSchema, assertSupported, contractKinds } from './
 import { install, validateInstalled, repoRoot } from './lib/installer.mjs';
 import { checkProvider, diagnoseProviders } from './lib/providers.mjs';
 import { diagnoseLocalSetup } from './lib/environment-readiness.mjs';
+import { inspectHostDependencies } from './lib/host-dependencies.mjs';
 import { dispatch } from './lib/dispatcher.mjs';
 import { createProject } from './lib/project-generator.mjs';
 import { adoptProject, onboarding } from './lib/project-adoption.mjs';
@@ -66,6 +67,7 @@ const help = `IntegraTech Toolkit — Node.js >=22
   ui-generate [--repo PATH] [--dry-run]
   ui-validate [--repo PATH] [--local]
   doctor [--quick] [--repo PATH]
+  dependencies [--provider codex|claude|cursor|both|all] [--repo PATH]
   graph sync [--repo PATH] [--file RELATIVE] [--dry-run] [--accept-changes]
   graph validate [--repo PATH] [--file RELATIVE]
   graph impact --id ID [--repo PATH] [--file RELATIVE]
@@ -146,7 +148,7 @@ export async function main(argv, services = {}) {
     help: [], 'create-project': ['repo', 'name', 'target', 'provider', 'dry-run', 'context-file', 'technology-file', 'preparation-file'], precheck: ['repo', 'phase'], route: ['category','request','last-asset'], providers: [], hash: ['file'],
     onboarding: ['repo', 'name', 'context-file'], 'adopt-project': ['repo', 'name', 'context-file', 'dry-run', 'technology-file', 'provider', 'preparation-file'], 'technology-check': ['repo', 'context-file', 'decision-file'], 'restore-adoption': ['journal', 'dry-run'],
     'research-collect': ['context-file', 'preparation-file', 'output'], 'specialist-check': ['context-file', 'preparation-file'], 'specialist-prepare': ['repo', 'preparation-file'], 'specialist-status': ['repo'], 'consultation-record': ['repo', 'file'], 'consultation-check': ['repo', 'file'], 'coherence-snapshot': ['repo'], 'coherence-run': ['repo'], 'coherence-check': ['repo', 'report-file'], 'coherence-status': ['repo'],
-    doctor: ['quick', 'repo'], 'policy-check': ['action', 'agent', 'phase', 'repo'], eval: ['mode', 'provider', 'trials', 'live'], 'run-state': ['id', 'repo'], 'close-interrupted-run': ['id', 'repo'], 'secret-scan': ['repo'],
+    doctor: ['quick', 'repo'], dependencies: ['repo', 'provider'], 'policy-check': ['action', 'agent', 'phase', 'repo'], eval: ['mode', 'provider', 'trials', 'live'], 'run-state': ['id', 'repo'], 'close-interrupted-run': ['id', 'repo'], 'secret-scan': ['repo'],
     install: ['provider', 'target', 'dry-run'], validate: ['provider', 'repo'],
     contract: ['kind', 'file'], dispatch: ['provider', 'task', 'files', 'phase', 'repo', 'timeout'], resume: ['file'],
     'loop-handoff': ['id', 'revision', 'provider', 'repo'], 'loop-candidate': ['id', 'revision', 'profile', 'repo'], 'loop-validate': ['id', 'revision', 'repo'], 'loop-review': ['id', 'revision', 'files', 'repo'],
@@ -217,6 +219,7 @@ export async function main(argv, services = {}) {
       const local = await diagnoseLocalSetup({ repo: resolve(options.repo ?? repoRoot), runner: services.environmentRunner });
       return options.quick ? local : { ...local, provider_clis: await diagnoseProviders() };
     }
+    case 'dependencies': return inspectHostDependencies({ repo: resolve(options.repo ?? repoRoot), provider: options.provider });
     case 'policy-check': return checkPolicy({ repo: resolve(options.repo ?? repoRoot), action: options.action, agent: options.agent, phase: options.phase });
     case 'eval': if (options.mode === 'local') return evaluateLocal(); if (options.mode === 'protocol') return evaluateProtocol({ provider: options.provider, live: options.live ?? false, trials: options.trials ? Number(options.trials) : 1 }); throw new Error('modo de avaliação inválido');
     case 'run-state': return inspectRun(resolve(options.repo ?? repoRoot), options.id);
@@ -302,10 +305,10 @@ if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1]
   try {
     const result = await main(process.argv.slice(2));
     console.log(typeof result === 'string' ? result : JSON.stringify(result, null, 2));
-    if (['blocked', 'failed', 'needs_input', 'empty', 'needs_review', 'needs_clarification', 'preparing'].includes(result?.status) || result?.failed > 0) process.exitCode = 2;
+    if (['blocked', 'failed', 'needs_input', 'empty', 'needs_review', 'needs_clarification', 'preparing', 'installation_required', 'verification_required'].includes(result?.status) || result?.failed > 0) process.exitCode = 2;
   } catch (error) {
     // Adoption errors identify controlled conflicts/recovery paths, never print file contents.
-    if (['adopt-project', 'restore-adoption', 'create-project', 'research-collect', 'specialist-check', 'specialist-prepare', 'specialist-status', 'consultation-record', 'consultation-check', 'coherence-check', 'coherence-status', 'coherence-run'].includes(process.argv[2])) console.error(error instanceof SyntaxError ? 'Documento da operação inválido.' : error.message);
+    if (['adopt-project', 'restore-adoption', 'create-project', 'dependencies', 'research-collect', 'specialist-check', 'specialist-prepare', 'specialist-status', 'consultation-record', 'consultation-check', 'coherence-check', 'coherence-status', 'coherence-run'].includes(process.argv[2])) console.error(error instanceof SyntaxError ? 'Documento da operação inválido.' : error.message);
     else console.error('Operação rejeitada: verifique comando, arquivos, contratos e conflitos. Use help.');
     process.exitCode = 2;
   }

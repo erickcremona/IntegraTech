@@ -6,7 +6,7 @@ Núcleo comum para Codex, Claude Code e Cursor. [Uso no Cursor](../../docs/inici
 
 ## Uso a partir da raiz
 
-Adoção na cópia atual: `onboarding` identifica somente os dados ausentes; execute `npm run verify` antes de aplicar. Falhas devem ser corrigidas no modelo e a verificação repetida; a adoção exige evidência aprovada para o conteúdo atual. `adopt-project --name Nome --context-file PATH --technology-file DECISAO --architecture-file ARQUITETURA --dry-run` simula e o mesmo comando sem --dry-run aplica a identidade e o contexto, preservando a pasta raiz e o Git. O resultado inclui o relatório completo de prontidão para apresentação obrigatória antes do trabalho do produto, também salvo em `references/toolkit-readiness.md`. Consulte [adoção guiada](../../docs/inicio/adotar-projeto.md). A operação exige baseline sem conflitos e bloqueia remotos canônicos. `restore-adoption --journal PATH` ou o recover.mjs do backup permite recuperação protegida por hashes.
+Adoção na cópia atual: `onboarding` identifica somente os dados ausentes; execute `npm run toolkit -- dependencies --provider <codex|claude|cursor|both|all>` e `npm run verify` antes de aplicar. A verificação de dependências não instala ferramentas: itens ausentes/incompatíveis geram solicitação com motivo, fonte oficial e comando sugerido para autorização humana. Itens não verificáveis bloqueiam adoção até nova inspeção. Falhas devem ser corrigidas no modelo e a verificação repetida; a adoção exige evidência aprovada para o conteúdo atual. `adopt-project --name Nome --context-file PATH --technology-file DECISAO --architecture-file ARQUITETURA --dry-run` simula e o mesmo comando sem --dry-run aplica a identidade e o contexto, preservando a pasta raiz e o Git. O resultado inclui o relatório completo de prontidão para apresentação obrigatória antes do trabalho do produto, também salvo em `references/toolkit-readiness.md`. Consulte [adoção guiada](../../docs/inicio/adotar-projeto.md). A operação exige baseline sem conflitos e bloqueia remotos canônicos. `restore-adoption --journal PATH` ou o recover.mjs do backup permite recuperação protegida por hashes.
 
 Ao manter o modelo, qualquer mudança em arquivo controlado exige revisar a mudança e atualizar o baseline antes de publicar: `node tools/IntegraTech.IA.Toolkit/scripts/update-template-baseline.mjs --write`. Sem --write, o comando apenas verifica. Nunca execute essa atualização no onboarding para contornar conflitos. O baseline detecta customizações acidentais; não é uma assinatura criptográfica de autoria. Projetos reais não podem ser adotados novamente por inferência.
 
@@ -16,6 +16,7 @@ O executor dos perfis acompanha o sistema operacional da sessão de desenvolvime
 
 O instalador abaixo é destinado à instalação e manutenção da fábrica; não gera a solução completa do produto. Para o negócio, siga [o guia de início](../../docs/inicio/primeiro-projeto.md) e a tecnologia aprovada no contexto do produto.
 ```powershell
+npm run toolkit -- dependencies --provider both
 npm test
 npm run check
 npm run toolkit -- precheck --phase toolkit
@@ -27,6 +28,8 @@ node tools/IntegraTech.IA.Toolkit/scripts/toolkit.mjs loop-start --task delegati
 node tools/IntegraTech.IA.Toolkit/scripts/toolkit.mjs loop-status --id TASK_RUN_ID
 node tools/IntegraTech.IA.Toolkit/scripts/toolkit.mjs loop-advance --id TASK_RUN_ID --revision 1 --event gate_checked
 ```
+
+`dependencies` verifica Node.js, npm, `curl`, Git quando aplicável e a CLI/flags do provedor selecionado. A autenticação é declarada `not_checked`; plugins externos/MCPs não são requisitos universais e só entram quando exigidos por plano de produto aprovado. Cursor exige confirmação manual porque o toolkit usa a sessão nativa do editor.
 
 Fases: toolkit (manutenção técnica), discovery (contexto incompleto permitido), design (contexto válido) e business (contexto/plano/aceite vinculados por hashes). Os comandos de instalação/validação aceitam cursor ou all; a adoção também aceita --provider para selecionar os adaptadores explicitamente. Sem seleção explícita, validate usa a última seleção do manifesto local ou project.provider. O precheck retorna código 2 enquanto os requisitos da fase estiverem pendentes. `ready` permite a fase; não autoriza ações externas. A validação não autentica o aprovador. Os arquivos .yaml usam sintaxe JSON, subconjunto válido de YAML, para não exigir parser adicional.
 

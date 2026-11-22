@@ -1,6 +1,7 @@
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { createHash } from 'node:crypto';
+import { inspectHostDependencies } from './host-dependencies.mjs';
 
 const providers = ['codex', 'claude', 'cursor'];
 const readJson = path => JSON.parse(readFileSync(path, 'utf8'));
@@ -42,6 +43,7 @@ export function auditToolkit(repo) {
     const evidence = readJson(join(repo, '.scratch/toolkit-verification.json'));
     if (evidence.status === 'passed' && evidence.source_sha256 === toolkitSourceFingerprint(repo)) verification = evidence;
   } catch { /* Missing, stale, or malformed evidence is reported as unavailable. */ }
+  const dependencies = inspectHostDependencies({ repo });
   const issues = [
     ...missingSkills.map(skill => `Skill ausente: ${skill}`),
     ...invalidRoutes.map(([route, role]) => `Rota ${route} aponta para papel ausente: ${role}`),
@@ -102,14 +104,23 @@ ${routeTable}
 
 ${issueText}
 
+## Pré-requisitos do ambiente
+
+- Estado: **${dependencies.status}** (seleção de provedor: ${dependencies.provider_selection}).
+- Dependências obrigatórias: ${dependencies.checks.map(item => `${item.id}=${item.status}`).join(', ')}.
+- Provedores: ${dependencies.providers.map(item => `${item.id}=${item.status}`).join(', ')}.
+- Plugins externos: ${dependencies.plugins.status}; ${dependencies.plugins.note}
+- Autenticação: ${dependencies.authentication}.
+${dependencies.installation_requests.length ? `- Solicitações de instalação/atualização:\n${dependencies.installation_requests.map(item => `  - ${item.dependency}: ${item.command ?? 'consulte a fonte oficial'} (${item.source ?? 'fonte oficial indisponível no catálogo local'})`).join('\n')}` : '- Nenhuma dependência obrigatória ausente detectada.'}
+
 ## Evidência e limites
 
 - Verificações estruturais executadas ao gerar o relatório: papéis referenciados, skills existentes, destinos das rotas e perfis de provedores.
 - Validação dinâmica completa: ${dynamicStatus}
 - Quando uma verificação falha, corrija a causa no modelo e repita npm run verify. A adoção só deve avançar após resultado aprovado e vinculado ao conteúdo atual.
 - Os arquivos de teste são inventário, não prova de execução; somente a evidência acima atesta uma execução vinculada ao estado atual.
-- Este inventário não comprova credenciais, autenticação de provedores, isolamento efetivo, acesso de rede, integrações externas nem comportamento de produção. Codex/Claude CLI e a sessão nativa Codex são capacidades distintas; Cursor opera pela sessão nativa do editor e não possui revisão automatizada neste toolkit.
+- Este inventário não comprova credenciais, autenticação de provedores, isolamento efetivo, acesso de rede, integrações externas nem comportamento de produção. A verificação de dependências detecta executáveis/versões e flags locais; Cursor opera pela sessão nativa do editor e não possui revisão automatizada neste toolkit.
 - Status estrutural aprovado significa apenas que as verificações estruturais deste relatório passaram; a validação funcional e operacional depende do ciclo de verificação e das evidências próprios do produto.
 `;
-  return { status, structural_status: structuralStatus, issues, content, verification };
+  return { status, structural_status: structuralStatus, issues, content, verification, dependencies };
 }
