@@ -153,6 +153,7 @@
     "tools/IntegraTech.IA.Toolkit/scripts/lib/architecture-model.mjs",
     "tools/IntegraTech.IA.Toolkit/scripts/lib/architecture-workflow.mjs",
     "tools/IntegraTech.IA.Toolkit/scripts/lib/business-context.mjs",
+    "tools/IntegraTech.IA.Toolkit/scripts/lib/capability-recommendations.mjs",
     "tools/IntegraTech.IA.Toolkit/scripts/lib/candidate.mjs",
     "tools/IntegraTech.IA.Toolkit/scripts/lib/contracts.mjs",
     "tools/IntegraTech.IA.Toolkit/scripts/lib/dispatcher.mjs",

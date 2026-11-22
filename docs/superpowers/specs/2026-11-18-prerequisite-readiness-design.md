@@ -12,6 +12,10 @@ Evitar que a ausência de um adaptador de agente/skill interrompa o usuário ao 
 - Se um agente/skill adaptado faltar mas a fonte canônica existir, o CTO usa essa fonte e pode executar a responsabilidade diretamente. Se a especialização também estiver ausente, continua apenas o trabalho seguro com capacidade disponível e explicita a limitação.
 - Não instalar ferramentas globais, autenticar provedores, nem escolher dependências de produto.
 
+## Checagem para criação e adoção
+
+O comando complementar `dependencies --provider ...` verifica Node.js, npm, `curl` e Git quando há uma cópia Git antes de criar/adotar. Requisito central ausente ou impossível de verificar bloqueia a materialização e apresenta ação/fontes sem executar instalação. CLI Codex/Claude é capacidade opcional do dispatcher de revisão; sua ausência é reportada como limitação, sem invalidar a sessão nativa. A seleção de `--provider` usada para materializar deve ser a mesma usada no relatório. Plugins/MCPs continuam condicionados ao plano aprovado.
+
 ## Abordagens
 
 1. Instalação automática em toda abertura: recupera arquivos sem intervenção, mas pode alterar personalizações e invocar ferramentas externas.
@@ -25,6 +29,7 @@ Estender `doctor` com `--quick` e `--repo`, inspecionando o catálogo e os arqui
 ## Aceite
 
 - Diagnóstico encontra runtime abaixo do mínimo, `curl` ausente, skill canônica/adaptada ausente e agente adaptado ausente.
+- Inspeção interrompida/negada não deve ser classificada como dependência ausente; a seleção de provedor de criação/adoção deve aparecer no relatório.
 - Diagnóstico de ambiente completo retorna ready e tarefas fora do que falta continuam permitidas.
 - Resposta informa recuperação e fallback sem alegar instalação nem autenticação.
 - Fluxo e manuais descrevem o comportamento.

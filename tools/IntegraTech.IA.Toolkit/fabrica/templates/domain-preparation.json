@@ -12,5 +12,14 @@
   "coverage": [],
   "risks": [],
   "assumptions": [],
-  "action_plan": []
+  "action_plan": [],
+  "capability_recommendations": {
+    "categories": [
+      { "category": "plugins", "outcome": "none", "rationale": "", "item_ids": [] },
+      { "category": "skills", "outcome": "none", "rationale": "", "item_ids": [] },
+      { "category": "agents", "outcome": "none", "rationale": "", "item_ids": [] },
+      { "category": "tools", "outcome": "none", "rationale": "", "item_ids": [] }
+    ],
+    "items": []
+  }
 }

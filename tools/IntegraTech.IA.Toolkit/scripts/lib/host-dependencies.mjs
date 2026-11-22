@@ -76,25 +76,33 @@ function checkProvider(provider, providerDir) {
     reason: 'O toolkit usa Cursor pela sessão nativa; não há CLI/revisor automatizado para detectar.'
   };
   const command = provider === 'codex' ? 'codex' : 'claude';
-  const profile = readJson(join(providerDir, `${provider}.json`));
+  let profile;
+  try { profile = readJson(join(providerDir, `${provider}.json`)); }
+  catch { return { id: provider, status: 'unverified', required: false, capability: 'dispatcher de revisão independente', reason: `Perfil de CLI ${provider} ausente ou inválido; as flags requeridas não puderam ser conferidas.` }; }
+  if (!Array.isArray(profile?.required_flags) || profile.required_flags.some(flag => typeof flag !== 'string'))
+    return { id: provider, status: 'unverified', required: false, capability: 'dispatcher de revisão independente', reason: `Perfil de CLI ${provider} não contém a lista de flags esperada.` };
   const result = providerRun(command, provider === 'codex' ? ['exec', '--help'] : ['--help']);
   if (!result.available) {
     const status = commandStatus(result);
+    const missing = status === 'missing';
     return {
-      id: provider, status, required: true,
-      ...(status === 'missing' ? { install: installation(provider) } : {}),
-      reason: status === 'missing' ? `CLI ${command} não encontrado.` : `Execução de diagnóstico do CLI ${command} não foi permitida (${result.error}).`
+      id: provider, status: missing ? 'optional_missing' : status, required: false,
+      capability: 'dispatcher de revisão independente',
+      ...(missing ? { install: installation(provider) } : {}),
+      reason: missing ? `CLI ${command} não encontrado; a sessão nativa continua disponível, mas o dispatcher deste provedor não poderá executar revisões.` : `Execução de diagnóstico do CLI ${command} não foi permitida (${result.error}); a sessão nativa não foi avaliada.`
     };
   }
   const missingFlags = profile.required_flags.filter(flag => !result.stdout.includes(flag));
   return missingFlags.length
-    ? { id: provider, status: 'incompatible', required: true, missing_flags: missingFlags, reason: `CLI ${command} não oferece as flags requeridas: ${missingFlags.join(', ')}.`, install: installation(provider) }
-    : { id: provider, status: 'available', required: true };
+    ? { id: provider, status: 'incompatible', required: false, capability: 'dispatcher de revisão independente', missing_flags: missingFlags, reason: `CLI ${command} não oferece as flags requeridas ao dispatcher: ${missingFlags.join(', ')}.`, install: installation(provider) }
+    : { id: provider, status: 'available', required: false, capability: 'dispatcher de revisão independente' };
 }
 
 export function inspectHostDependencies({ repo, provider, runner = run } = {}) {
   if (typeof repo !== 'string' || !repo) throw new Error('repositório obrigatório para verificar dependências');
   const identity = readJson(join(repo, 'project.json'));
+  if (typeof identity.name !== 'string' || !/^[A-Z][A-Za-z0-9]{0,49}$/.test(identity.name)
+    || /^(CON|PRN|AUX|NUL|COM[1-9]|LPT[1-9])$/i.test(identity.name)) throw new Error('nome inválido no project.json; perfil de provedor não foi lido');
   const selected = provider ?? identity.provider;
   const providers = selectedProviders(selected);
   const packageJson = readJson(join(repo, 'package.json'));
@@ -113,25 +121,32 @@ export function inspectHostDependencies({ repo, provider, runner = run } = {}) {
       : { available: false, error: located.status === 'missing' ? 'ENOENT' : located.error };
   } else npmResult = runner('npm', ['--version']);
   const npmStatus = commandStatus(npmResult);
-  const npm = { id: 'npm', status: npmStatus, required: true, ...(npmStatus === 'missing' ? { install: installation('npm') } : {}) };
+  const npm = { id: 'npm', status: npmStatus, required: true,
+    ...(npmStatus === 'unverified' ? { reason: `Inspeção do npm não concluída (${npmResult.error}).` } : {}),
+    ...(npmStatus === 'missing' ? { install: installation('npm') } : {}) };
   if (npmResult.available) npm.version = npmResult.stdout.split(/\s+/)[0];
   const curlResult = runner(process.platform === 'win32' ? 'curl.exe' : 'curl', ['--version']);
   const curlStatus = commandStatus(curlResult);
-  const curl = { id: 'curl', status: curlStatus, required: true, purpose: 'consulta HTTPS de referências de domínio', ...(curlStatus === 'missing' ? { install: installation('curl') } : {}) };
+  const curl = { id: 'curl', status: curlStatus, required: true, purpose: 'consulta HTTPS de referências de domínio',
+    ...(curlStatus === 'unverified' ? { reason: `Inspeção do curl não concluída (${curlResult.error}).` } : {}),
+    ...(curlStatus === 'missing' ? { install: installation('curl') } : {}) };
   const checks = [node, npm, curl];
   if (existsSync(join(repo, '.git'))) {
     const gitResult = runner(process.platform === 'win32' ? 'git.exe' : 'git', ['--version']);
     const gitStatus = commandStatus(gitResult);
-    checks.push({ id: 'git', status: gitStatus, required: true, purpose: 'verificação do remoto antes da adoção', ...(gitStatus === 'missing' ? { install: installation('git') } : {}) });
+    checks.push({ id: 'git', status: gitStatus, required: true, purpose: 'verificação do remoto antes da adoção',
+      ...(gitStatus === 'unverified' ? { reason: `Inspeção do Git não concluída (${gitResult.error}).` } : {}),
+      ...(gitStatus === 'missing' ? { install: installation('git') } : {}) });
   }
   const providerDir = join(repo, `tools/${identity.name}.IA.Toolkit/fabrica/providers`);
   const providerChecks = providers.map(name => checkProvider(name, providerDir));
   const requiredMissing = [...checks, ...providerChecks].filter(item => item.required && ['missing', 'incompatible'].includes(item.status));
   const requiredUnverified = [...checks, ...providerChecks].filter(item => item.required && item.status === 'unverified');
-  const manual = providerChecks.filter(item => item.status === 'manual_confirmation');
+  const manual = providerChecks.filter(item => item.status === 'manual_confirmation' || (!item.required && item.status !== 'available'));
+  const installableMissing = [...checks, ...providerChecks].filter(item => ['missing', 'incompatible', 'optional_missing'].includes(item.status) && item.install);
   const pluginStatus = {
     status: 'not_required', required: [],
-    note: 'O toolkit inclui localmente suas skills, agentes e contratos. Plugins externos/MCPs não são dependências universais; avalie-os somente quando um plano aprovado de produto os exigir.'
+    note: 'O toolkit inclui localmente suas skills, agents e contratos. Plugins externos/MCPs não são requisitos universais; avalie-os durante discovery pelo contexto e instale somente após escopo aprovado e autorização.'
   };
   const status = requiredMissing.length ? 'installation_required' : requiredUnverified.length ? 'verification_required' : manual.length ? 'manual_confirmation' : 'ready';
   return {
@@ -139,7 +154,7 @@ export function inspectHostDependencies({ repo, provider, runner = run } = {}) {
     checks, providers: providerChecks, plugins: pluginStatus,
     missing_required: requiredMissing,
     unverified_required: requiredUnverified,
-    installation_requests: requiredMissing.map(item => ({ dependency: item.id, reason: item.reason ?? item.purpose ?? item.status, ...item.install })),
+    installation_requests: installableMissing.map(item => ({ dependency: item.id, required: item.required, ...(item.capability ? { capability: item.capability } : {}), reason: item.reason ?? item.purpose ?? item.status, ...item.install })),
     authentication: 'not_checked',
     limitations: ['Autenticação e sessão interativa dos provedores não são verificadas automaticamente.', 'Ferramentas de produto são verificadas após plano e decisão tecnológica aprovados, conforme a stack escolhida.']
   };

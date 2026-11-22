@@ -19,7 +19,7 @@ export function toolkitSourceFingerprint(repo) {
   return hash.digest('hex');
 }
 
-export function auditToolkit(repo) {
+export function auditToolkit(repo, { provider, hostDependencies } = {}) {
   const toolkit = join(repo, 'tools/IntegraTech.IA.Toolkit');
   const factory = join(toolkit, 'fabrica');
   const catalog = readJson(join(factory, 'team/catalog.yaml'));
@@ -43,14 +43,17 @@ export function auditToolkit(repo) {
     const evidence = readJson(join(repo, '.scratch/toolkit-verification.json'));
     if (evidence.status === 'passed' && evidence.source_sha256 === toolkitSourceFingerprint(repo)) verification = evidence;
   } catch { /* Missing, stale, or malformed evidence is reported as unavailable. */ }
-  const dependencies = inspectHostDependencies({ repo });
+  const dependencies = hostDependencies ?? inspectHostDependencies({ repo, provider });
   const issues = [
     ...missingSkills.map(skill => `Skill ausente: ${skill}`),
     ...invalidRoutes.map(([route, role]) => `Rota ${route} aponta para papel ausente: ${role}`),
     ...missingProviders.map(provider => `Perfil de provedor ausente: ${provider}`)
   ];
   const structuralStatus = issues.length ? 'blocked' : 'passed';
-  const status = issues.length ? 'blocked' : verification ? 'ready' : 'verification_required';
+  const status = issues.length ? 'blocked'
+    : dependencies.status === 'installation_required' ? 'installation_required'
+      : dependencies.status === 'verification_required' ? 'verification_required'
+        : verification ? 'ready' : 'verification_required';
   const routeTable = routeEntries.map(([route, roleName]) => {
     const role = roles.find(item => item.name === roleName);
     return `| ${route} | ${roleName} | ${role?.description ?? 'papel ausente'} | ${role?.skill ?? 'ausente'} | ${role?.read_only ? 'somente leitura' : 'execução conforme fase e autorização'} |`;
@@ -111,7 +114,7 @@ ${issueText}
 - Provedores: ${dependencies.providers.map(item => `${item.id}=${item.status}`).join(', ')}.
 - Plugins externos: ${dependencies.plugins.status}; ${dependencies.plugins.note}
 - Autenticação: ${dependencies.authentication}.
-${dependencies.installation_requests.length ? `- Solicitações de instalação/atualização:\n${dependencies.installation_requests.map(item => `  - ${item.dependency}: ${item.command ?? 'consulte a fonte oficial'} (${item.source ?? 'fonte oficial indisponível no catálogo local'})`).join('\n')}` : '- Nenhuma dependência obrigatória ausente detectada.'}
+${dependencies.installation_requests.length ? `- Solicitações/sugestões de instalação:\n${dependencies.installation_requests.map(item => `  - ${item.dependency}${item.required ? ' (obrigatória)' : item.capability ? ` (opcional para ${item.capability})` : ' (opcional)'}: ${item.command ?? 'consulte a fonte oficial'} (${item.source ?? 'fonte oficial indisponível no catálogo local'})`).join('\n')}` : '- Nenhuma dependência obrigatória ausente detectada.'}
 
 ## Evidência e limites
 

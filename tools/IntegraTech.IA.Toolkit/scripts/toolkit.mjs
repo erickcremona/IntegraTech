@@ -27,6 +27,7 @@ import { adoptProject, onboarding } from './lib/project-adoption.mjs';
 import { inspectTechnologyDecision, technologyContextHash } from './lib/technology-decision.mjs';
 import { assessContext, inspectPreparation } from './lib/domain-specialist.mjs';
 import { collectResearch, verifyResearch } from './lib/domain-research.mjs';
+import { inspectCapabilityRecommendations } from './lib/capability-recommendations.mjs';
 import { inspectSpecialist, prepareSpecialist, recordConsultation, inspectConsultation, repositorySnapshot, runCoherenceChecks, completeCoherence, inspectCoherence, readDocument } from './lib/domain-workflow.mjs';
 import { restoreAdoption } from './lib/adoption-recovery.mjs';
 import { checkPolicy, policyConfig } from './lib/policy.mjs';
@@ -254,7 +255,9 @@ export async function main(argv, services = {}) {
       if (assessment.status !== 'ready') return assessment;
       const preparation = readDecision(options['preparation-file']);
       const checked = inspectPreparation({ context, preparation });
-      verifyResearch({ context, preparation }); return checked;
+      verifyResearch({ context, preparation });
+      inspectCapabilityRecommendations({ repo: repoRoot, preparation });
+      return { ...checked, capability_recommendations: 'complete' };
     }
     case 'specialist-prepare': return prepareSpecialist({ repo: resolve(options.repo ?? repoRoot), preparation: readDecision(options['preparation-file']) });
     case 'specialist-status': return withTraceability(inspectSpecialist(resolve(options.repo ?? repoRoot)));

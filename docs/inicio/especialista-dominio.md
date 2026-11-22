@@ -14,6 +14,7 @@ Prepare em `.scratch/` o contexto conforme `business-context` e o levantamento c
 - `synthesis`: tópicos/achados com `source_ids` e natureza `external_finding`, `recommendation` ou `hypothesis`.
 - `coverage`: temas, justificativas e fontes; todas as fontes obrigatórias precisam de cobertura.
 - Riscos, hipóteses e `action_plan`: fases ordenadas com dependências anteriores, objetivos, entregáveis, critérios de aceite, validações e riscos. A última fase tem id `coherence` e cobre otimização global.
+- `capability_recommendations`: avaliação obrigatória e contextual de plugins, skills, agents e ferramentas. Cada categoria deve terminar em `recommend`, `evaluate`, `defer` ou `none`, com justificativa. Cada item liga a recomendação a campos do contexto, explica adequação, alternativas e riscos; opções externas para avaliar/recomendar precisam de fontes oficiais atuais com comprovantes. Capacidades internas de skill/agent são conferidas no catálogo do toolkit.
 
 ```powershell
 npm run toolkit -- onboarding --name MeuProjeto --context-file .scratch/contexto.json
@@ -37,7 +38,7 @@ npm run toolkit -- create-project --name MeuProjeto --target DESTINO --context-f
 
 Na cópia própria do usuário, `adopt-project` aceita os mesmos documentos e protege o modelo canônico e alterações locais. `--presentation` é uma conferência opcional da decisão, nunca uma dispensa de contexto, pesquisa ou aprovação. Não há parâmetro de bypass, inclusive no dry-run. Falha de acesso impede materialização.
 
-A geração cria a skill `<slug>-especialista-dominio` no núcleo da fábrica e nos provedores selecionados, além de `references/domain-preparation.json` e `references/domain-specialist.json`. O estado é `workflow_status: materialized`: ainda falta a revisão global. Não há herança do especialista ou contexto de outro projeto.
+A geração cria a skill `<slug>-especialista-dominio` no núcleo da fábrica e nos provedores selecionados, além de `references/domain-preparation.json`, `references/domain-specialist.json` e `references/capability-recommendations.md`. A adoção/criação retorna o relatório de recomendações e exige sua apresentação antes de qualquer trabalho de produto. Sugestões não instalam, conectam nem aprovam ferramentas; cada decisão segue seu aceite e autorização próprios. O estado é `workflow_status: materialized`: ainda falta a revisão global. Não há herança do especialista ou contexto de outro projeto.
 
 ## Consulta antes de cada desenho
 

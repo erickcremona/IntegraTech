@@ -83,14 +83,14 @@ export function collectResearch({ context, preparation, request = httpsRequest }
   for (const source of output.sources) {
     delete source.receipt;
     try { source.receipt = consult(source, request); }
-    catch (error) { if (source.required || output.coverage.some(c => c.source_ids.includes(source.id)) || output.synthesis.some(s => s.source_ids.includes(source.id))) throw error; }
+    catch (error) { if (source.required || output.coverage.some(c => c.source_ids.includes(source.id)) || output.synthesis.some(s => s.source_ids.includes(source.id)) || output.capability_recommendations?.items?.some(item => item.source_ids.includes(source.id))) throw error; }
   }
   return output;
 }
 export function inspectReceipts(preparation) {
   for (const source of preparation.sources) {
     const receipt = source.receipt;
-    const needed = source.required || preparation.coverage.some(c => c.source_ids.includes(source.id)) || preparation.synthesis.some(s => s.source_ids.includes(source.id));
+    const needed = source.required || preparation.coverage.some(c => c.source_ids.includes(source.id)) || preparation.synthesis.some(s => s.source_ids.includes(source.id)) || preparation.capability_recommendations?.items?.some(item => item.source_ids.includes(source.id));
     if (!receipt) { if (needed) throw new Error('Pesquisa bloqueada: evidência de consulta obrigatória ausente.'); else continue; }
     publicHttps(receipt.final_url);
     const date = new Date(receipt.accessed_at);

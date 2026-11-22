@@ -14,13 +14,16 @@ import { selectedProviders } from './provider-selection.mjs';
 import { initialTraceability } from './traceability-sync.mjs';
 import { providerFiles } from './installer.mjs';
 import { auditToolkit } from './toolkit-audit.mjs';
+import { inspectHostDependencies, formatInstallationRequest } from './host-dependencies.mjs';
+import { inspectCapabilityRecommendations, renderCapabilityRecommendations } from './capability-recommendations.mjs';
 
 const sourceRoot = fileURLToPath(new URL('../../../../', import.meta.url));
-export function prepareProject({ name, provider = 'both', source = sourceRoot, context, technologyDecision, architectureDecision, preparation, researchRequest, decisionRepo = source }) {
+export function prepareProject({ name, provider = 'both', source = sourceRoot, context, technologyDecision, architectureDecision, preparation, researchRequest, decisionRepo = source, hostDependencies }) {
   if (!technologyDecision) throw new Error('Decisão tecnológica pesquisada e aprovada obrigatória.');
   const technology = inspectTechnologyDecision({ decision: technologyDecision, context, repo: decisionRepo, requireApproval: true });
   verifyTechnologySources(technologyDecision, preparation);
   verifyResearch({ context, preparation, request: researchRequest });
+  inspectCapabilityRecommendations({ repo: source, preparation });
   if (!architectureDecision) throw new Error('Decisão arquitetural pesquisada e aprovada obrigatória.');
   const initialContext = normalizeInitialContext(context);
   const architecture = inspectArchitectureDecision({ repo: decisionRepo, context: initialContext, technologyDecision, decision: architectureDecision, requireApproval: true });
@@ -33,9 +36,11 @@ export function prepareProject({ name, provider = 'both', source = sourceRoot, c
   const slug = name.toLowerCase();
   const render = text => text.replaceAll(identity.name, name).replaceAll(identity.slug, slug);
   const files = new Map();
-  const readinessReport = auditToolkit(source);
+  const readinessReport = auditToolkit(source, { provider, hostDependencies });
   if (readinessReport.status === 'blocked') throw new Error(`auditoria estrutural bloqueou a criação: ${readinessReport.issues.join('; ')}`);
   files.set('references/toolkit-readiness.md', readinessReport.content);
+  const capabilityReport = renderCapabilityRecommendations({ name, context: initialContext, preparation });
+  files.set('references/capability-recommendations.md', capabilityReport);
   const sourceSkills = [];
   for (const path of manifest.files) {
     if (typeof path !== 'string' || /(^|\/)(?:\.git|\.scratch|\.vs|bin|obj|secrets|node_modules|qa-artifacts|runtime-publish)(?:\/|$)/i.test(path)) throw new Error('manifesto inválido');
@@ -56,7 +61,7 @@ export function prepareProject({ name, provider = 'both', source = sourceRoot, c
   const rolesPath = manifest.files.find(path => path.endsWith('/fabrica/team/catalog.yaml'));
   const roles = JSON.parse(readFileSync(contained(source, rolesPath), 'utf8')).specialists;
   for (const [path, text] of providerFiles(provider, roles, sourceSkills, {productName:name})) {
-    const productEntry = text.replace('Continue o produto existente.', 'Antes de qualquer trabalho de produto na primeira sessão, leia e apresente ao usuário references/toolkit-readiness.md. Continue o produto existente.');
+    const productEntry = text.replace('Continue o produto existente.', 'Antes de qualquer trabalho de produto na primeira sessão, leia e apresente ao usuário references/toolkit-readiness.md e references/capability-recommendations.md. Recomendações não instalam componentes. Continue o produto existente.');
     files.set(render(path), render(productEntry));
   }
   const architectural=structuredClone(architectureDecision);
@@ -108,9 +113,12 @@ export function createProject({ name, target, provider = 'both', dryRun = false,
   if (!rel || (!rel.startsWith('..') && !isAbsolute(rel))) throw new Error('destino deve ficar fora do modelo');
   assertNoLinks(root);
   if (existsSync(root) && (!statSync(root).isDirectory() || readdirSync(root).length)) throw new Error('destino deve ser uma pasta vazia');
-  const files = prepareProject({ name, provider, context, technologyDecision, architectureDecision, preparation, researchRequest, decisionRepo });
+  const hostDependencies = inspectHostDependencies({ repo: sourceRoot, provider });
+  const files = prepareProject({ name, provider, context, technologyDecision, architectureDecision, preparation, researchRequest, decisionRepo, hostDependencies });
+  const capabilityReport = files.get('references/capability-recommendations.md');
+  if (!dryRun && ['installation_required', 'verification_required'].includes(hostDependencies.status)) throw new Error(formatInstallationRequest(hostDependencies));
   for (const path of files.keys()) contained(root, path);
-  if (dryRun) return { status: 'planned', name, provider, files: [...files.keys()] };
+  if (dryRun) return { status: 'planned', name, provider, dependencies: hostDependencies, files: [...files.keys()], capability_recommendations: { path: 'references/capability-recommendations.md', content: capabilityReport, presentation_required_before_product_work: true } };
   // Recheck immediately before creating files; only explicit destinations are written.
   assertNoLinks(root);
   if (existsSync(root) && readdirSync(root).length) throw new Error('destino alterado durante planejamento');
@@ -134,6 +142,6 @@ export function createProject({ name, target, provider = 'both', dryRun = false,
     if (removedEmpty && !existsSync(root)) mkdirSync(root);
     throw error;
   } finally { if (existsSync(staging)) rmSync(staging, { recursive: true, force: true }); }
-  const readinessReport = auditToolkit(sourceRoot);
-  return { status: 'created', name, provider, target: root, files: files.size, readiness_report: { status: readinessReport.status, generation_status: 'generated', path: 'references/toolkit-readiness.md', content: readinessReport.content, presentation_required_before_product_work: true }, next_step: 'Apresente integralmente o relatório de prontidão ao usuário antes de iniciar qualquer trabalho do produto.' };
+  const readinessReport = auditToolkit(sourceRoot, { provider, hostDependencies });
+  return { status: 'created', name, provider, target: root, files: files.size, dependencies: hostDependencies, readiness_report: { status: readinessReport.status, generation_status: 'generated', path: 'references/toolkit-readiness.md', content: readinessReport.content, presentation_required_before_product_work: true }, capability_recommendations: { status: 'ready', path: 'references/capability-recommendations.md', content: capabilityReport, presentation_required_before_product_work: true }, next_step: 'Apresente os relatórios de prontidão e de recomendações antes de iniciar qualquer trabalho do produto.' };
 }

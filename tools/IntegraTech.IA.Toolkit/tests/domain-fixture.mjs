@@ -13,6 +13,10 @@ export function preparationFor(context = fullContext) {
     synthesis: [{ topic: 'Formulários de atendimento', finding: 'Prever rótulos e instruções compreensíveis', source_ids: ['accessibility'], kind: 'recommendation' }],
     coverage: [{ topic: 'Tecnologia HTTP', rationale: 'Verificar compatibilidade do host selecionado', source_ids: ['technology'] }, { topic: 'Interação principal do usuário', rationale: 'Cobrir acessibilidade dos formulários; sem regulação setorial identificada no escopo.', source_ids: ['accessibility'] }],
     risks: ['Validar fluxo com atendentes antes de implementar'], assumptions: ['Volume inicial não informado; medir antes de otimizar'],
-    action_plan: [{ id: 'discovery', objective: 'Validar fluxo do atendimento', depends_on: [], deliverables: ['Mapa do fluxo e limites'], acceptance_criteria: ['Atendentes validam o fluxo'], validation: ['Revisar exemplos reais sanitizados'], risks: ['Regras privadas ainda podem mudar'] }, { id: 'coherence', objective: 'Otimizar o projeto e alinhar o repositório ao contexto aprovado', depends_on: ['discovery'], deliverables: ['Relatório de coerência e ajustes'], acceptance_criteria: ['Nenhuma contradição bloqueadora'], validation: ['Build, testes e revisão global'], risks: ['Preservar arquivos locais'] }]
+    action_plan: [{ id: 'discovery', objective: 'Validar fluxo do atendimento', depends_on: [], deliverables: ['Mapa do fluxo e limites'], acceptance_criteria: ['Atendentes validam o fluxo'], validation: ['Revisar exemplos reais sanitizados'], risks: ['Regras privadas ainda podem mudar'] }, { id: 'coherence', objective: 'Otimizar o projeto e alinhar o repositório ao contexto aprovado', depends_on: ['discovery'], deliverables: ['Relatório de coerência e ajustes'], acceptance_criteria: ['Nenhuma contradição bloqueadora'], validation: ['Build, testes e revisão global'], risks: ['Preservar arquivos locais'] }],
+    capability_recommendations: {
+      categories: ['plugins', 'skills', 'agents', 'tools'].map(category => ({ category, outcome: 'none', rationale: 'Este fixture valida o fluxo de adoção sem adicionar dependências de ferramentas ao domínio de atendimento.', item_ids: [] })),
+      items: []
+    }
   };
 }

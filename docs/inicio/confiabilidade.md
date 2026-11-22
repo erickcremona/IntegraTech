@@ -34,6 +34,8 @@ Protocolo avalia decisões JSON, preservação do problema e perguntas necessár
 
 `doctor --quick` verifica Node.js >=22, curl e skills, agentes e entradas nativas do provedor selecionado; informa estado degradado, comandos de recuperação protegidos e tarefas que podem continuar. Não instala nem autentica ferramentas. `doctor` completo acrescenta executável, flags e versão detectável das CLIs Codex/Claude. Autenticação, modelo e isolamento efetivo permanecem não verificados até testes específicos no ambiente autorizado. Não imprime credenciais. A ausência de CLI não significa que uma sessão nativa do provedor não esteja disponível.
 
+`dependencies --provider codex|claude|cursor|both|all` complementa o doctor antes de criar/adotar: verifica Node.js, npm, `curl`, Git quando a cópia contém `.git` e CLIs/flags do dispatcher. Ausência de requisito central bloqueia a materialização e apresenta a fonte/comando sugerido, sem instalar; falha de inspeção vira `verification_required`, não “ausente”. CLI ausente/incompatível limita o dispatcher, mas não invalida sessões nativas. Plugins/MCPs e runtimes de produto não são requisitos universais; ferramentas externas são avaliadas durante discovery e instaladas somente após escopo aprovado e autorização.
+
 ## Execução durável e rastreabilidade
 
 Revisões despachadas registram state.json e events.jsonl em qa-artifacts/runs, com identificador próprio, tarefa/papel/fase/provedor, eventos, duração, resultado e fingerprint do contexto, código selecionado, políticas e commit quando disponível. Não registra prompt, saída bruta, segredo, conteúdo de negócio ou raciocínio interno. Tokens e custo desconhecidos permanecem null.

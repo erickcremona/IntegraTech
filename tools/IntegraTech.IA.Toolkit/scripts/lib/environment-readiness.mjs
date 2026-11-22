@@ -28,9 +28,10 @@ export async function diagnoseLocalSetup({ repo, nodeVersion = process.version, 
   };
   const curlResult = await runner({ command: 'curl', args: ['--version'], timeoutMs: 5000 });
   const curlOutput = curlResult.code === 0 && !curlResult.timedOut && !curlResult.overflow ? curlResult.stdout : '';
-  const tools = { curl: curlOutput
+  const curlStatus = curlOutput ? 'available' : curlResult.error === 'ENOENT' ? 'missing' : 'unverified';
+  const tools = { curl: curlStatus === 'available'
     ? { status: 'available', version: curlOutput.match(/curl\s+([\d][\w.-]*)/i)?.[1] ?? null }
-    : { status: 'missing' } };
+    : { status: curlStatus, ...(curlResult.error ? { reason_code: curlResult.error } : {}) } };
 
   const identity = readJson(join(root, 'project.json'));
   const projectName = typeof identity?.name === 'string' && /^[A-Za-z][A-Za-z0-9]{0,49}$/.test(identity.name) ? identity.name : null;
@@ -77,6 +78,7 @@ export async function diagnoseLocalSetup({ repo, nodeVersion = process.version, 
   const instructions = [];
   if (runtime.status === 'unsupported' || runtime.status === 'unknown') instructions.push('Instale Node.js 22 ou superior e reabra o terminal: https://nodejs.org/');
   if (tools.curl.status === 'missing') instructions.push('Instale curl pelo gerenciador de pacotes do seu sistema operacional ou use https://curl.se/download.html; pesquisa externa ficará bloqueada até então.');
+  if (tools.curl.status === 'unverified') instructions.push('A inspeção do curl não pôde ser concluída; não presuma que está ausente. Repita o diagnóstico em um ambiente que permita executar o comando.');
   if (missingCoreSkills.length) instructions.push(`Skill(s) do núcleo ausente(s): ${missingCoreSkills.join(', ')}. Restaure da cópia oficial do IntegraTech antes das tarefas que dependam dessa especialização.`);
   if (missingSkills.length || missingAgents.length || missingEntrypoints.length) instructions.push(`Revise e simule a recuperação com: npm run toolkit -- install --provider ${providerSelection} --dry-run. Resolva qualquer conflito antes de executar sem --dry-run; personalizações são preservadas.`);
   if (configurationErrors.length) instructions.push('Confira project.json, o catálogo e a integridade da pasta tools/<Nome>.IA.Toolkit.');

@@ -324,6 +324,51 @@
           }
         }
       }
+    },
+    "capability_recommendations": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["categories", "items"],
+      "properties": {
+        "categories": {
+          "type": "array",
+          "minItems": 4,
+          "maxItems": 4,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["category", "outcome", "rationale", "item_ids"],
+            "properties": {
+              "category": { "enum": ["plugins", "skills", "agents", "tools"] },
+              "outcome": { "enum": ["recommend", "evaluate", "defer", "none"] },
+              "rationale": { "type": "string", "minLength": 1 },
+              "item_ids": { "type": "array", "minItems": 0, "items": { "type": "string", "minLength": 1 } }
+            }
+          }
+        },
+        "items": {
+          "type": "array",
+          "minItems": 0,
+          "maxItems": 20,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["id", "category", "name", "decision", "scope", "rationale", "context_refs", "alternatives", "risks", "source_ids"],
+            "properties": {
+              "id": { "type": "string", "minLength": 1 },
+              "category": { "enum": ["plugins", "skills", "agents", "tools"] },
+              "name": { "type": "string", "minLength": 1 },
+              "decision": { "enum": ["recommend", "evaluate", "defer", "not_recommended"] },
+              "scope": { "enum": ["toolkit_builtin", "project", "developer_environment", "external_service"] },
+              "rationale": { "type": "string", "minLength": 1 },
+              "context_refs": { "type": "array", "minItems": 1, "items": { "enum": ["problem", "current_situation", "stakeholders", "desired_outcomes", "success_criteria", "scope", "out_of_scope", "known_rules", "data", "constraints", "integrations"] } },
+              "alternatives": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } },
+              "risks": { "type": "array", "minItems": 0, "items": { "type": "string", "minLength": 1 } },
+              "source_ids": { "type": "array", "minItems": 0, "items": { "type": "string", "minLength": 1 } }
+            }
+          }
+        }
+      }
     }
   }
 }

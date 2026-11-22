@@ -37,7 +37,8 @@ export function adoptProject({ repo, name, context, dryRun = false, contextFile,
   const baselinePath = `tools/${identity.name}.IA.Toolkit/fabrica/template-baseline.json`;
   const baseline = JSON.parse(readFileSync(transactionPath(root, baselinePath), 'utf8'));
   if (baseline.version !== 1 || !baseline.files || !baseline.canonical_repository) throw new Error('baseline inválido');
-  const readinessReport = auditToolkit(root);
+  const selectedProvider = provider ?? identity.provider;
+  const readinessReport = auditToolkit(root, { provider: selectedProvider });
   if (readinessReport.structural_status === 'blocked') throw new Error(`auditoria estrutural do toolkit bloqueou a adoção: ${readinessReport.issues.join('; ')}`);
   if (!dryRun && ['installation_required', 'verification_required'].includes(readinessReport.dependencies.status)) throw new Error(formatInstallationRequest(readinessReport.dependencies));
   if (!dryRun && !readinessReport.verification) throw new Error('adoção bloqueada: execute npm run verify, corrija falhas e repita até haver validação aprovada do conteúdo atual do toolkit');
@@ -52,7 +53,7 @@ export function adoptProject({ repo, name, context, dryRun = false, contextFile,
       throw new Error('modelo canônico protegido: use uma cópia/repositório próprio antes de adotar');
   }
   const initial = normalizeInitialContext(context);
-  const files = prepareProject({ source: root, name, provider: provider ?? identity.provider, context: initial, technologyDecision, architectureDecision, preparation, researchRequest, decisionRepo: root });
+  const files = prepareProject({ source: root, name, provider: selectedProvider, context: initial, technologyDecision, architectureDecision, preparation, researchRequest, decisionRepo: root, hostDependencies: readinessReport.dependencies });
   const newIdentity = JSON.parse(files.get('project.json'));
   newIdentity.adoption = { status: 'adopted', context_path: 'references/business-context.json' };
   files.set('project.json', JSON.stringify(newIdentity, null, 2) + '\n');
@@ -81,7 +82,7 @@ export function adoptProject({ repo, name, context, dryRun = false, contextFile,
   }
   const operations = [...new Set([...old, ...files.keys()])].sort((a, b) => a === 'project.json' ? 1 : b === 'project.json' ? -1 : a.localeCompare(b))
     .map(path => ({ path, before: before.has(path) ? exactHash(before.get(path)) : null, after: files.has(path) ? exactHash(Buffer.from(files.get(path), 'utf8')) : null }));
-  if (dryRun) return { status: 'planned', name, root, dependencies: readinessReport.dependencies, operations: operations.map(op => ({ path: op.path, action: op.after === null ? 'remove' : op.before === null ? 'create' : 'replace' })) };
+  if (dryRun) return { status: 'planned', name, root, dependencies: readinessReport.dependencies, operations: operations.map(op => ({ path: op.path, action: op.after === null ? 'remove' : op.before === null ? 'create' : 'replace' })), capability_recommendations: { path: 'references/capability-recommendations.md', content: files.get('references/capability-recommendations.md'), presentation_required_before_product_work: true } };
   const parent = join(root, '.scratch/adoptions');
   assertNoLinks(parent);
   mkdirSync(parent, { recursive: true });
@@ -119,5 +120,5 @@ export function adoptProject({ repo, name, context, dryRun = false, contextFile,
     try { restoreAdoption(journalPath); } catch { throw new Error(`adoção interrompida; recuperação local necessária: ${journalPath}`); }
     throw error;
   }
-  return { status: 'adopted', name, root, journal: journalPath, recovery: join(run, 'recover.mjs'), readiness_report: { status: readinessReport.status, generation_status: 'generated', path: 'references/toolkit-readiness.md', content: readinessReport.content, presentation_required_before_product_work: true }, next_step: 'Apresente integralmente o relatório de prontidão ao usuário antes de iniciar qualquer trabalho do produto.' };
+  return { status: 'adopted', name, root, journal: journalPath, recovery: join(run, 'recover.mjs'), dependencies: readinessReport.dependencies, readiness_report: { status: readinessReport.status, generation_status: 'generated', path: 'references/toolkit-readiness.md', content: readinessReport.content, presentation_required_before_product_work: true }, capability_recommendations: { status: 'ready', path: 'references/capability-recommendations.md', content: files.get('references/capability-recommendations.md'), presentation_required_before_product_work: true }, next_step: 'Apresente os relatórios de prontidão e de recomendações antes de iniciar qualquer trabalho do produto.' };
 }
