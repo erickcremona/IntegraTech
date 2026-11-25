@@ -207,7 +207,7 @@ Documentos em `docs/superpowers` e `docs/validacao` registram a manutenção do 
 Criado por **[Erick Cremona](https://www.linkedin.com/in/erick-cremona-6983a1383/)**. [Registro de autoria da ferramenta](AUTHORS.md).
 
 
-Consulte [arquitetura contextual](docs/inicio/arquitetura-contextual.md) para escolher o menor perfil adequado, registrar decisão/aceite e reavaliar evolução. Criação/adoção exigem `--architecture-file PATH`; planos SDD de produtos com arquitetura gerenciada exigem `architecture_sha256`. Migrações dependem de aprovação, fases, compatibilidade, recuperação e entrega validada antes de distribuição.
+Consulte [arquitetura contextual](docs/inicio/arquitetura-contextual.md) para escolher o menor perfil adequado, registrar decisão/aceite e reavaliar evolução. Criação/adoção exigem `--architecture-file PATH`; planos SDD de produtos com arquitetura gerenciada exigem `architecture_sha256` e classificação N0–N4 por tarefa. N2+ chama revisão arquitetural independente; persistência inclui revisão de dados. Fitness functions e ferramentas são selecionadas conforme a stack aprovada, com critérios e evidências vinculados ao plano. Migrações dependem de aprovação, fases, compatibilidade, recuperação e entrega validada antes de distribuição.
 
 
 O desenho de sistema é condicional aos riscos e atributos dos requisitos. Consulte [quando e como usar system design](docs/inicio/system-design.md); se exigido ou recomendado, o registro fica vinculado ao desenho técnico e ao aceite SDD.

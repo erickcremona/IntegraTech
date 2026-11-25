@@ -193,6 +193,19 @@
                     "rationale": { "type": "string", "minLength": 1 },
                     "affected_journeys": { "type": "array", "items": { "type": "string" } }
                   }
+                },
+                "architecture_impact": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["classification", "rationale", "signals", "affected_modules", "evidence_requirement_ids", "decision_refs"],
+                  "properties": {
+                    "classification": { "type": "string", "enum": ["N0", "N1", "N2", "N3", "N4"] },
+                    "rationale": { "type": "string", "minLength": 1 },
+                    "signals": { "type": "array", "minItems": 1, "items": { "type": "string", "enum": ["documentation_only", "local_change", "single_module", "multiple_modules", "domain_rules", "public_contract", "data_persistence", "external_integration", "security_boundary", "quality_attribute", "architecture_decision", "technology_change", "migration", "unknown"] } },
+                    "affected_modules": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } },
+                    "evidence_requirement_ids": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } },
+                    "decision_refs": { "type": "array", "items": { "type": "string", "minLength": 1 } }
+                  }
                 }
               }
             }

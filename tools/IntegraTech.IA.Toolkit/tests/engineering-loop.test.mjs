@@ -7,14 +7,14 @@ import { startTask, advanceTask } from '../scripts/lib/task-loop.mjs';
 import { fingerprint } from '../scripts/lib/candidate.mjs';
 import * as engineering from '../scripts/lib/engineering-loop.mjs';
 
-function fixture({ includeTest = true } = {}) {
+function fixture({ includeTest = true, architectureImpact = null } = {}) {
   const repo = mkdtempSync(join(tmpdir(), 'engineering-loop-'));
   mkdirSync(join(repo, 'src')); mkdirSync(join(repo, 'references'));
   writeFileSync(join(repo, 'src/main.mjs'), 'export const value = 1;');
   if (includeTest) writeFileSync(join(repo, 'src/main.test.mjs'), "import test from 'node:test'; test('original assertion', () => {});");
   writeFileSync(join(repo, 'references/project-state.json'), JSON.stringify({ scope_status: 'pending', plan_gate: 'pending' }));
   writeFileSync(join(repo, 'references/business-context.json'), '{}');
-  const delegation = { schema_version: 1, task_id: 'cycle', objective: 'Maintain test fixture', business_context: '', technical_context: '', scope: ['src'], out_of_scope: [], assigned_agent: 'platform-engineer', supporting_agents: [], required_inputs: [], expected_deliverables: ['code'], constraints: [], file_ownership: { read: ['.'], write: ['src'] }, risks: [], acceptance_criteria: ['tests pass'], validation_commands: [], evidence_required: [], deadline_or_priority: 'normal', human_gate: 'none' };
+  const delegation = { schema_version: 1, task_id: 'cycle', objective: 'Maintain test fixture', business_context: '', technical_context: '', scope: ['src'], out_of_scope: [], assigned_agent: 'platform-engineer', supporting_agents: [], required_inputs: [], expected_deliverables: ['code'], constraints: [], file_ownership: { read: ['.'], write: ['src'] }, risks: [], acceptance_criteria: ['tests pass'], validation_commands: [], evidence_required: [], deadline_or_priority: 'normal', human_gate: 'none', ...(architectureImpact?{sdd:{plan_sha256:'a'.repeat(64),task_id:'architecture-task',architecture_impact:architectureImpact}}:{}) };
   startTask({ repo, delegation, phase: 'toolkit', provider: 'codex' });
   advanceTask({ repo, id: 'cycle', expectedRevision: 1, event: { type: 'gate_checked' } });
   advanceTask({ repo, id: 'cycle', expectedRevision: 2, event: { type: 'gate_checked' } });
@@ -23,7 +23,7 @@ function fixture({ includeTest = true } = {}) {
 const observed = async () => ({ status: 'passed', isolation: 'unverified', execution_mode: 'host_controlled', checks: ['inventory', 'frozen_oracles', 'host_controls', 'node-tests-v1'].map(id => ({ id, code: 0 })), environment: { platform: 'synthetic-test', runtime: 'test' } });
 const reviewer = async ({ repo, task, files, candidate }) => {
   const path = join(repo, 'qa-artifacts', `${task.task_id}.json`);
-  const report = { schema_version: 1, task_id: task.task_id, review_type: task.assigned_agent === 'code-reviewer' ? 'code' : 'security', verdict: 'approved', findings: [], residual_risk: '' };
+  const report = { schema_version: 1, task_id: task.task_id, review_type: task.assigned_agent === 'data-migration-reviewer' ? 'data' : task.technical_context.includes('Revisão arquitetural do nível') ? 'architecture' : task.assigned_agent === 'code-reviewer' ? 'code' : 'security', verdict: 'approved', findings: [], residual_risk: '' };
   writeFileSync(path, JSON.stringify(report));
   return { status: 'completed', verdict: report.verdict, output: path, run_id: task.task_id, candidate_sha256: candidate.sha256, package_sha256: fingerprint(files.map(path => ({ path, content: candidate.removed.includes(path) ? null : readFileSync(join(repo, path), 'utf8') }))) };
 };
@@ -55,6 +55,18 @@ test('observed validation and both fixed reviews are required for delivery; edit
     assert.deepEqual(reviewed.engineering.reviews.map(item => item.type), ['code', 'security']);
     writeFileSync(join(f.repo, 'src/main.mjs'), 'changed after review');
     assert.equal(engineering.engineeringStatus(f).delivery_valid, false);
+  } finally { rmSync(f.repo, { recursive: true, force: true }); }
+});
+
+test('N2+ architecture impact adds an independent architecture review and persistence adds data review', async () => {
+  const impact = { classification: 'N3', rationale: 'A tarefa altera a persistência.', signals: ['data_persistence'], affected_modules: ['Orders'], evidence_requirement_ids: ['REQ-1'], decision_refs: ['references/architecture-decision.json'] };
+  const f = fixture({ architectureImpact: impact });
+  try {
+    const accepted = candidate(f);
+    const validated = await engineering.validateCandidate({ ...f, expectedRevision: accepted.revision, validator: observed });
+    const reviewed = await engineering.reviewCandidate({ ...f, expectedRevision: validated.revision, dispatcher: reviewer });
+    assert.equal(reviewed.status, 'ready_for_delivery');
+    assert.deepEqual(reviewed.engineering.reviews.map(item => item.type), ['code', 'security', 'architecture', 'data']);
   } finally { rmSync(f.repo, { recursive: true, force: true }); }
 });
 

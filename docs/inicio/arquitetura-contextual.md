@@ -35,6 +35,22 @@ Uma recomendação não autoriza reestruturação. Registre `mode:"evolution"` e
 
 Mudanças irreversíveis, troca de contratos ou publicação exigem aceite e autorização próprios. A conclusão de migração requer todas as tarefas, evidências de validação atual e revisão aplicável; uma decisão aprovada, isoladamente, não comprova a entrega.
 
+## Impacto arquitetural por tarefa
+
+Tarefas em planos SDD v2 vinculados a uma decisão gerenciada declaram `architecture_impact`: nível N0–N4, justificativa, sinais, módulos afetados, IDs de requisitos que fundamentam a classificação e referências de decisão para N3/N4. O avaliador verifica piso por sinais e também eleva automaticamente contratos, migrações, fronteiras de segurança e arquivos de decisão identificáveis pelos caminhos escritos. Sinais ausentes/desconhecidos e classificação abaixo do piso bloqueiam o plano.
+
+| Nível | Piso de risco | Gate adicional |
+|---|---|---|
+| N0 | Documentação sem fonte executável | Fluxo base de validação e revisão |
+| N1 | Mudança local ou em um módulo | Fluxo base de validação e revisão |
+| N2 | Regras de domínio ou mais de um módulo | Revisão arquitetural independente |
+| N3 | Contrato, persistência, integração, segurança ou atributo de qualidade | Revisão arquitetural; persistência também requer revisão de dados |
+| N4 | Decisão, stack ou migração | Decisão `evolution` aprovada, fase SDD vinculada, compatibilidade/rollback e revisão arquitetural |
+
+Níveis acima do piso são permitidos; redução abaixo dele não. A classificação depende de evidências do requisito e da inspeção dos arquivos, e não substitui julgamento semântico do CTO/revisor. Produto sem decisão arquitetural gerenciada preserva compatibilidade e exige avaliação antes de ativar esse gate. A decisão arquitetural versionada é o registro de decisão do fluxo; sua validação não afirma que o código do produto foi inspecionado.
+
+Cada migração arquitetural escolhe `migration.validation_profile` entre perfis realmente registrados em `fabrica/validation-profiles.json`. O encerramento confere a execução entregue, revisões, perfil e evidência de testes desse perfil; não fixa uma linguagem ou caminho de projeto .NET.
+
 ## Referências
 
 Fontes para princípios arquiteturais, a consultar novamente conforme cada contexto:
@@ -43,3 +59,5 @@ Fontes para princípios arquiteturais, a consultar novamente conforme cada conte
 - [Microsoft — arquiteturas comuns de aplicações web .NET](https://learn.microsoft.com/en-us/dotnet/architecture/modern-web-apps-azure/common-web-application-architectures).
 - [Spring Modulith — verificação de limites de módulos](https://docs.spring.io/spring-modulith/reference/verification.html).
 - [Clean Architecture — exemplo .NET](https://github.com/ardalis/CleanArchitecture). É uma alternativa, não um padrão obrigatório.
+
+Ferramentas de arquitetura como código e testes são candidatas por produto, não dependências do toolkit. A documentação oficial descreve Structurizr DSL como modelagem textual baseada em C4 ([DSL](https://docs.structurizr.com/dsl)); ArchUnit.NET oferece testes de arquitetura para .NET ([ArchUnit.NET](https://www.archunit.net/dotnet/)). Nenhuma dessas ferramentas é instalada ou declarada operacional pelo modelo. O responsável técnico seleciona após confirmar stack, versão, licença, execução local/CI e custo; alternativas simples como Mermaid/Markdown podem bastar. O toolkit reutiliza os testes SDD, perfis de validação registrados, revisão independente e grafo de módulos; isso não substitui uma Fitness Function específica do produto.

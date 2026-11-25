@@ -18,6 +18,13 @@ const limits = Object.freeze({ attempts: 3, corrections: 2, active_ms: 600000 })
 const profiles = ['node-tests-v1', 'dotnet-offline-v1'];
 const baseReviewTypes = Object.freeze(['code', 'security']);
 function requiredReviewTypes(repo,state,changed){
+ const architectureImpact=state.delegation.sdd?.architecture_impact;
+ const architectureReviews=[];
+ if(architectureImpact){
+  if(!['N0','N1','N2','N3','N4'].includes(architectureImpact.classification))throw new Error('impacto arquitetural precisa ser revalidado antes do candidato');
+  if(['N2','N3','N4'].includes(architectureImpact.classification))architectureReviews.push('architecture');
+  if(architectureImpact.signals?.includes('data_persistence'))architectureReviews.push('data');
+ }
  const impact=state.delegation.experience_impact;
  if(impact?.classification==='unknown')throw new Error('impacto de UX precisa ser classificado antes do candidato');
  if(impact&&!['direct','indirect','not_applicable'].includes(impact.classification))throw new Error('classificação de impacto UX inválida');
@@ -36,14 +43,14 @@ function requiredReviewTypes(repo,state,changed){
   }
 
   if(state.assigned_agent==='ui-engineer')throw new Error('agente UI exige especialização aprovada');
-  return [...baseReviewTypes];
+  return [...baseReviewTypes,...architectureReviews];
  }
  const meta=inspectInterface(repo);
  const changedUI=state.assigned_agent==='ui-engineer'||changed.some(path=>owns(meta.selection.source_roots,path));
  if(impact?.classification==='not_applicable'&&changedUI)throw new Error('impacto UX marcado como não aplicável diverge das alterações de interface');
  const affectsUI=changedUI||['direct','indirect'].includes(impact?.classification);
  if(affectsUI)inspectDesign(repo);
- return affectsUI?[...baseReviewTypes,'ux_accessibility']:[...baseReviewTypes];
+ return affectsUI?[...baseReviewTypes,...architectureReviews,'ux_accessibility']:[...baseReviewTypes,...architectureReviews];
 }
 function gate(repo, state) {
   validateContract('delegation', state.delegation);
@@ -184,7 +191,7 @@ export async function reviewCandidate({ repo, id, expectedRevision, dispatcher =
       // Code/security share one immutable candidate; UX remains a later gate.
       const batches=[reviewTypes.filter(type=>type!=='ux_accessibility'),reviewTypes.filter(type=>type==='ux_accessibility')].filter(batch=>batch.length);
       for(const types of batches){
-        const jobs=types.map(type=>({type,task:{...structuredClone(state.delegation),task_id:`review-${fingerprint({id,candidate:state.engineering.candidate_sha256,type}).slice(0,32)}`,assigned_agent:type==='code'?'code-reviewer':type==='security'?'security-reviewer':'ux-accessibility-reviewer',file_ownership:{read:[...files],write:[]}}}));
+        const jobs=types.map(type=>({type,task:{...structuredClone(state.delegation),task_id:`review-${fingerprint({id,candidate:state.engineering.candidate_sha256,type}).slice(0,32)}`,objective:type==='architecture'?'Revisar independentemente conformidade arquitetural, limites, decisões vinculadas, contratos e fitness functions aplicáveis.':type==='data'?'Revisar independentemente integridade, consistência, concorrência e migrações de dados.':state.delegation.objective,technical_context:type==='architecture'?`${state.delegation.technical_context}\nRevisão arquitetural do nível ${state.delegation.sdd?.architecture_impact?.classification}: confronte sinais, módulos, ADR/decisão, contratos, testes, riscos, rollback e arquivos alterados. Para N4, desafie premissas, falhas, compatibilidade e reversibilidade.`:type==='data'?`${state.delegation.technical_context}\nRevisão de dados: valide integridade, consistência, concorrência, isolamento, migração e recuperação.`:state.delegation.technical_context,assigned_agent:type==='code'||type==='architecture'?'code-reviewer':type==='security'?'security-reviewer':type==='data'?'data-migration-reviewer':'ux-accessibility-reviewer',file_ownership:{read:[...files],write:[]}}}));
         const timeLeft=limits.active_ms-state.engineering.spent_ms-Math.ceil(performance.now()-started);
         if(timeLeft<100)throw new Error('orçamento esgotado');
         // Persist every reservation before any child starts; interruption cannot replay peers.

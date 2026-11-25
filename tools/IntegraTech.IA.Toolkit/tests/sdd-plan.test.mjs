@@ -5,6 +5,8 @@ import { join, dirname } from 'node:path';
 import { tmpdir } from 'node:os';
 import { createHash } from 'node:crypto';
 import { inspectSDDPlan } from '../scripts/lib/sdd-plan.mjs';
+import { architectureDigest, architectureContextHash, architectureTechnologyHash } from '../scripts/lib/architecture-decision.mjs';
+import { fullContext } from './domain-fixture.mjs';
 
 const hash = bytes => createHash('sha256').update(bytes).digest('hex');
 function fixture(t) {
@@ -114,6 +116,67 @@ test('SDD joins every prerequisite phase and preserves deterministic order of in
   const result = inspectSDDPlan(f);
   assert.deepEqual(result.phase_order, ['register', 'list', 'verification']);
   assert.deepEqual(result.tasks.at(-1).depends_on, ['register-task', 'list-task']);
+});
+
+function installManagedArchitecture(f) {
+  const contextText = JSON.stringify(fullContext, null, 2) + '\n';
+  const contextHash = f.save('references/business-context.json', contextText);
+  f.contextHash = contextHash;
+  const technologyDecision = { selection: 'synthetic-node' };
+  const technologyHash = f.save('references/technology-decision.json', technologyDecision);
+  const approvalText = 'Synthetic fixture approval for architecture-managed SDD tests.';
+  f.save('references/architecture-approval.md', approvalText);
+  const decision = {
+    schema_version: 1, mode: 'initial', profile: 'simple-application',
+    layout: { name: 'Product', presentation: 'api', stack: 'node' },
+    context_sha256: architectureContextHash(fullContext), technology_sha256: architectureTechnologyHash(technologyDecision), source_binding_sha256: null,
+    requirements: { schema_version: 1, context_sha256: architectureContextHash(fullContext), domain_complexity: 'simple', modules: [], drivers: [], unknowns: [] },
+    rationale: ['Synthetic fixture with one deployment unit'], alternatives: [{ profile: 'modular-monolith', reason: 'No module boundary requirement in fixture' }],
+    research: [{ url: 'https://example.com/synthetic', accessed_at: '2026-01-01', findings: 'Synthetic fixture only' }],
+    validation_strategy: ['Run the selected task validation profile'], migration: null
+  };
+  decision.approval = { status: 'approved', decision_sha256: architectureDigest(decision), approved_by: 'Synthetic fixture owner', approved_at: '2026-01-01T00:00:00Z', source_reference: 'references/architecture-approval.md', source_reference_sha256: hash(approvalText) };
+  f.save('references/architecture-decision.json', decision);
+  const decisionHash = architectureDigest(decision);
+  f.save('project.json', { name: 'Product', presentation: 'api' });
+  f.save('references/project-state.json', { scope_status: 'defined', context_path: 'references/business-context.json', technology_decision_path: 'references/technology-decision.json', architecture_path: 'references/architecture-decision.json' });
+  f.plan.context_sha256 = contextHash;
+  f.specification.context_sha256 = contextHash;
+  f.design.context_sha256 = contextHash;
+  f.plan.architecture_sha256 = decisionHash;
+  for (const phase of f.plan.phases) for (const task of phase.tasks) task.architecture_impact = {
+    classification: 'N1', rationale: 'Alteração local no módulo de solicitações.', signals: ['single_module'], affected_modules: ['Requests'],
+    evidence_requirement_ids: [...task.requirement_ids], decision_refs: []
+  };
+  f.refresh();
+  return { decision, decisionHash };
+}
+
+test('architecture-managed SDD requires evidenced impact per task and rejects under-classification', t => {
+  const f = fixture(t); installManagedArchitecture(f);
+  assert.equal(inspectSDDPlan(f).tasks.length, 2);
+  delete f.plan.phases[0].tasks[0].architecture_impact;
+  assert.throws(() => inspectSDDPlan(f), /impacto arquitetural bloqueado/);
+  f.plan.phases[0].tasks[0].architecture_impact = { classification: 'N0', rationale: 'Só documentação', signals: ['documentation_only'], affected_modules: ['Requests'], evidence_requirement_ids: ['req-register'], decision_refs: [] };
+  assert.throws(() => inspectSDDPlan(f), /inferior ao piso/);
+});
+
+test('N4 impact requires the current approved evolution decision and its migration phase', t => {
+  const f = fixture(t); const { decision, decisionHash } = installManagedArchitecture(f);
+  const task = f.plan.phases[0].tasks[0];
+  task.architecture_impact = { classification: 'N4', rationale: 'Troca estratégica da arquitetura do runtime.', signals: ['technology_change'], affected_modules: ['Requests'], evidence_requirement_ids: task.requirement_ids, decision_refs: ['references/architecture-decision.json'] };
+  f.plan.architecture_sha256 = decisionHash; f.refresh();
+  assert.throws(() => inspectSDDPlan(f), /N4 exige decisão arquitetural de evolução/);
+  decision.mode = 'evolution';
+  decision.migration = { from_profile: 'simple-application', baseline_sha256: 'a'.repeat(64), phases: ['list'], compatibility: ['Preserve API'], rollback: ['Restore previous runtime'], data_changes: false, irreversible: false, validation_profile: 'node-tests-v1' };
+  decision.approval.decision_sha256 = architectureDigest(decision);
+  f.save('references/architecture-decision.json', decision);
+  f.plan.architecture_sha256 = architectureDigest(decision); f.refresh();
+  assert.throws(() => inspectSDDPlan(f), /fora de uma fase de migração/);
+  decision.migration.phases = ['register'];
+  decision.approval.decision_sha256 = architectureDigest(decision);
+  f.save('references/architecture-decision.json', decision); f.plan.architecture_sha256 = architectureDigest(decision); f.refresh();
+  assert.equal(inspectSDDPlan(f).tasks.length, 2);
 });
 
 // Frontier ordering uses verified inventory edges and is independent of timestamps.

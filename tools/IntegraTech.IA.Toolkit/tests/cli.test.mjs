@@ -1,9 +1,11 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { spawnSync } from 'node:child_process';
 import { main } from '../scripts/toolkit.mjs';
-import { mkdtempSync, readdirSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, readdirSync, writeFileSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
+import { fileURLToPath } from 'node:url';
 test('CLI: erro de contexto não inclui seu conteúdo no diagnóstico', async () => {
   const file = join(mkdtempSync(join(tmpdir(), 'context-diagnostic-')), 'invalid.json');
   writeFileSync(file, '{"problem": "conteudo-privado"');
@@ -14,6 +16,17 @@ test('CLI: rejeita opção desconhecida, duplicada, fase e provedor inválidos',
     await assert.rejects(main(args));
   assert.equal((await main(['route', '--category', 'qa'])).name, 'qa-engineer');
   assert.ok((await main(['help'])).includes('resume'));
+});
+
+test('CLI install reports a managed-file conflict without exposing file contents', t => {
+  const repo = mkdtempSync(join(tmpdir(), 'install-cli-conflict-'));
+  t.after(() => rmSync(repo, { recursive: true, force: true }));
+  writeFileSync(join(repo, 'AGENTS.md'), 'private custom instructions');
+  const result = spawnSync(process.execPath, [fileURLToPath(new URL('../scripts/toolkit.mjs', import.meta.url)), 'install', '--provider', 'both', '--target', repo, '--dry-run'], { encoding: 'utf8', windowsHide: true });
+  assert.equal(result.status, 2);
+  const output = `${result.stdout}\n${result.stderr}`;
+  assert.match(output, /conflito: AGENTS\.md; arquivo preservado/);
+  assert.doesNotMatch(output, /private custom instructions/);
 });
 
 test('CLI help enumerates every route, policy action, and contract schema', async () => {

@@ -19,7 +19,7 @@ export function completeArchitecture({repo}){
  const current=architectureCurrent(repo);if(!current||current.decision.mode!=='evolution')throw new Error('Nenhuma migração aprovada em andamento');
  if(sddStatus({repo}).status!=='completed')throw new Error('Migração exige todas as tarefas SDD concluídas');
  const {action}=actionPlan(repo);const runs=action.tasks.map(t=>sddDelegation({repo,id:t.id}).task_id);
- const run_id=runs.find(id=>{const run=engineeringStatus({repo,id});return run.delivery_valid&&run.engineering.profile==='dotnet-offline-v1'&&run.engineering.validation.test_files?.some(f=>f.path===`tests/${current.decision.layout.name}.Arquitetura.Tests/${current.decision.layout.name}.Arquitetura.Tests.csproj`);});if(!run_id)throw new Error('Migração exige entrega atual validada e revisada');
+ const run_id=runs.find(id=>{const run=engineeringStatus({repo,id});return run.delivery_valid&&run.engineering.profile===current.decision.migration.validation_profile&&run.engineering.validation.test_files?.some(f=>typeof f.path==='string'&&/^[a-f0-9]{64}$/.test(f.sha256));});if(!run_id)throw new Error('Migração exige entrega atual validada e revisada pelo perfil aprovado');
  const source=architectureSourceSnapshot(repo);
  const path=architectureReceiptPath(current.decision_sha256,source,action.plan_sha256);const receipt={schema_version:1,decision_sha256:current.decision_sha256,plan_sha256:action.plan_sha256,source_sha256:architectureSourceSnapshot(repo),run_id,run_sha256:fingerprint(readFileSync(contained(repo,`qa-artifacts/loops/${run_id}/state.json`))),completed_at:new Date().toISOString()};
  if(!architectureReceiptEvidence(repo,current.decision,receipt))throw new Error('Evidências arquiteturais inconsistentes');

@@ -311,7 +311,7 @@ if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1]
     if (['blocked', 'failed', 'needs_input', 'empty', 'needs_review', 'needs_clarification', 'preparing', 'installation_required', 'verification_required'].includes(result?.status) || result?.failed > 0) process.exitCode = 2;
   } catch (error) {
     // Adoption errors identify controlled conflicts/recovery paths, never print file contents.
-    if (['adopt-project', 'restore-adoption', 'create-project', 'dependencies', 'research-collect', 'specialist-check', 'specialist-prepare', 'specialist-status', 'consultation-record', 'consultation-check', 'coherence-check', 'coherence-status', 'coherence-run'].includes(process.argv[2])) console.error(error instanceof SyntaxError ? 'Documento da operação inválido.' : error.message);
+    if (['install', 'adopt-project', 'restore-adoption', 'create-project', 'dependencies', 'research-collect', 'specialist-check', 'specialist-prepare', 'specialist-status', 'consultation-record', 'consultation-check', 'coherence-check', 'coherence-status', 'coherence-run'].includes(process.argv[2])) console.error(error instanceof SyntaxError ? 'Documento da operação inválido.' : error.message);
     else console.error('Operação rejeitada: verifique comando, arquivos, contratos e conflitos. Use help.');
     process.exitCode = 2;
   }

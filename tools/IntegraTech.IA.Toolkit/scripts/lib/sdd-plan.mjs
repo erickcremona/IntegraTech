@@ -1,5 +1,6 @@
 import {inspectSystemDesign} from './system-design.mjs';
 import {architectureCurrent,architectureEstablished} from './architecture-inspection.mjs';
+import {assessArchitectureImpact} from './architecture-impact.mjs';
 import {sourceRoot,sourceFile,sourceBinding} from './project-locations.mjs';
 import { readFileSync, lstatSync, existsSync } from 'node:fs';
 import { createHash } from 'node:crypto';
@@ -127,6 +128,23 @@ export function inspectSDDPlan({ repo, plan, contextHash }) {
       try {
         if (!lstatSync(sourceFile(repo, path)).isFile()) throw new Error('SDD: caminho de teste deve nomear arquivo');
       } catch (error) { if (error.code !== 'ENOENT') throw error; }
+    }
+    if (architecture) {
+      const impact = assessArchitectureImpact({ impact: task.architecture_impact, requirementIds: task.requirement_ids, writeFiles: task.write_files });
+      if (impact.status !== 'ready') throw new Error(`SDD: impacto arquitetural bloqueado (${impact.reason})`);
+      if (['N3', 'N4'].includes(impact.classification) && !task.architecture_impact.decision_refs.includes(architecture.state.architecture_path))
+        throw new Error('SDD: impacto N3/N4 deve referenciar a decisão arquitetural vigente');
+      for (const ref of task.architecture_impact.decision_refs) {
+        const full = canonical(repo, ref); const stat = lstatSync(full);
+        if (!stat.isFile() || stat.size > limit) throw new Error('SDD: referência de decisão arquitetural inválida');
+      }
+      if (impact.classification === 'N4') {
+        if (architecture.decision.mode !== 'evolution') throw new Error('SDD: N4 exige decisão arquitetural de evolução aprovada');
+        if (!architecture.decision.migration.phases.includes(phase.id)) throw new Error('SDD: tarefa N4 fora de uma fase de migração aprovada');
+      }
+    } else if (task.architecture_impact) {
+      const impact = assessArchitectureImpact({ impact: task.architecture_impact, requirementIds: task.requirement_ids, writeFiles: task.write_files });
+      if (impact.status !== 'ready') throw new Error(`SDD: impacto arquitetural inválido (${impact.reason})`);
     }
     task.requirement_ids.forEach(id => coveredRequirements.add(id));
     task.scenario_ids.forEach(id => coveredScenarios.add(id));

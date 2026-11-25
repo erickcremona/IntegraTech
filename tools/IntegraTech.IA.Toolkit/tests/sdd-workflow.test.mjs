@@ -354,10 +354,10 @@ test('managed architecture binds SDD and blocks an obsolete migration baseline',
  const {generationOptions}=await import('./generation-fixture.mjs');
  const args=generationOptions({name:'Atendimento',presentation:'worker',context:fullContext,decisionRepo:f.repo});
  f.save('references/technology-decision.json',args.technologyDecision);
- const d=args.architectureDecision;d.mode='evolution';d.migration={from_profile:'simple-application',baseline_sha256:architectureSourceSnapshot(f.repo),phases:['register','list'],compatibility:['Preserve owner association'],rollback:['Restore compatible old service and validate ownership'],data_changes:false,irreversible:false};d.approval.decision_sha256=architectureDigest(d);
+ const d=args.architectureDecision;d.mode='evolution';d.migration={from_profile:'simple-application',baseline_sha256:architectureSourceSnapshot(f.repo),phases:['register','list'],compatibility:['Preserve owner association'],rollback:['Restore compatible old service and validate ownership'],data_changes:false,irreversible:false,validation_profile:'node-tests-v1'};d.approval.decision_sha256=architectureDigest(d);
  f.save('references/architecture-decision.json',d);f.state.architecture_mode='managed-v1';f.state.architecture_path='references/architecture-decision.json';f.state.technology_decision_path='references/technology-decision.json';f.save('references/project-state.json',f.state);
  assert.equal(precheck(f.repo,'business').status,'blocked');
- f.plan.architecture_sha256=architectureDigest(d);f.approval.plan_sha256=f.save(f.state.plan_path,f.plan);f.save(f.state.approval_path,f.approval);
+ f.plan.architecture_sha256=architectureDigest(d);for(const task of f.plan.phases.flatMap(phase=>phase.tasks))task.architecture_impact={classification:'N1',rationale:'Alteração localizada em módulo existente.',signals:['local_change','single_module'],affected_modules:['request'],evidence_requirement_ids:task.requirement_ids,decision_refs:[]};f.approval.plan_sha256=f.save(f.state.plan_path,f.plan);f.save(f.state.approval_path,f.approval);
  assert.equal(precheck(f.repo,'business').status,'ready');
  f.save('src/request.mjs','export const value = 99;');assert.throws(()=>prepareActionPlan(f),/fonte alterado/);
 });
@@ -367,9 +367,9 @@ test('approved architecture migration does not auto-generate or compare a source
  const {architectureSourceSnapshot,architectureStatus}=await import('../scripts/lib/architecture-inspection.mjs');
  const {generationOptions}=await import('./generation-fixture.mjs');
  const args=generationOptions({name:'Atendimento',presentation:'worker',context:fullContext,decisionRepo:f.repo});f.save('references/technology-decision.json',args.technologyDecision);
- const d=args.architectureDecision;d.mode='evolution';d.migration={from_profile:'simple-application',baseline_sha256:architectureSourceSnapshot(f.repo),phases:['register','list'],compatibility:['Preservar contratos existentes'],rollback:['Restaurar a versão anterior'],data_changes:false,irreversible:false,oracle_transition:{task_id:'register-task',original_sha256:'a'.repeat(64),target_sha256:'b'.repeat(64)}};d.approval.decision_sha256=architectureDigest(d);
+ const d=args.architectureDecision;d.mode='evolution';d.migration={from_profile:'simple-application',baseline_sha256:architectureSourceSnapshot(f.repo),phases:['register','list'],compatibility:['Preservar contratos existentes'],rollback:['Restaurar a versão anterior'],data_changes:false,irreversible:false,validation_profile:'node-tests-v1',oracle_transition:{task_id:'register-task',original_sha256:'a'.repeat(64),target_sha256:'b'.repeat(64)}};d.approval.decision_sha256=architectureDigest(d);
  f.save('references/architecture-decision.json',d);Object.assign(f.state,{architecture_mode:'managed-v1',architecture_path:'references/architecture-decision.json',technology_decision_path:'references/technology-decision.json'});f.save('references/project-state.json',f.state);
- f.plan.architecture_sha256=architectureDigest(d);f.approval.plan_sha256=f.save(f.state.plan_path,f.plan);f.save(f.state.approval_path,f.approval);prepareActionPlan(f);
+ f.plan.architecture_sha256=architectureDigest(d);for(const task of f.plan.phases.flatMap(phase=>phase.tasks))task.architecture_impact={classification:'N1',rationale:'Alteração localizada em módulo existente.',signals:['local_change','single_module'],affected_modules:['request'],evidence_requirement_ids:task.requirement_ids,decision_refs:[]};f.approval.plan_sha256=f.save(f.state.plan_path,f.plan);f.save(f.state.approval_path,f.approval);prepareActionPlan(f);
  const before=readFileSync(f.disk('src/request.mjs'),'utf8');
  const delegation=sddDelegation({repo:f.repo,id:'register-task'});
  assert.throws(()=>startTask({repo:f.repo,delegation,phase:'business',provider:'codex'}),/Transição automática de oráculo indisponível/);

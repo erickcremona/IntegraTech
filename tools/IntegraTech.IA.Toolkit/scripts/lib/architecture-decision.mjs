@@ -6,6 +6,7 @@ import {validateArchitectureModules} from './architecture-model.mjs';
 export const architectureContextHash=context=>fingerprint(normalizeInitialContext(context));
 const evidenceBytes=(repo,path)=>{const p=contained(repo,path);const stat=lstatSync(p);if(!stat.isFile()||stat.size>256*1024)throw new Error('Evidência arquitetural acima do limite');return readFileSync(p);};
 export const architectureProfiles=['simple-application','modular-monolith','layered-monolith','distributed'];
+const validationProfileIds=new Set(Object.keys(JSON.parse(readFileSync(new URL('../../fabrica/validation-profiles.json',import.meta.url),'utf8')).profiles));
 export const architectureTechnologyHash=decision=>{const {approval,...body}=decision;return fingerprint(body);};
 export const architectureDigest=({approval,...body})=>fingerprint(body);
 const fail=message=>{throw new Error(`Arquitetura: ${message}`);};
@@ -44,7 +45,7 @@ export function inspectArchitectureDecision({repo,context,technologyDecision,dec
   if(d.mode==='initial'&&d.migration!==null)fail('criação não aceita migração implícita');
   if(d.mode==='evolution'){
     const m=d.migration;
-    if(!m||!text(m.from_profile)||!/^[a-f0-9]{64}$/.test(m.baseline_sha256)||!list(m.phases)||!list(m.compatibility)||!list(m.rollback)||typeof m.data_changes!=='boolean'||m.irreversible!==false)fail('migração exige baseline, fases, compatibilidade e recuperação reversível');
+    if(!m||!text(m.from_profile)||!/^[a-f0-9]{64}$/.test(m.baseline_sha256)||!list(m.phases)||!list(m.compatibility)||!list(m.rollback)||typeof m.data_changes!=='boolean'||m.irreversible!==false||!validationProfileIds.has(m.validation_profile))fail('migração exige baseline, fases, compatibilidade, recuperação reversível e perfil de validação existente');
   }
   if(d.mode==='evolution'&&d.migration.oracle_transition){const t=d.migration.oracle_transition;if(!text(t.task_id)||![t.original_sha256,t.target_sha256].every(v=>typeof v==='string'&&/^[a-f0-9]{64}$/.test(v)))fail('transição de oráculo exige tarefa e hashes explícitos');}
   validateArchitectureModules(d.requirements.modules,d.profile);

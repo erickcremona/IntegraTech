@@ -26,6 +26,7 @@
         "code",
         "security",
         "data",
+        "architecture",
         "ux_accessibility"
       ]
     },
@@ -91,6 +92,13 @@
             "minLength": 1
           },
           "finding_id": { "type": "string", "minLength": 1 },
+          "affected_component": { "type": "string", "minLength": 1 },
+          "affected_module": { "type": "string", "minLength": 1 },
+          "decision_ref": { "type": "string", "minLength": 1 },
+          "functional_impact": { "type": "string", "minLength": 1 },
+          "technical_impact": { "type": "string", "minLength": 1 },
+          "operational_impact": { "type": "string", "minLength": 1 },
+          "alternatives_considered": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } },
           "affected_feature": { "type": "string", "minLength": 1 },
           "affected_flow": { "type": "string", "minLength": 1 },
           "priority": { "type": "string", "enum": ["P0", "P1", "P2", "P3"] },

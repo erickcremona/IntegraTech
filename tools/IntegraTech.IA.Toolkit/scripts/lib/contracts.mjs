@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs';
 // Deliberately limited to the keywords used in the versioned factory contracts.
 // Unsupported keywords fail closed; this is not a general JSON Schema engine.
 const supported = new Set(['$schema', '$id', 'title', 'description', 'type', 'additionalProperties', 'required', 'properties', 'items', 'const', 'enum', 'minLength', 'minimum', 'minItems', 'maxItems', 'allOf', 'if', 'then']);
-export const contractKinds = Object.freeze(['delegation', 'return', 'review', 'handoff', 'business-context', 'business-plan', 'approval', 'technology-decision', 'domain-preparation', 'domain-consultation', 'domain-coherence', 'task-run', 'traceability-graph', 'interface-profile', 'business-plan-v2', 'functional-spec', 'technical-design', 'system-design']);
+export const contractKinds = Object.freeze(['delegation', 'return', 'review', 'handoff', 'business-context', 'business-plan', 'approval', 'technology-decision', 'domain-preparation', 'domain-consultation', 'domain-coherence', 'task-run', 'traceability-graph', 'interface-profile', 'business-plan-v2', 'functional-spec', 'technical-design', 'system-design', 'architecture-impact']);
 export function assertSupported(schema) {
   for (const key of Object.keys(schema)) if (!supported.has(key)) throw new Error(`schema: keyword não suportada: ${key}`);
   for (const child of Object.values(schema.properties ?? {})) assertSupported(child);
@@ -65,9 +65,20 @@ export function validateContract(kind, value, expectedTaskId) {
         ids.add(finding.finding_id);
       }
     }
+    if(value.review_type==='architecture'&&value.findings.length){
+      const required=['finding_id','affected_component','affected_module','decision_ref','functional_impact','technical_impact','operational_impact','priority','cause_hypothesis','alternatives_considered','dependencies','acceptance_criteria','owner','required_tests','resolution_status'];
+      const ids=new Set();
+      for(const finding of value.findings){
+        for(const field of required)if(!Object.hasOwn(finding,field))throw new Error(`achado arquitetural exige campo ${field}`);
+        if(ids.has(finding.finding_id))throw new Error('identificador arquitetural duplicado');
+        ids.add(finding.finding_id);
+      }
+    }
     if (value.verdict === 'approved' && value.findings.length) throw new Error('approved exige ausência de achados');
     if (value.verdict === 'approved_with_findings' && value.findings.some(f => ['blocker', 'critical', 'high'].includes(f.severity)))
       throw new Error('achado alto/bloqueador exige changes_required ou blocked');
+    if (value.review_type === 'architecture' && value.findings.some(f => ['blocker', 'critical', 'high'].includes(f.severity)) && value.verdict !== 'changes_required' && value.verdict !== 'blocked')
+      throw new Error('achado arquitetural alto/bloqueador exige changes_required ou blocked');
   }
   return value;
 }
