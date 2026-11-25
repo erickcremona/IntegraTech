@@ -141,6 +141,16 @@
         "pending"
       ]
     },
+    "experience_impact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["classification", "rationale"],
+      "properties": {
+        "classification": { "type": "string", "enum": ["direct", "indirect", "not_applicable", "unknown"] },
+        "rationale": { "type": "string", "minLength": 1 },
+        "affected_journeys": { "type": "array", "items": { "type": "string" } }
+      }
+    },
     "sdd": {
       "type": "object",
       "additionalProperties": false,

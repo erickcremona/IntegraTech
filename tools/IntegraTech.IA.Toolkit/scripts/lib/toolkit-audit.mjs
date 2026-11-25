@@ -43,7 +43,7 @@ export function auditToolkit(repo, { provider, hostDependencies } = {}) {
     const evidence = readJson(join(repo, '.scratch/toolkit-verification.json'));
     if (evidence.status === 'passed' && evidence.source_sha256 === toolkitSourceFingerprint(repo)) verification = evidence;
   } catch { /* Missing, stale, or malformed evidence is reported as unavailable. */ }
-  const dependencies = hostDependencies ?? inspectHostDependencies({ repo, provider });
+  const dependencies = typeof hostDependencies === 'function' ? hostDependencies() : hostDependencies ?? inspectHostDependencies({ repo, provider });
   const issues = [
     ...missingSkills.map(skill => `Skill ausente: ${skill}`),
     ...invalidRoutes.map(([route, role]) => `Rota ${route} aponta para papel ausente: ${role}`),

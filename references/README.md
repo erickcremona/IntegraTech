@@ -17,3 +17,5 @@ Preenchimento: o agente traceability-maintainer usa graph sync --dry-run/graph s
 Orientação ao usuário: consulte README.md e docs/inicio/fluxo-toolkit.md para o fluxo completo, exemplos de pedidos, decisões e limites. Atualize esses materiais junto com mudanças no funcionamento do toolkit.
 
 Interface: quando houver seleção estruturada aprovada, consulte references/interface-profile.json e ui-status antes de retomar; leia docs/inicio/interfaces.md. Não repetir geração sobre frontend personalizado nem converter diagnóstico local em aprovação isolada.
+
+Experiência: classifique o impacto de cada tarefa como direto, indireto, não aplicável ou desconhecido, com justificativa. Aplique o gate UX proporcional ao risco; desconhecido ou ferramenta/evidência necessária indisponível bloqueia, não aprova. Registre achados com dono, prioridade, aceite e testes; só encerre após reauditoria independente.

@@ -50,13 +50,23 @@ export function validateContract(kind, value, expectedTaskId) {
   assertSupported(schema);
   check(schema, value);
   if (expectedTaskId && value.task_id !== expectedTaskId) throw new Error('task_id divergente');
+  if(kind==='delegation'&&value.experience_impact&&!value.experience_impact.rationale.trim())throw new Error('classificação de impacto UX exige justificativa');
   if (kind === 'review') {
     if(value.review_type==='ux_accessibility'&&['approved','approved_with_findings'].includes(value.verdict)){
       const criteria=['task_clarity','visual_hierarchy','visual_identity','interaction_states','responsive_behavior','accessibility','performance'];
       if(!Array.isArray(value.ux_assessment)||new Set(value.ux_assessment.map(item=>item.criterion)).size!==criteria.length||criteria.some(criterion=>!value.ux_assessment.some(item=>item.criterion===criterion&&item.score>=4&&item.score<=5&&item.evidence.every(text=>text.trim().length>0))))throw new Error('aprovação UX exige avaliação completa, evidências e mínimo 4/5 em cada dimensão');
     }
+    if(value.review_type==='ux_accessibility'&&value.findings.length){
+      const required=['finding_id','affected_feature','affected_flow','priority','cause_hypothesis','dependencies','acceptance_criteria','owner','required_tests','resolution_status'];
+      const ids=new Set();
+      for(const finding of value.findings){
+        for(const field of required)if(!Object.hasOwn(finding,field))throw new Error(`achado UX exige campo ${field}`);
+        if(ids.has(finding.finding_id))throw new Error('identificador UX duplicado');
+        ids.add(finding.finding_id);
+      }
+    }
     if (value.verdict === 'approved' && value.findings.length) throw new Error('approved exige ausência de achados');
-    if (value.verdict === 'approved_with_findings' && value.findings.some(f => ['blocker', 'high'].includes(f.severity)))
+    if (value.verdict === 'approved_with_findings' && value.findings.some(f => ['blocker', 'critical', 'high'].includes(f.severity)))
       throw new Error('achado alto/bloqueador exige changes_required ou blocked');
   }
   return value;

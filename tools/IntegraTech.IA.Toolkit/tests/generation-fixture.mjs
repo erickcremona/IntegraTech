@@ -9,6 +9,7 @@ import { adoptProject as adopt } from '../scripts/lib/project-adoption.mjs';
 import { fullContext, preparationFor, researchRequest } from './domain-fixture.mjs';
 import { decisionFor } from './technology-fixture.mjs';
 import { toolkitSourceFingerprint } from '../scripts/lib/toolkit-audit.mjs';
+const deterministicHostDependencies = () => ({ status: 'ready', provider_selection: 'all', checks: [], providers: [], plugins: { status: 'not_required', note: 'Fixture determinística; não representa detecção real do host.' }, authentication: 'not_checked', installation_requests: [] });
 export function generationOptions(args) {
   const context = { ...fullContext, ...(typeof args.context === 'string' ? { problem: args.context } : args.context ?? {}) };
   const decisionRepo = args.decisionRepo ?? args.repo ?? mkdtempSync(join(tmpdir(), 'fixture-approval-'));
@@ -25,7 +26,7 @@ export function generationOptions(args) {
     architectureDecision={schema_version:1,mode:'initial',profile:'layered-monolith',layout:{name:args.name,presentation:selection?.presentation??'Contextual',stack:selection?.stack},context_sha256:fingerprint(context),technology_sha256:architectureTechnologyHash(technologyDecision),source_binding_sha256:null,requirements:{schema_version:1,context_sha256:fingerprint(context),domain_complexity:'simple',modules:[],drivers:[],unknowns:[]},rationale:['Synthetic backwards-compatible layered fixture'],alternatives:[{profile:'simple-application',reason:'Fixture tests the existing layered layout'}],research:[{url:'https://example.com/synthetic',accessed_at:'2026-01-01',findings:'Synthetic fixture, not actual research'}],validation_strategy:['Build and structural lifecycle tests'],migration:null};
     architectureDecision.approval={status:'approved',decision_sha256:architectureDigest(architectureDecision),approved_by:'Synthetic owner',approved_at:new Date().toISOString(),source_reference:'references/architecture-fixture-approval.md',source_reference_sha256:fingerprint(evidence)};
   }
-  return { ...args, architectureDecision, context, decisionRepo, technologyDecision, preparation: args.preparation ?? preparationFor(context), researchRequest: args.researchRequest ?? researchRequest };
+  return { ...args, architectureDecision, context, decisionRepo, technologyDecision, hostDependencies: args.hostDependencies ?? deterministicHostDependencies, preparation: args.preparation ?? preparationFor(context), researchRequest: args.researchRequest ?? researchRequest };
 }
 export const createProject = args => generate(generationOptions(args));
 export const adoptProject = args => {

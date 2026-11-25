@@ -81,7 +81,7 @@ test('toolkit readiness audit maps purposes, routes, CLI contracts, and evidence
   assert.equal(report.structural_status, 'passed');
   assert.match(report.content, /Papéis especializados: 16/);
   assert.match(report.content, /Rotas catalogadas: 22/);
-  assert.match(report.content, /Comandos documentados na CLI: 69/);
+  assert.match(report.content, /Comandos documentados na CLI: 70/);
   assert.match(report.content, /integration-analysis/);
   assert.match(report.content, /Verificações estruturais executadas/);
   assert.match(report.content, /npm run verify/);

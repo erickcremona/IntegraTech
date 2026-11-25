@@ -55,6 +55,24 @@ A revisão `ux_accessibility` usa os sete critérios abaixo. Para `approved`, o 
 
 Notas: **1** = falha grave que impede uso; **2** = problemas importantes; **3** = funcional, com fraquezas relevantes; **4** = critérios atendidos com evidência suficiente e sem fraqueza material pendente; **5** = execução especialmente cuidadosa e consistente no escopo observado, sustentada por evidências. Evidência insuficiente exige `blocked`; não atribua 4 por falta de problema conhecido. As notas não certificam WCAG, superioridade sobre concorrentes ou resultados reais de negócio.
 
+## Aplicabilidade e resultado do gate
+
+Classifique o impacto da tarefa na delegação como `direct`, `indirect`, `not_applicable` ou `unknown`, com justificativa e jornadas afetadas quando aplicável. Mudança direta inclui interface, navegação, conteúdo, feedback e interação. Mudança indireta inclui regras, respostas, permissões ou dados que alterem uma jornada mesmo sem editar arquivos de UI. `unknown` bloqueia a classificação do candidato. `not_applicable` exige motivo específico; uma mudança de UI detectada em código contradiz essa classificação e bloqueia o candidato. A ausência de contexto/perfil para um impacto direto ou indireto também bloqueia.
+
+O avaliador `evaluateUxGate` registra um resultado explícito: `approved`, `approved_with_remarks`, `rejected`, `not_applicable` ou `blocked`. `approved_with_findings` é elegível a `approved_with_remarks` apenas para achados médios/baixos completos e acionáveis. `blocker`, `critical` e `high`, `changes_required`, falta de revisão, evidência insuficiente ou dependência necessária indisponível impedem aprovação. Uma alternativa equivalente só conta quando realmente executada e suas evidências estão disponíveis; ausência do plugin Product Design não é aprovação automática.
+
+Achados UX ativos incluem `finding_id` único, `title`, `evidence`, `affected_feature`, `affected_flow`, `impact`, `severity`, prioridade `P0`–`P3`, `cause_hypothesis`, `recommendation`, `dependencies`, `acceptance_criteria`, `owner`, `required_tests` e `resolution_status`. Registre a hipótese como desconhecida quando a causa ainda não tiver sido investigada. O relatório mantém o plano de correção mesmo quando a entrega é aprovada com ressalvas. Após implementar, marque `awaiting_revalidation`; somente uma nova revisão independente que não reproduza o achado permite registrar `verified_resolved`. Código alterado sem reobservação não resolve o achado.
+
+| Resultado | Condição |
+|---|---|
+| `approved` | Impacto direto/indireto, validação e revisão UX independente presentes; todos os sete critérios >= 4; nenhum achado. |
+| `approved_with_remarks` | Revisão aprovada com achados médios/baixos estruturados, responsáveis e plano de correção; sem achado impeditivo. |
+| `rejected` | Revisor exige alteração ou há achado blocker/critical/high. |
+| `not_applicable` | Classificação explícita, sem conflito com arquivos/fluxos observados e com justificativa. |
+| `blocked` | Classificação, evidência, revisão ou dependência necessária ausente/indisponível; não equivale a aprovação. |
+
+A auditoria cobre as jornadas afetadas e as conexões relevantes com áreas existentes, em proporção ao risco e à abrangência. Em marcos de release, amplie a amostra para navegação, regressões e coerência entre módulos. Alterações críticas/altas não podem receber gate aprovado; qualquer exceção requer justificativa formal e autorização da governança competente quando admissível.
+
 Cada evidência deve permitir localizar o artefato e entender a observação, por exemplo: captura do candidato e viewport, estado/jornada observado, relatório de interação, medição e seu ambiente. Um caminho de screenshot não significa que o revisor viu a imagem. O dispatcher textual precisa bloquear julgamento visual quando não tiver acesso efetivo às imagens ou ao protótipo. Não invente capturas, consultas, observações, métricas ou aceites.
 
 Achados da revisão identificam jornada/estado, impacto, gravidade, evidência, correção esperada e o que precisa ser reobservado. O implementador refina; o revisor independente reavalia o candidato e as evidências correspondentes. Testes de componentes, Playwright/axe, screenshots e inspeção manual se complementam. Nenhum deles sozinho comprova usabilidade ou conformidade integral.

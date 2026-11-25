@@ -16,6 +16,8 @@ O processo atualiza a identidade do toolkit e skills, sem gerar solução ou pro
 
 Avalie plugins, skills, agents e ferramentas no próprio levantamento de domínio antes de criar/adotar. Inclua candidatos pertinentes e também uma justificativa quando nenhuma opção for indicada. Recomendações externas de instalar/avaliar precisam de fonte oficial pesquisada e comprovada. Após o aceite, instale somente os itens justificados pelo escopo aprovado; confira suporte ao sistema operacional, permissões, rede e credenciais. Registre o motivo para instalar, adiar ou rejeitar. Se um bloqueio de ambiente impedir uma instalação autorizada, informe sem simular sucesso.
 
+Quando o contexto indicar interface ou jornadas de usuário, avalie o plugin Product Design como candidato opcional e confirme disponibilidade na superfície realmente selecionada. Não trate compatibilidade de ChatGPT/Codex como suporte à CLI, Claude Code ou Cursor. Se indisponível, registre o limite e mantenha as responsabilidades e gates UX internos. Não conecte nem instale o plugin automaticamente; para produto sem interação humana, justifique não aplicabilidade.
+
 ## Utilitários usados pela fábrica
 
 O CTO pode preparar um arquivo temporário ignorado, como .scratch/contexto-inicial.json, contendo apenas os fatos fornecidos. A decisão em .scratch/decisao-tecnologica.json deve estar pesquisada, vinculada ao contexto e aprovada conforme o guia. O contexto deve estar completo e estruturado; texto parcial inicia apenas descoberta. Prepare também .scratch/pesquisa.json conforme [especialista-dominio.md](especialista-dominio.md). Pesquisa indisponível bloqueia a materialização. Não incluir segredos, tokens ou dados pessoais reais.

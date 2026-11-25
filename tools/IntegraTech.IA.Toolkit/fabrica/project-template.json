@@ -164,6 +164,7 @@
     "tools/IntegraTech.IA.Toolkit/scripts/lib/environment-readiness.mjs",
     "tools/IntegraTech.IA.Toolkit/scripts/lib/evaluations.mjs",
     "tools/IntegraTech.IA.Toolkit/scripts/lib/governance.mjs",
+    "tools/IntegraTech.IA.Toolkit/scripts/lib/host-dependencies.mjs",
     "tools/IntegraTech.IA.Toolkit/scripts/lib/installer.mjs",
     "tools/IntegraTech.IA.Toolkit/scripts/lib/interface-design.mjs",
     "tools/IntegraTech.IA.Toolkit/scripts/lib/interface-generator.mjs",
@@ -194,6 +195,7 @@
     "tools/IntegraTech.IA.Toolkit/scripts/lib/traceability-sources.mjs",
     "tools/IntegraTech.IA.Toolkit/scripts/lib/traceability-sync.mjs",
     "tools/IntegraTech.IA.Toolkit/scripts/lib/ui-templates.mjs",
+    "tools/IntegraTech.IA.Toolkit/scripts/lib/ux-gate.mjs",
     "tools/IntegraTech.IA.Toolkit/scripts/lib/verify-report.mjs",
     "tools/IntegraTech.IA.Toolkit/scripts/toolkit.mjs",
     "tools/IntegraTech.IA.Toolkit/scripts/update-template-baseline.mjs",
@@ -234,6 +236,7 @@
     "tools/IntegraTech.IA.Toolkit/tests/technology-fixture.mjs",
     "tools/IntegraTech.IA.Toolkit/tests/technology.test.mjs",
     "tools/IntegraTech.IA.Toolkit/tests/ui-templates.test.mjs",
+    "tools/IntegraTech.IA.Toolkit/tests/ux-gate.test.mjs",
     "tools/IntegraTech.IA.Toolkit/tests/ux-quality.test.mjs",
     "tools/IntegraTech.IA.Toolkit/tests/verify-model.test.mjs"
   ]

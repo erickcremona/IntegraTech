@@ -139,7 +139,7 @@ test('UI candidate fixes UX review requirement before dispatch in addition to co
  const repo=fixture();
  try{
   approveBusiness(repo);generateInterface({repo});
-  const delegation={schema_version:1,task_id:'ui-loop',objective:'Ajustar interface aprovada',business_context:'Contexto registrado',technical_context:'React',scope:['frontend'],out_of_scope:[],assigned_agent:'ui-engineer',supporting_agents:[],required_inputs:[],expected_deliverables:['Interface'],constraints:[],file_ownership:{read:['frontend'],write:['frontend']},risks:[],acceptance_criteria:['Navegação acessível'],validation_commands:[],evidence_required:[],deadline_or_priority:'normal',human_gate:'none'};
+  const delegation={schema_version:1,task_id:'ui-loop',objective:'Ajustar interface aprovada',business_context:'Contexto registrado',technical_context:'React',scope:['frontend'],out_of_scope:[],assigned_agent:'ui-engineer',supporting_agents:[],required_inputs:[],expected_deliverables:['Interface'],constraints:[],file_ownership:{read:['frontend'],write:['frontend']},risks:[],acceptance_criteria:['Navegação acessível'],validation_commands:[],evidence_required:[],deadline_or_priority:'normal',human_gate:'none',experience_impact:{classification:'direct',rationale:'A mudança altera navegação e feedback visível.'}};
   startTask({repo,delegation,phase:'business',provider:'codex'});
   advanceTask({repo,id:'ui-loop',expectedRevision:1,event:{type:'gate_checked'}});
   advanceTask({repo,id:'ui-loop',expectedRevision:2,event:{type:'gate_checked'}});
@@ -148,6 +148,65 @@ test('UI candidate fixes UX review requirement before dispatch in addition to co
   assert.deepEqual(state.engineering.required_reviews,['code','security','ux_accessibility']);
   const validated=await validateCandidate({repo,id:'ui-loop',expectedRevision:state.revision,validator:async()=>({status:'passed',isolation:'unverified',execution_mode:'host_controlled',checks:['inventory','frozen_oracles','host_controls','node-tests-v1'].map(id=>({id,code:0})),environment:{platform:'synthetic',runtime:'test'}})});
   assert.equal(validated.status,'validation_blocked');
+ }finally{rmSync(repo,{recursive:true,force:true});}
+});
+
+test('explicit indirect UX impact requires review even when only backend code changed',async()=>{
+ const {generateInterface}=await import('../scripts/lib/interface-generator.mjs');
+ const {startTask,advanceTask}=await import('../scripts/lib/task-loop.mjs');
+ const {acceptCandidate}=await import('../scripts/lib/engineering-loop.mjs');
+ const repo=fixture();
+ try{
+  approveBusiness(repo);generateInterface({repo});mkdirSync(join(repo,'src'),{recursive:true});writeFileSync(join(repo,'src/main.mjs'),'export const value = "original";');
+  const delegation={schema_version:1,task_id:'indirect-ux',objective:'Alterar erros retornados ao cliente',business_context:'Contexto registrado',technical_context:'React e API',scope:['src'],out_of_scope:[],assigned_agent:'application-engineer',supporting_agents:[],required_inputs:[],expected_deliverables:['Erro coerente'],constraints:[],file_ownership:{read:['.'],write:['.']},risks:[],acceptance_criteria:['Erro apresentado de forma compreensível'],validation_commands:[],evidence_required:[],deadline_or_priority:'normal',human_gate:'none',experience_impact:{classification:'indirect',rationale:'O texto da API é exibido pela jornada de interface.',affected_journeys:['Cadastro']}};
+  startTask({repo,delegation,phase:'business',provider:'codex'});advanceTask({repo,id:'indirect-ux',expectedRevision:1,event:{type:'gate_checked'}});advanceTask({repo,id:'indirect-ux',expectedRevision:2,event:{type:'gate_checked'}});
+  writeFileSync(join(repo,'src/main.mjs'),'export const value = "error changed";');
+  const candidate=acceptCandidate({repo,id:'indirect-ux',expectedRevision:3,profile:'node-tests-v1'});
+  assert.ok(candidate.engineering.required_reviews.includes('ux_accessibility'));
+ }finally{rmSync(repo,{recursive:true,force:true});}
+});
+
+test('unknown UX impact and false not-applicable classification block interface candidates',async()=>{
+ const {generateInterface}=await import('../scripts/lib/interface-generator.mjs');
+ const {startTask,advanceTask}=await import('../scripts/lib/task-loop.mjs');
+ const {acceptCandidate}=await import('../scripts/lib/engineering-loop.mjs');
+ for(const impact of [{classification:'unknown',rationale:'Ainda não avaliado.'},{classification:'not_applicable',rationale:'Sem impacto UX.'}]){
+  const repo=fixture();
+  try{
+   approveBusiness(repo);generateInterface({repo});
+   const delegation={schema_version:1,task_id:'invalid-impact',objective:'Alterar interface',business_context:'Contexto registrado',technical_context:'React',scope:['frontend'],out_of_scope:[],assigned_agent:'ui-engineer',supporting_agents:[],required_inputs:[],expected_deliverables:['UI'],constraints:[],file_ownership:{read:['frontend'],write:['frontend']},risks:[],acceptance_criteria:['Fluxo coerente'],validation_commands:[],evidence_required:[],deadline_or_priority:'normal',human_gate:'none',experience_impact:impact};
+   startTask({repo,delegation,phase:'business',provider:'codex'});advanceTask({repo,id:'invalid-impact',expectedRevision:1,event:{type:'gate_checked'}});advanceTask({repo,id:'invalid-impact',expectedRevision:2,event:{type:'gate_checked'}});
+   writeFileSync(join(repo,'frontend/src/App.tsx'),readFileSync(join(repo,'frontend/src/App.tsx'),'utf8')+'\n// UI changed\n');
+   assert.throws(()=>acceptCandidate({repo,id:'invalid-impact',expectedRevision:3,profile:'node-tests-v1'}),/classificado|diverge/);
+  }finally{rmSync(repo,{recursive:true,force:true});}
+ }
+});
+
+test('UX medium findings remain delivery-visible as approved with remarks after independent review',async()=>{
+ const {generateInterface}=await import('../scripts/lib/interface-generator.mjs');
+ const {startTask,advanceTask}=await import('../scripts/lib/task-loop.mjs');
+ const {acceptCandidate,validateCandidate,reviewCandidate,engineeringStatus}=await import('../scripts/lib/engineering-loop.mjs');
+ const {fingerprint}=await import('../scripts/lib/candidate.mjs');
+ const repo=fixture();
+ try{
+  approveBusiness(repo);generateInterface({repo});
+  const delegation={schema_version:1,task_id:'ux-remarks',objective:'Ajustar confirmação de salvamento',business_context:'Contexto registrado',technical_context:'React',scope:['frontend'],out_of_scope:[],assigned_agent:'ui-engineer',supporting_agents:[],required_inputs:[],expected_deliverables:['Confirmação'],constraints:[],file_ownership:{read:['frontend'],write:['frontend']},risks:[],acceptance_criteria:['O resultado do salvamento fica claro'],validation_commands:[],evidence_required:[],deadline_or_priority:'normal',human_gate:'none',experience_impact:{classification:'direct',rationale:'A alteração muda feedback visível após salvar.',affected_journeys:['Salvar cadastro']}};
+  startTask({repo,delegation,phase:'business',provider:'codex'});advanceTask({repo,id:'ux-remarks',expectedRevision:1,event:{type:'gate_checked'}});advanceTask({repo,id:'ux-remarks',expectedRevision:2,event:{type:'gate_checked'}});
+  writeFileSync(join(repo,'frontend/src/App.tsx'),readFileSync(join(repo,'frontend/src/App.tsx'),'utf8')+'\n// visible feedback adjustment\n');
+  let state=acceptCandidate({repo,id:'ux-remarks',expectedRevision:3,profile:'node-tests-v1'});
+  state=await validateCandidate({repo,id:'ux-remarks',expectedRevision:state.revision,validator:async()=>({status:'passed',isolation:'unverified',execution_mode:'host_controlled',checks:['inventory','frozen_oracles','host_controls','node-tests-v1','ui_build','ui_browser','ui_accessibility'].map(id=>({id,code:0})),environment:{platform:'synthetic',runtime:'test'}})});
+  assert.equal(state.status,'review_pending');
+  const dispatcher=async({repo,task,files,candidate})=>{
+   const type=task.assigned_agent==='ux-accessibility-reviewer'?'ux_accessibility':task.assigned_agent==='code-reviewer'?'code':'security';
+   const finding={finding_id:'UX-001',severity:'medium',title:'A confirmação pode ser mais clara',evidence:'No estado de sucesso a mensagem não informa o próximo passo',path:'frontend/src/App.tsx',line:1,impact:'A pessoa pode hesitar após concluir o cadastro',recommendation:'Indicar o que foi salvo e próximo passo',affected_feature:'Cadastro',affected_flow:'Salvar cadastro',priority:'P2',cause_hypothesis:'Microcopy não cobre a continuidade',dependencies:[],acceptance_criteria:['Mensagem confirma a conclusão e informa próximo passo'],owner:'ui-engineer',required_tests:['Teste de estado de sucesso'],resolution_status:'planned'};
+   const criteria=['task_clarity','visual_hierarchy','visual_identity','interaction_states','responsive_behavior','accessibility','performance'];
+   const report={schema_version:1,task_id:task.task_id,review_type:type,verdict:type==='ux_accessibility'?'approved_with_findings':'approved',findings:type==='ux_accessibility'?[finding]:[],residual_risk:'',...(type==='ux_accessibility'?{ux_assessment:criteria.map(criterion=>({criterion,score:4,evidence:['Protótipo e estado observados no viewport informado']}))}:{})};
+   const path=join(repo,'qa-artifacts',`${task.task_id}.json`);mkdirSync(join(repo,'qa-artifacts'),{recursive:true});writeFileSync(path,JSON.stringify(report));
+   return {status:'completed',verdict:report.verdict,output:path,run_id:task.task_id,candidate_sha256:candidate.sha256,package_sha256:fingerprint(files.map(file=>({path:file,content:candidate.removed.includes(file)?null:readFileSync(join(repo,file),'utf8')})))};
+  };
+  state=await reviewCandidate({repo,id:'ux-remarks',expectedRevision:state.revision,dispatcher});
+  assert.equal(state.status,'ready_for_delivery');
+  const status=engineeringStatus({repo,id:'ux-remarks'});assert.equal(status.delivery_valid,true);assert.equal(status.ux_gate.outcome,'approved_with_remarks');
  }finally{rmSync(repo,{recursive:true,force:true});}
 });
 

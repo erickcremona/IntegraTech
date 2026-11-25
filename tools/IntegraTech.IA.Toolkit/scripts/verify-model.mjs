@@ -9,7 +9,8 @@ import { failureCode } from './lib/verify-report.mjs';
 import { toolkitSourceFingerprint } from './lib/toolkit-audit.mjs';
 const results = [];
 async function command(label, executable, args, cwd = repoRoot) {
-  const result = await runProcess({ command: executable, args, cwd, timeoutMs: 1500000 });
+  console.log(JSON.stringify({ check: label, status: 'running' }));
+  const result = await runProcess({ command: executable, args, cwd, timeoutMs: 60 * 60 * 1000 });
   const ok = result.code === 0 && !result.timedOut && !result.overflow && !result.error;
   results.push({ check: label, status: ok ? 'passed' : 'failed', ...(!ok ? { reason_code: failureCode(result) } : {}) });
   console.log(JSON.stringify(results.at(-1)));
@@ -18,7 +19,13 @@ async function command(label, executable, args, cwd = repoRoot) {
 async function toolkitTests(label, root, name) {
   const directory = join(root, `tools/${name}.IA.Toolkit/tests`);
   const tests = readdirSync(directory).filter(file => file.endsWith('.test.mjs')).map(file => join(directory, file));
-  await command(label, process.execPath, ['--test', '--test-isolation=none', ...tests], root);
+  const reporter = join(root, '.scratch/toolkit-tests.tap');
+  mkdirSync(join(root, '.scratch'), { recursive: true });
+  const result = await runProcess({ command: process.execPath, args: ['--test', '--test-concurrency=4', '--test-reporter=tap', `--test-reporter-destination=${reporter}`, ...tests], cwd: root, timeoutMs: 60 * 60 * 1000, outputPath: reporter });
+  const ok = result.code === 0 && !result.timedOut && !result.overflow && !result.error;
+  results.push({ check: label, status: ok ? 'passed' : 'failed', ...(!ok ? { reason_code: failureCode(result) } : {}) });
+  console.log(JSON.stringify(results.at(-1)));
+  if (!ok) throw new Error(`${label}: falhou (${failureCode(result)}); veja o resumo TAP local em .scratch/toolkit-tests.tap.`);
 }
 try {
   const identity = JSON.parse(readFileSync(join(repoRoot, 'project.json'), 'utf8'));

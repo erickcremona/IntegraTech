@@ -106,14 +106,14 @@ export function prepareProject({ name, provider = 'both', source = sourceRoot, c
   for(const [path,text] of productDocuments({name,context:initialContext,preparation,decision,architecture:architectural,authorship:files.get('AUTHORS.md'),toolkitManual:files.get(`tools/${name}.IA.Toolkit/fabrica/toolkit-manual.md`)})) files.set(path,text);
   return files;
 }
-export function createProject({ name, target, provider = 'both', dryRun = false, context, technologyDecision, architectureDecision, preparation, researchRequest, decisionRepo = sourceRoot }) {
+export function createProject({ name, target, provider = 'both', dryRun = false, context, technologyDecision, architectureDecision, preparation, researchRequest, decisionRepo = sourceRoot, hostDependencies: injectedHostDependencies }) {
   if (typeof target !== 'string' || !target.trim()) throw new Error('destino obrigatório');
   const root = resolve(target);
   const rel = relative(sourceRoot, root);
   if (!rel || (!rel.startsWith('..') && !isAbsolute(rel))) throw new Error('destino deve ficar fora do modelo');
   assertNoLinks(root);
   if (existsSync(root) && (!statSync(root).isDirectory() || readdirSync(root).length)) throw new Error('destino deve ser uma pasta vazia');
-  const hostDependencies = inspectHostDependencies({ repo: sourceRoot, provider });
+  const hostDependencies = injectedHostDependencies ?? inspectHostDependencies({ repo: sourceRoot, provider });
   const files = prepareProject({ name, provider, context, technologyDecision, architectureDecision, preparation, researchRequest, decisionRepo, hostDependencies });
   const capabilityReport = files.get('references/capability-recommendations.md');
   if (!dryRun && ['installation_required', 'verification_required'].includes(hostDependencies.status)) throw new Error(formatInstallationRequest(hostDependencies));

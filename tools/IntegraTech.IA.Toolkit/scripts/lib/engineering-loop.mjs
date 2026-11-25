@@ -12,11 +12,15 @@ import { dispatch } from './dispatcher.mjs';
 import { contained, assertNoLinks, assertSanitized } from './paths.mjs';
 import { inspectInterface } from './interface-profile.mjs';
 import { validateIsolated } from './isolated-validation.mjs';
+import { evaluateUxGate } from './ux-gate.mjs';
 
 const limits = Object.freeze({ attempts: 3, corrections: 2, active_ms: 600000 });
 const profiles = ['node-tests-v1', 'dotnet-offline-v1'];
 const baseReviewTypes = Object.freeze(['code', 'security']);
 function requiredReviewTypes(repo,state,changed){
+ const impact=state.delegation.experience_impact;
+ if(impact?.classification==='unknown')throw new Error('impacto de UX precisa ser classificado antes do candidato');
+ if(impact&&!['direct','indirect','not_applicable'].includes(impact.classification))throw new Error('classificação de impacto UX inválida');
  const registered=existsSync(contained(repo,'references/interface-profile.json'));
  if(!registered){
   if(linkedProject(repo)){
@@ -27,6 +31,7 @@ function requiredReviewTypes(repo,state,changed){
     const full=sourceFile(repo,path);if(!existsSync(full))return false;
     const text=readFileSync(full,'utf8');return /(?:\bfrom\s*['"](?:react(?:['"/])|@angular\/|vue['"]|svelte(?:['"/]))|\b(?:require|import)\s*\(\s*['"](?:react(?:['"/])|@angular\/|vue['"]|svelte(?:['"/]))|\bReact\.createElement\b|\bMicrosoft\.Maui\b|\bRenderTreeBuilder\b|\bdocument\.(?:querySelector|createElement|getElementById)\b|<\/[A-Za-z][\w.:-]*\s*>|<[A-Za-z][\w.:-]*(?:\s[^<>]*)?\s*\/>)/i.test(text);
    });
+   if(['direct','indirect'].includes(impact?.classification))throw new Error('impacto UX exige perfil de interface aprovado antes do candidato');
    if(changed.some(interfaceSourcePath)||inlineUI||signals&&changed.some(path=>/\.(?:[cm]?[jt]s|cs|kt|json)$/i.test(path)))throw new Error('interface existente exige classificação e perfil de interface aprovado antes do candidato');
   }
 
@@ -34,7 +39,9 @@ function requiredReviewTypes(repo,state,changed){
   return [...baseReviewTypes];
  }
  const meta=inspectInterface(repo);
- const affectsUI=state.assigned_agent==='ui-engineer'||changed.some(path=>owns(meta.selection.source_roots,path));
+ const changedUI=state.assigned_agent==='ui-engineer'||changed.some(path=>owns(meta.selection.source_roots,path));
+ if(impact?.classification==='not_applicable'&&changedUI)throw new Error('impacto UX marcado como não aplicável diverge das alterações de interface');
+ const affectsUI=changedUI||['direct','indirect'].includes(impact?.classification);
  if(affectsUI)inspectDesign(repo);
  return affectsUI?[...baseReviewTypes,'ux_accessibility']:[...baseReviewTypes];
 }
@@ -200,8 +207,12 @@ export async function reviewCandidate({ repo, id, expectedRevision, dispatcher =
             const report=JSON.parse(text);validateContract('review',report,task.task_id);
             if(report.review_type!==type||report.verdict!==response.verdict)throw new Error('parecer divergente');
             state.engineering.reviews.push({type,run_id:response.run_id,path,sha256:fingerprint(text),package_sha256:expectedPackageHash,candidate_sha256:state.engineering.candidate_sha256,verdict:report.verdict});
-            if(report.verdict==='blocked')state.status='review_blocked';
-            else if((report.verdict!=='approved'||report.findings.length)&&state.status!=='review_blocked')state.status='correction_pending';
+            if(type==='ux_accessibility'){
+              const impact=state.delegation.experience_impact;
+              const outcome=evaluateUxGate({applicability:impact?.classification==='indirect'?'indirect':'direct',dependency:'available',evidenceAvailable:true,review:report});
+              if(outcome.outcome==='blocked')state.status='review_blocked';
+              else if(outcome.outcome==='rejected'&&state.status!=='review_blocked')state.status='correction_pending';
+            }else if(report.verdict!=='approved'||report.findings.length){state.status='correction_pending';}
           }catch{state.status='review_blocked';}
         }
         if(state.status!=='reviewing')break;
@@ -226,9 +237,20 @@ export function engineeringStatus({ repo, id }) {
       && (state.oracle_files ?? []).every(item => fingerprint(readFileSync(contained(contained(taskPaths(repo, id).dir, 'oracles'), item.path))) === item.sha256)
       && state.engineering.profile_sha256 === fingerprint(readFileSync(new URL('../../fabrica/validation-profiles.json', import.meta.url)))
       && JSON.stringify(requiredReviewTypes(repo,state,state.engineering.changed_files))===JSON.stringify(state.engineering.required_reviews)
-      && state.engineering.required_reviews.every(type => state.engineering.reviews.some(item => item.type === type && item.verdict === 'approved' && item.candidate_sha256 === state.engineering.candidate_sha256 && fingerprint(readFileSync(contained(repo, item.path))) === item.sha256));
+      && state.engineering.required_reviews.every(type => {
+        const item=state.engineering.reviews.find(review=>review.type===type&&review.candidate_sha256===state.engineering.candidate_sha256);
+        if(!item||fingerprint(readFileSync(contained(repo,item.path)))!==item.sha256)return false;
+        if(type!=='ux_accessibility')return item.verdict==='approved';
+        const report=JSON.parse(readFileSync(contained(repo,item.path),'utf8'));
+        const impact=state.delegation.experience_impact;
+        return ['approved','approved_with_remarks'].includes(evaluateUxGate({applicability:impact?.classification==='indirect'?'indirect':'direct',dependency:'available',evidenceAvailable:true,review:report}).outcome);
+      });
   } catch { deliveryValid = false; }
-  return { ...state, effective_status: state.status === 'ready_for_delivery' && !deliveryValid ? 'stale' : state.status, delivery_valid: deliveryValid, automatic_executor: false };
+  const uxReview=state.engineering?.reviews?.find(item=>item.type==='ux_accessibility');
+  let ux_gate=null;
+  if(uxReview){try{const impact=state.delegation.experience_impact;ux_gate=evaluateUxGate({applicability:impact?.classification==='indirect'?'indirect':'direct',dependency:'available',evidenceAvailable:true,review:JSON.parse(readFileSync(contained(repo,uxReview.path),'utf8'))});}catch{ux_gate={outcome:'blocked',reason:'ux_gate_record_unavailable'};}}
+  else if(state.delegation?.experience_impact?.classification==='not_applicable')ux_gate={outcome:'not_applicable',reason:state.delegation.experience_impact.rationale};
+  return { ...state, ux_gate, effective_status: state.status === 'ready_for_delivery' && !deliveryValid ? 'stale' : state.status, delivery_valid: deliveryValid, automatic_executor: false };
 }
 
 export function handoffTask({ repo, id, expectedRevision, provider }) {

@@ -18,3 +18,12 @@ test('verificação integral não requer runtime nem projetos de produto', () =>
   assert.match(workflow, /npm run verify/);
   assert.doesNotMatch(workflow, /setup-dotnet|dotnet-version|\bdotnet\b/i);
 });
+
+test('timeout global de verify cobre a suíte serial medida', () => {
+  assert.match(source, /timeoutMs:\s*60\s*\*\s*60\s*\*\s*1000/);
+  assert.match(source, /--test-concurrency=4/);
+  assert.doesNotMatch(source, /--test-isolation=none/);
+  assert.match(source, /--test-reporter=tap/);
+  assert.match(source, /--test-reporter-destination=/);
+  assert.match(source, /outputPath:\s*reporter/);
+});
