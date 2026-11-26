@@ -52,6 +52,12 @@ export function validateContract(kind, value, expectedTaskId) {
   if (expectedTaskId && value.task_id !== expectedTaskId) throw new Error('task_id divergente');
   if(kind==='delegation'&&value.experience_impact&&!value.experience_impact.rationale.trim())throw new Error('classificação de impacto UX exige justificativa');
   if (kind === 'review') {
+    if(value.review_type==='security'){
+      for(const finding of value.findings){
+        if(!Object.hasOwn(finding,'security_reference')||!finding.security_reference.trim())throw new Error('achado de segurança exige security_reference OWASP aplicável');
+        if(!/^OWASP\b/i.test(finding.security_reference.trim())&&!/^https:\/\/(?:[\w-]+\.)*owasp\.org(?:\/|$)/i.test(finding.security_reference.trim()))throw new Error('achado de segurança exige referência OWASP identificável');
+      }
+    }
     if(value.review_type==='ux_accessibility'&&['approved','approved_with_findings'].includes(value.verdict)){
       const criteria=['task_clarity','visual_hierarchy','visual_identity','interaction_states','responsive_behavior','accessibility','performance'];
       if(!Array.isArray(value.ux_assessment)||new Set(value.ux_assessment.map(item=>item.criterion)).size!==criteria.length||criteria.some(criterion=>!value.ux_assessment.some(item=>item.criterion===criterion&&item.score>=4&&item.score<=5&&item.evidence.every(text=>text.trim().length>0))))throw new Error('aprovação UX exige avaliação completa, evidências e mínimo 4/5 em cada dimensão');

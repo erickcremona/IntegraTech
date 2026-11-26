@@ -236,6 +236,7 @@
     "tools/IntegraTech.IA.Toolkit/tests/request-routing.test.mjs",
     "tools/IntegraTech.IA.Toolkit/tests/sdd-plan.test.mjs",
     "tools/IntegraTech.IA.Toolkit/tests/sdd-workflow.test.mjs",
+    "tools/IntegraTech.IA.Toolkit/tests/security-review.test.mjs",
     "tools/IntegraTech.IA.Toolkit/tests/technology-fixture.mjs",
     "tools/IntegraTech.IA.Toolkit/tests/technology.test.mjs",
     "tools/IntegraTech.IA.Toolkit/tests/ui-templates.test.mjs",

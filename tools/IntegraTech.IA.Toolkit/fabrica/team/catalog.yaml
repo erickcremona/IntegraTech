@@ -59,7 +59,7 @@
       "read_only": true,
       "skill": "integratech-seguranca",
       "review_type": "security",
-      "description": "Revisa segurança, credenciais, isolamento e efeitos externos."
+      "description": "Revisa decisões de segurança e código com evidências e referências OWASP contextualizadas; somente leitura."
     },
     {
       "name": "data-migration-reviewer",

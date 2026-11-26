@@ -91,6 +91,10 @@
             "type": "string",
             "minLength": 1
           },
+          "security_reference": {
+            "type": "string",
+            "minLength": 1
+          },
           "finding_id": { "type": "string", "minLength": 1 },
           "affected_component": { "type": "string", "minLength": 1 },
           "affected_module": { "type": "string", "minLength": 1 },

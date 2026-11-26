@@ -40,6 +40,8 @@ Arquivos do modelo precisam corresponder ao baseline versionado. Alterações pr
 
 A adoção preserva os gates de escopo e plano funcional. A skill de domínio e sua pesquisa são geradas, mas a conclusão exige revisão e otimização global com coherence-run/coherence-check. Isso não concede autorização para implementar, push ou deploy.
 
+O produto adotado recebe a skill `integratech-seguranca` e o agente existente `security-reviewer` conforme os providers selecionados. O CTO os aciona em decisões de segurança e revisões de código que alterem esses controles. A skill usa referências OWASP conforme tipo de produto e risco; Top 10 é lente de conscientização para web, e ASVS só é aplicado com requisitos/versão definidos. A presença dos arquivos não instala scanners nem comprova revisão, teste de segurança ou certificação do produto.
+
 ## Recuperação
 
 Antes de substituir os arquivos, a operação guarda snapshots somente dos arquivos controlados, os novos arquivos e journal em .scratch/adoptions/adopt-.... Não copia .git ou credenciais. Essa pasta continua ignorada pelo Git e deve permanecer local, pois pode conter o contexto de negócio informado.

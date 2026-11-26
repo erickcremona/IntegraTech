@@ -10,6 +10,8 @@ No primeiro uso, o agente executa `npm run toolkit -- doctor --quick`. O comando
 
 Em demandas de produto, registre o impacto na experiência como direto, indireto, não aplicável ou desconhecido, com justificativa. UI alterada é direta; mudança backend/regra/dado que modifique uma jornada pode ser indireta. Aplique `evaluateUxGate`: desconhecido, evidência/revisão necessária indisponível ou dependência necessária sem alternativa executada resulta em bloqueado. Não aplicável precisa de justificativa e não pode contrariar mudanças de UI observadas. Achados recebem identificador, impacto, severidade, prioridade, responsável, solução, aceite e testes; após correção, a revisão independente verifica resolução antes do fechamento.
 
+Em decisões de segurança, o CTO aciona o `security-reviewer` com `integratech-seguranca`; a revisão de código de cada candidato também inclui esse reviewer. Ele usa controles OWASP aplicáveis ao tipo de produto, exige referência OWASP em cada achado e bloqueia quando evidência/revisão necessária estiver indisponível. Isso não instala scanners nem certifica o produto.
+
 Exemplo de primeira mensagem:
 
 > Meu projeto se chamará AgendaFacil. Quero resolver o problema de agendamentos feitos por mensagens, com horários duplicados e dificuldade para confirmar atendimentos. Ajude-me a entender o contexto e pesquise as tecnologias adequadas antes de implementar.

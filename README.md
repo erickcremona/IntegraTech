@@ -49,7 +49,7 @@ mindmap
       Design gráfico e animações
     Validação e entrega
       Testes isolados
-      Código e segurança em paralelo
+      Código e segurança OWASP em paralelo
       Análises independentes sem escrita
       Checkpoints por tarefa
       Retomada e evolução
