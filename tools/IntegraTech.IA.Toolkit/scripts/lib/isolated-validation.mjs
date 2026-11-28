@@ -5,6 +5,7 @@ import { createHash } from 'node:crypto';
 import { tmpdir, platform } from 'node:os';
 import { join, dirname, isAbsolute } from 'node:path';
 import { scanText } from './secret-scan.mjs';
+import { symlinkCapability } from './host-capabilities.mjs';
 const MAX_FILE = 2 * 1024 * 1024, MAX_TOTAL = 32 * 1024 * 1024, MAX_FILES = 2048;
 function result(status, isolation, checks, reason_code) {
  return {status,isolation,execution_mode:'host_controlled',checks,environment:{platform:platform(),runtime:`node-${process.versions.node}`},...(reason_code?{reason_code}:{})};
@@ -76,7 +77,7 @@ async function inventoryBytes(root,entries,deadline) {
   }
  return buffers;
 }
-export async function validateIsolated({repo,files,profile,timeoutMs=120000,oracles,requestedTests=[]}={}) {
+export async function validateIsolated({repo,files,profile,timeoutMs=120000,oracles,requestedTests=[],symlinkProbe=symlinkCapability}={}) {
  const checks=[]; let staging;
  const blocked=code=>result('blocked','unverified',checks,code);
  if(!['node-tests-v1','dotnet-offline-v1'].includes(profile)) return blocked('unsupported_profile');
@@ -106,6 +107,8 @@ export async function validateIsolated({repo,files,profile,timeoutMs=120000,orac
   if(profile==='dotnet-offline-v1') for(const [path] of entries) if(path.endsWith('.csproj')) for(const output of ['bin','obj']) outputPaths.push(join(dirname(path),output));
   if(entries.some(([path])=>outputPaths.some(output=>path===output||path.startsWith(output+'/')))) return blocked('unsafe_inventory');
   const tests=frozenEntries.map(([p])=>p).filter(p=>/(?:^|\/)(?:[^/]+\.)?(?:test|spec)\.(?:mjs|cjs|js)$/.test(p)).sort();
+  const symlinkTests=[...frozen,...buffers].filter(([path,data])=>tests.includes(path)&&/\b(?:symlinkSync|symlink)\s*\(/.test(data.toString('utf8')));
+  if(symlinkTests.length){const capability=await symlinkProbe();if(capability.status==='unavailable'||capability.available===false)return blocked('symlink_unavailable');}
   let commands, dotnetRoot;
   if(profile==='node-tests-v1') { if(!tests.length)return blocked('no_tests'); commands=[[process.execPath,'--test','--test-reporter=tap','--test-isolation=process',...tests]]; }
   else {

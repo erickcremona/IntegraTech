@@ -2,11 +2,12 @@ import { adoptProject as preparedAdopt } from './generation-fixture.mjs';
 import { fullContext } from './domain-fixture.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync, writeFileSync, mkdirSync, mkdtempSync, existsSync } from 'node:fs';
+import { readFileSync, writeFileSync, mkdirSync, mkdtempSync, existsSync, readdirSync, rmSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { tmpdir } from 'node:os';
 import { execFileSync } from 'node:child_process';
+import {symlinkTest} from './host-capability-fixture.mjs';
 const root = fileURLToPath(new URL('../../../', import.meta.url));
 const prefix = 'tools/IntegraTech.IA.Toolkit/';
 const model = JSON.parse(readFileSync(join(root, 'project.json'), 'utf8')).is_model;
@@ -151,7 +152,20 @@ test('adoção: escrita parcial em preparação não trunca o arquivo de destino
   finally { fs.default.writeFileSync = original; syncBuiltinESMExports(); }
   assert.equal(readFileSync(file, 'utf8'), 'conteúdo original íntegro');
 });
-test('adoção: recovery independente e links não contornam a proteção', options, async t => {
+test('atomic exclusive write refuses collisions and preserves existing bytes',async t=>{
+ const {atomicFileWrite}=await import('../scripts/lib/adoption-recovery.mjs');const dir=mkdtempSync(join(tmpdir(),'atomic-collision-'));t.after(()=>rmSync(dir,{recursive:true,force:true}));
+ const file=join(dir,'artifact.json');writeFileSync(file,'existing bytes');
+ assert.throws(()=>atomicFileWrite(file,'replacement',{exclusive:true}),error=>error.code==='EEXIST');
+ assert.equal(readFileSync(file,'utf8'),'existing bytes');assert.deepEqual(readdirSync(dir),['artifact.json']);
+});
+test('atomic exclusive write cleans its temporary after a permission failure and preserves destination',async t=>{
+ const {atomicFileWrite}=await import('../scripts/lib/adoption-recovery.mjs');const fs=await import('node:fs');const {syncBuiltinESMExports}=await import('node:module');const dir=mkdtempSync(join(tmpdir(),'atomic-eperm-'));t.after(()=>rmSync(dir,{recursive:true,force:true}));
+ const file=join(dir,'artifact.json');writeFileSync(file,'existing bytes');const original=fs.default.linkSync;fs.default.linkSync=()=>{throw Object.assign(new Error('private host detail'),{code:'EPERM'});};syncBuiltinESMExports();
+ try{assert.throws(()=>atomicFileWrite(file,'replacement',{exclusive:true}),error=>error.code==='EPERM');}
+ finally{fs.default.linkSync=original;syncBuiltinESMExports();}
+ assert.equal(readFileSync(file,'utf8'),'existing bytes');assert.deepEqual(readdirSync(dir),['artifact.json']);
+});
+symlinkTest(test,'adoção: recovery independente e links não contornam a proteção', options, async t => {
   const f = await fixture();
   const { symlinkSync, unlinkSync } = await import('node:fs');
   const original = readFileSync(join(f.repo, 'README.md'));

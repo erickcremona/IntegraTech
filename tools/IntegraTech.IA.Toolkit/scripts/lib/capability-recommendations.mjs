@@ -1,10 +1,32 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { normalizeInitialContext } from './business-context.mjs';
+import { digest } from './domain-specialist.mjs';
+import { contained } from './paths.mjs';
 
 export const recommendationCategories = Object.freeze(['plugins', 'skills', 'agents', 'tools']);
 const contextFields = new Set(['problem', 'current_situation', 'stakeholders', 'desired_outcomes', 'success_criteria', 'scope', 'out_of_scope', 'known_rules', 'data', 'constraints', 'integrations']);
 const recommendationsFor = preparation => preparation.capability_recommendations;
 const markdownText = value => String(value).replace(/[\r\n]+/g, ' ').replace(/[\\`*_{}\[\]()<>#+.!|]/g, '\\$&');
+
+export function capabilityRecommendationsStatus({repo,context}={}) {
+  const path='references/capability-recommendations.md';const reportPath=contained(repo,path);
+  if(!existsSync(reportPath))return {status:'missing',path};
+  const text=readFileSync(reportPath,'utf8');
+  const bound=text.match(/Este relatório está vinculado ao contexto SHA-256 `([a-f0-9]{64})`\./)?.[1];
+  if(!bound)return {status:'unbound',path};
+  const identityPath=contained(repo,'project.json');
+  if(existsSync(identityPath)&&JSON.parse(readFileSync(identityPath,'utf8')).is_model===true)return {status:'not_applicable',path};
+  const statePath=contained(repo,'references/project-state.json');
+  const state=existsSync(statePath)?JSON.parse(readFileSync(statePath,'utf8')):{};
+  let current;
+  try{current=context?digest(JSON.stringify(normalizeInitialContext(context))):digest(JSON.stringify(normalizeInitialContext(JSON.parse(readFileSync(contained(repo,state.context_path??'references/business-context.json'),'utf8')))));}
+  catch{return {status:'context_unavailable',path,report_context_sha256:bound};}
+  const contentHash=digest(text);
+  const integrity=state.capability_recommendations_sha256;
+  const status=bound===current&&(!integrity||integrity===contentHash)?'current':'stale';
+  return {status,path,report_context_sha256:bound,current_context_sha256:current,...(integrity?{integrity_matches:integrity===contentHash}:{})};
+}
 
 export function inspectCapabilityRecommendations({ repo, preparation }) {
   const assessment = recommendationsFor(preparation);

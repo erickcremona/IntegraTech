@@ -9,6 +9,7 @@ import { inspectInterface } from './interface-profile.mjs';
 import { inspectTechnologyDecision } from './technology-decision.mjs';
 import { inspectSpecialist, inspectConsultation, readDocument } from './domain-workflow.mjs';
 import { validateContract } from './contracts.mjs';
+import { capabilityRecommendationsStatus } from './capability-recommendations.mjs';
 
 export const factoryRoot = new URL('../../fabrica/', import.meta.url);
 export const catalog = JSON.parse(readFileSync(new URL('team/catalog.yaml', factoryRoot), 'utf8'));
@@ -40,6 +41,11 @@ export function precheck(repo, phase) {
     const contextText = read(state.context_path);
     const context = validateContract('business-context', JSON.parse(contextText));
     assertMeaningful(context);
+    if(['design','business'].includes(phase)){
+      const recommendations=capabilityRecommendationsStatus({repo,context});
+      const identity=JSON.parse(read('project.json'));
+      if(identity.is_model===false&&recommendations.status!=='current'&&(recommendations.status!=='missing'||Boolean(state.capability_recommendations_sha256)))return result(false,`Relatório de recomendações de capacidades ${recommendations.status}; reavalie contra o contexto atual antes de apresentar recomendações como correntes.`);
+    }
     inspectSpecialist(repo);
     let selectedInterface;
     if (state.technology_decision_path) {

@@ -68,6 +68,8 @@ mindmap
 
 [Fluxo de uso do toolkit](docs/inicio/fluxo-toolkit.md) · [Execução SDD](docs/inicio/sdd.md)
 
+Para acompanhar um projeto aprovado, use `sdd-status`: ele calcula a fase atual a partir dos checkpoints e informa se as recomendações de capacidades ainda correspondem ao contexto. Depois de alterar o contexto, reavalie e valide o relatório antes de apresentá-lo como atual.
+
 **Contexto e pesquisa → decisões → system design quando justificado → especificação e desenho → plano faseado aprovado → tarefas → testes e revisão → checkpoints → entrega e evolução.**
 
 | Etapa | O que você faz | O que o toolkit prepara |

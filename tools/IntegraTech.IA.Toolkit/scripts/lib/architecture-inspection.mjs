@@ -39,11 +39,13 @@ export function architectureReceiptEvidence(repo,decision,receipt){
   const path=`qa-artifacts/loops/${receipt.run_id}/state.json`;
   if(fingerprint(readFileSync(contained(repo,path)))!==receipt.run_sha256)return false;
   const run=architectureRead(repo,path),e=run.engineering,v=e?.validation;
-  const project=`tests/${decision.layout.name}.Arquitetura.Tests/${decision.layout.name}.Arquitetura.Tests.csproj`;
-  if(receipt.plan_sha256!==run.delegation?.sdd?.plan_sha256||run.id!==receipt.run_id||run.phase!=='business'||run.status!=='ready_for_delivery'||e?.profile!=='dotnet-offline-v1'||v?.status!=='passed'||v.execution_mode!=='host_controlled'||v.isolation!=='unverified'||v.candidate_sha256!==e.candidate_sha256||fingerprint(e.files)!==e.candidate_sha256)return false;
-  if(!v.test_files?.some(f=>f.path===project&&e.files.some(c=>c.path===f.path&&c.sha256===f.sha256)))return false;
-  if(!['inventory','frozen_oracles','host_controls','dotnet-offline-v1'].every(id=>v.checks?.some(c=>c.id===id&&c.code===0)))return false;
-  if(v.oracle_sha256!==fingerprint(run.oracle_files)||!run.oracle_files.every(f=>fingerprint(readFileSync(contained(repo,`qa-artifacts/loops/${run.id}/oracles/${f.path}`)))===f.sha256))return false;
+  const profile=decision.migration?.validation_profile;
+  if(receipt.plan_sha256!==run.delegation?.sdd?.plan_sha256||run.id!==receipt.run_id||run.phase!=='business'||run.status!=='ready_for_delivery'||e?.profile!==profile||v?.status!=='passed'||v.execution_mode!=='host_controlled'||v.isolation!=='unverified'||v.candidate_sha256!==e.candidate_sha256||fingerprint(e.files)!==e.candidate_sha256)return false;
+  const runnable=profile==='node-tests-v1'?/(?:^|\/)(?:[^/]+\.)?(?:test|spec)\.(?:mjs|cjs|js)$/:profile==='dotnet-offline-v1'?/^tests\/[^/]*(?:Architecture|Arquitetura)[^/]*\/[^/]+\.csproj$/i:null;
+  if(!runnable||!Array.isArray(run.oracle_files)||!run.oracle_files.length||!Array.isArray(v.test_files)||!v.test_files.length)return false;
+  if(!v.test_files.some(f=>runnable.test(f.path)&&e.files.some(c=>c.path===f.path&&c.sha256===f.sha256)&&run.oracle_files.some(o=>o.path===f.path&&o.sha256===f.sha256)&&/^([a-f0-9]{64})$/.test(f.sha256)))return false;
+  if(!['inventory','frozen_oracles','host_controls',profile].every(id=>v.checks?.some(c=>c.id===id&&c.code===0)))return false;
+  if(v.oracle_sha256!==fingerprint(run.oracle_files)||!run.oracle_files.every(f=>typeof f.path==='string'&&/^([a-f0-9]{64})$/.test(f.sha256)&&fingerprint(readFileSync(contained(repo,`qa-artifacts/loops/${run.id}/oracles/${f.path}`)))===f.sha256))return false;
   const types=e.required_reviews;if(!Array.isArray(types)||!['code','security'].every(t=>types.includes(t))||new Set(types).size!==types.length)return false;
   if(!types.every(type=>e.reviews?.some(r=>r.type===type&&r.verdict==='approved'&&r.candidate_sha256===e.candidate_sha256&&fingerprint(readFileSync(contained(repo,r.path)))===r.sha256)))return false;
   return true;

@@ -6,6 +6,7 @@ import {inspectSDDPlan} from './sdd-plan.mjs';
 import {precheck} from './governance.mjs';
 import {contained,assertSanitized} from './paths.mjs';
 import {atomicFileWrite} from './adoption-recovery.mjs';
+import {capabilityRecommendationsStatus} from './capability-recommendations.mjs';
 import {fingerprint,inventory,changes,owns} from './candidate.mjs';
 export function sddRead(repo,path){const full=contained(repo,path);const stat=lstatSync(full);if(!stat.isFile()||stat.size>1024*1024)throw new Error('documento SDD inválido');const text=readFileSync(full,'utf8');assertSanitized(text);return {text,value:JSON.parse(text)};}
 export function sddRequired(repo){const state=sddRead(repo,'references/project-state.json').value;return state.execution_workflow==='sdd-v2'||state.plan_path&&sddRead(repo,state.plan_path).value.schema_version===2;}
@@ -63,7 +64,12 @@ export function sddStatus({repo}){
  const {action,path,plan}=actionPlan(repo);const completed=[];
  for(const task of action.tasks)if(existsSync(contained(repo,receiptPath(action,task.id)))){verifyReceipt(repo,action,task.id);completed.push(task.id);}
  verifySDDFrontier(repo,action);
- return {status:completed.length===action.tasks.length?'completed':'in_progress',path,completed,phases:plan.phases.map(phase=>({id:phase.id,completed:action.tasks.filter(task=>task.phase_id===phase.id).every(task=>completed.includes(task.id))})),ready:action.tasks.filter(task=>!completed.includes(task.id)&&task.depends_on.every(id=>completed.includes(id))).map(task=>task.id)};
+ const phases=plan.phases.map(phase=>({id:phase.id,completed:action.tasks.filter(task=>task.phase_id===phase.id).every(task=>completed.includes(task.id))}));
+ const ready=action.tasks.filter(task=>!completed.includes(task.id)&&task.depends_on.every(id=>completed.includes(id))).map(task=>task.id);
+ const projectState=sddRead(repo,'references/project-state.json').value;
+ const status=completed.length===action.tasks.length?'completed':'in_progress';
+ const activePhase=phases.find(phase=>!phase.completed)?.id??'completed';
+ return {status,path,completed,phases,ready,project_progress:{source:'references/project-state.json + approved SDD plan/checkpoints',scope_status:projectState.scope_status,plan_gate:projectState.plan_gate,active_phase:activePhase,business_implementation:status==='completed'?'completed':ready.length?'ready':'blocked'},capability_recommendations:capabilityRecommendationsStatus({repo})};
 }
 
 export function verifySDDFrontier(repo,action,delegation){

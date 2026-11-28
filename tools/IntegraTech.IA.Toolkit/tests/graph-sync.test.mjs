@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {mkdirSync,mkdtempSync,readFileSync,writeFileSync,existsSync,symlinkSync} from 'node:fs';
 import {dirname,join} from 'node:path';
 import {tmpdir} from 'node:os';
+import {symlinkTest} from './host-capability-fixture.mjs';
 import {createHash} from 'node:crypto';
 import {fullContext} from './domain-fixture.mjs';
 import {decisionFor} from './technology-fixture.mjs';
@@ -69,16 +70,20 @@ test('sync: não elimina nó gerenciado referenciado manualmente',async()=>{
  f.context.scope.shift();f.save(f.state.context_path,f.context);
  assert.equal(syncGraph({repo:f.repo,acceptChanges:true}).status,'blocked');assert.ok(f.graph().nodes.some(n=>n.id===req.id));
 });
-test('sync: caminhos/links/locks e fonte malformada falham sem sobrescrever',async()=>{
+test('sync: caminhos/locks e fonte malformada falham sem sobrescrever',async()=>{
  const {syncGraph}=await import(moduleUrl);
- for(const scenario of ['escape','symlink','lock','json']){
+ for(const scenario of ['escape','lock','json']){
  const f=fixture(),before=readFileSync(join(f.repo,'references/traceability-graph.json'));
  if(scenario==='escape'){f.state.context_path='../escape.json';f.save('references/project-state.json',f.state);}
- if(scenario==='symlink'){symlinkSync(join(f.repo,'references'),join(f.repo,'linked'),'junction');f.state.context_path='linked/business-context.json';f.save('references/project-state.json',f.state);}
  if(scenario==='lock')f.save('references/traceability-graph.json.lock','existing lock');
  if(scenario==='json')f.save(f.state.context_path,'{private-invalid');
  assert.equal(syncGraph({repo:f.repo}).status,'blocked');assert.deepEqual(readFileSync(join(f.repo,'references/traceability-graph.json')),before);
  }
+});
+symlinkTest(test,'sync: rejeita fonte atravessada por junction',async()=>{
+ const {syncGraph}=await import(moduleUrl);const f=fixture();const before=readFileSync(join(f.repo,'references/traceability-graph.json'));
+ symlinkSync(join(f.repo,'references'),join(f.repo,'linked'),'junction');f.state.context_path='linked/business-context.json';f.save('references/project-state.json',f.state);
+ assert.equal(syncGraph({repo:f.repo}).status,'blocked');assert.deepEqual(readFileSync(join(f.repo,'references/traceability-graph.json')),before);
 });
 test('sync: CLI e rota do agente são reais e retomada mantém os gates',async()=>{
  const f=fixture();const {main}=await import('../scripts/toolkit.mjs');

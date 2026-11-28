@@ -7,6 +7,8 @@ import { createHash } from 'node:crypto';
 import { inspectSDDPlan } from '../scripts/lib/sdd-plan.mjs';
 import { architectureDigest, architectureContextHash, architectureTechnologyHash } from '../scripts/lib/architecture-decision.mjs';
 import { fullContext } from './domain-fixture.mjs';
+import { symlinkCapability } from '../scripts/lib/host-capabilities.mjs';
+const symlinkHost=symlinkCapability();
 
 const hash = bytes => createHash('sha256').update(bytes).digest('hex');
 function fixture(t) {
@@ -93,7 +95,7 @@ const invalidCases = {
   'rejects symlinked input': f => { symlinkSync(join(f.repo, 'references'), join(f.repo, 'references/linked'), 'junction'); f.plan.specification_path = 'references/linked/functional-spec.json'; },
   'rejects symlinked ownership ancestor': f => { symlinkSync(join(f.repo, 'tests'), join(f.repo, 'linked-tests'), 'junction'); f.plan.phases[0].tasks[0].write_files.push('linked-tests/new.test.mjs'); }
 };
-for (const [name, mutate] of Object.entries(invalidCases)) test(`SDD ${name}`, t => {
+for (const [name, mutate] of Object.entries(invalidCases)) test(`SDD ${name}`, ...(name.includes('symlinked')&&symlinkHost.status==='unavailable'?[{skip:`${symlinkHost.reason_code} (${symlinkHost.error_code}); host must permit directory junctions/symlinks to execute this security oracle.`}]:[]), t => {
   const f = fixture(t); mutate(f); assert.throws(() => inspectSDDPlan(f));
 });
 for (const path of ['../outside.json', '/tmp/outside.json', './references/functional-spec.json', 'references/../references/functional-spec.json', 'references//functional-spec.json', 'references\\functional-spec.json', 'references/functional-spec.json/']) test(`SDD rejects noncanonical path ${path}`, t => {
@@ -154,6 +156,9 @@ function installManagedArchitecture(f) {
 
 test('architecture-managed SDD requires evidenced impact per task and rejects under-classification', t => {
   const f = fixture(t); installManagedArchitecture(f);
+  assert.notEqual(f.contextHash,architectureContextHash(fullContext),'SDD and traceability bind raw context bytes while architecture uses normalized semantic context.');
+  assert.equal(f.plan.context_sha256,f.contextHash);
+  assert.equal(f.specification.context_sha256,f.contextHash);
   assert.equal(inspectSDDPlan(f).tasks.length, 2);
   delete f.plan.phases[0].tasks[0].architecture_impact;
   assert.throws(() => inspectSDDPlan(f), /impacto arquitetural bloqueado/);

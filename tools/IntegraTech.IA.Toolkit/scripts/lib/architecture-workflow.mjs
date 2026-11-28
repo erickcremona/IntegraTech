@@ -25,6 +25,6 @@ export function completeArchitecture({repo}){
  if(!architectureReceiptEvidence(repo,current.decision,receipt))throw new Error('Evidências arquiteturais inconsistentes');
  if(existsSync(contained(repo,path))){if(architectureCompleted(repo))return {status:'unchanged',path};throw new Error('Recibo existente inválido; preservar histórico e replanejar');}
  mkdirSync(dirname(contained(repo,path)),{recursive:true});atomicFileWrite(contained(repo,path),JSON.stringify(receipt,null,2)+'\n',{exclusive:true});
- return {status:'completed',path,assurance:'observed_sdd_delivery_with_selected_dotnet_validator'};
+ return {status:'completed',path,assurance:`observed_sdd_delivery_with_${current.decision.migration.validation_profile}_validator`};
 }
 export function reviewArchitecture({repo}){const status=architectureStatus({repo});try{if(status.status==='migration_pending'&&architectureCompleted(repo))return {...status,status:'consistent'};}catch{}return status;}

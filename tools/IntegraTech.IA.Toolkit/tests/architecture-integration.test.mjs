@@ -6,6 +6,7 @@ import {tmpdir} from 'node:os';
 import {generationOptions} from './generation-fixture.mjs';
 import {createProject} from '../scripts/lib/project-generator.mjs';
 import {architectureDigest,architectureTechnologyHash} from '../scripts/lib/architecture-decision.mjs';
+import {fingerprint} from '../scripts/lib/candidate.mjs';
 import {architectureStatus,architectureSourceSnapshot,inspectArchitectureGraph} from '../scripts/lib/architecture-inspection.mjs';
 import {completeArchitecture} from '../scripts/lib/architecture-workflow.mjs';
 const temporary=t=>{const repo=mkdtempSync(join(tmpdir(),'arch-integration-'));t.after(()=>rmSync(repo,{recursive:true,force:true}));return repo;};
@@ -17,6 +18,8 @@ test('materialization records approved simple and modular architecture for futur
  if(profile==='modular-monolith')d.requirements.modules=[{name:'Requests',depends_on:[],context_refs:[{pointer:'/scope/0',quote:args.context.scope[0]}]},{name:'Owners',depends_on:['Requests'],context_refs:[{pointer:'/known_rules/0',quote:args.context.known_rules[0]}]}];
  d.approval.decision_sha256=architectureDigest(d);
  createProject(args);assert.equal(existsSync(join(target,'src')),false);
+ const state=JSON.parse(readFileSync(join(target,'references/project-state.json'),'utf8'));
+ assert.equal(state.capability_recommendations_sha256,fingerprint(readFileSync(join(target,'references/capability-recommendations.md'))));
  assert.equal(architectureStatus({repo:target}).status,'decision_recorded');
  assert.equal(architectureStatus({repo:target}).validation_status,'not_run');
  const before=architectureSourceSnapshot(target);writeFileSync(join(target,'references/unrelated-note.md'),'Control update');assert.equal(architectureSourceSnapshot(target),before);

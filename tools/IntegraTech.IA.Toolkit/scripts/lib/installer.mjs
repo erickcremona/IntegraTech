@@ -52,7 +52,7 @@ export function expectedFiles(provider) {
   const skills = readdirSync(join(toolkitRoot, 'fabrica/skills')).map(name => [name, readFileSync(join(toolkitRoot, 'fabrica/skills', name, 'SKILL.md'), 'utf8')]);
   const identity = JSON.parse(readFileSync(join(repoRoot,'project.json'),'utf8'));
   for (const [name, text] of providerFiles(provider, catalog.specialists, skills, {productName:identity.is_model===false?identity.name:undefined})) {
-    const productEntry = identity.is_model === false ? text.replace('Continue o produto existente.', 'Antes de qualquer trabalho de produto na primeira sessão, leia e apresente ao usuário references/toolkit-readiness.md e references/capability-recommendations.md. Recomendações não instalam componentes. Continue o produto existente.') : text;
+    const productEntry = identity.is_model === false ? text.replace('Continue o produto existente.', 'Antes de qualquer trabalho de produto na primeira sessão, leia references/toolkit-readiness.md e references/capability-recommendations.md; verifique capability-status antes de apresentar as recomendações como atuais. Se estiverem obsoletas, faça nova pesquisa e use capability-report para atualização preservando o histórico. Recomendações não instalam componentes. Continue o produto existente.') : text;
     files.set(name, productEntry);
   }
   return files;

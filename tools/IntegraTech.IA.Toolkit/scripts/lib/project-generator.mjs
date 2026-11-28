@@ -7,7 +7,7 @@ import { resolve, relative, isAbsolute, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { contained, assertNoLinks } from './paths.mjs';
 import { inspectTechnologyDecision } from './technology-decision.mjs';
-import { specialistFiles } from './domain-specialist.mjs';
+import { specialistFiles, digest } from './domain-specialist.mjs';
 import { verifyResearch, verifyTechnologySources } from './domain-research.mjs';
 import { normalizeInitialContext } from './business-context.mjs';
 import { selectedProviders } from './provider-selection.mjs';
@@ -61,7 +61,7 @@ export function prepareProject({ name, provider = 'both', source = sourceRoot, c
   const rolesPath = manifest.files.find(path => path.endsWith('/fabrica/team/catalog.yaml'));
   const roles = JSON.parse(readFileSync(contained(source, rolesPath), 'utf8')).specialists;
   for (const [path, text] of providerFiles(provider, roles, sourceSkills, {productName:name})) {
-    const productEntry = text.replace('Continue o produto existente.', 'Antes de qualquer trabalho de produto na primeira sessão, leia e apresente ao usuário references/toolkit-readiness.md e references/capability-recommendations.md. Recomendações não instalam componentes. Continue o produto existente.');
+    const productEntry = text.replace('Continue o produto existente.', 'Antes de qualquer trabalho de produto na primeira sessão, leia references/toolkit-readiness.md e references/capability-recommendations.md; verifique capability-status antes de apresentar as recomendações como atuais. Se estiverem obsoletas, faça nova pesquisa e use capability-report para atualização preservando o histórico. Recomendações não instalam componentes. Continue o produto existente.');
     files.set(render(path), render(productEntry));
   }
   const architectural=structuredClone(architectureDecision);
@@ -92,6 +92,7 @@ export function prepareProject({ name, provider = 'both', source = sourceRoot, c
     plan_path: null,
     approval_path: null,
     business_implementation: 'blocked_until_scope_and_plan',
+    capability_recommendations_sha256: digest(capabilityReport),
     external_actions_authorized: false
   };
   if (files.has('references/interface-profile.json')) {

@@ -6,6 +6,7 @@ import { contained, assertNoLinks } from './paths.mjs';
 
 export const fingerprint = value => createHash('sha256').update(typeof value === 'string' || Buffer.isBuffer(value) ? value : JSON.stringify(value)).digest('hex');
 const ignored = new Set(['.git', '.integratech', '.scratch', '.superpowers', 'node_modules', 'qa-artifacts', 'runtime-publish', '.vs']);
+const maxFileBytes = 16 * 1024 * 1024;
 export function generatedOutput(directory, name) {
   return ['bin', 'obj'].includes(name) && !existsSync(join(directory, 'package.json')) && readdirSync(directory).some(file => file.endsWith('.csproj'));
 }
@@ -22,7 +23,7 @@ export function inventory(repo) {
       const stat = lstatSync(full);
       if (stat.isDirectory()) { if (!generatedOutput(directory, name)) visit(full, path); }
       else {
-        if (!stat.isFile() || stat.size > 1024 * 1024 || result.length >= 5000 || (bytes += stat.size) > 64 * 1024 * 1024)
+        if (!stat.isFile() || stat.size > maxFileBytes || result.length >= 5000 || (bytes += stat.size) > 64 * 1024 * 1024)
           throw new Error('inventário excede limites ou contém arquivo não regular');
         result.push({ path, sha256: fingerprint(readFileSync(full)) });
       }

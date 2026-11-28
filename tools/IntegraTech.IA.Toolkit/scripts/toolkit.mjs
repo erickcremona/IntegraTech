@@ -28,6 +28,8 @@ import { inspectTechnologyDecision, technologyContextHash } from './lib/technolo
 import { assessContext, inspectPreparation } from './lib/domain-specialist.mjs';
 import { collectResearch, verifyResearch } from './lib/domain-research.mjs';
 import { inspectCapabilityRecommendations } from './lib/capability-recommendations.mjs';
+import { capabilityRecommendationsStatus } from './lib/capability-recommendations.mjs';
+import { refreshCapabilityRecommendations } from './lib/capability-report.mjs';
 import { inspectSpecialist, prepareSpecialist, recordConsultation, inspectConsultation, repositorySnapshot, runCoherenceChecks, completeCoherence, inspectCoherence, readDocument } from './lib/domain-workflow.mjs';
 import { restoreAdoption } from './lib/adoption-recovery.mjs';
 import { checkPolicy, policyConfig } from './lib/policy.mjs';
@@ -57,6 +59,8 @@ const help = `IntegraTech Toolkit — Node.js >=22
   sdd-plan [--dry-run] [--repo PATH]
   sdd-task --id TASK_ID [--repo PATH]
   sdd-status [--repo PATH]
+  capability-status [--repo PATH]
+  capability-report --repo PATH --preparation-file PATH
   sdd-complete --id TASK_ID --run-id RUN_ID [--repo PATH]
   ui-capabilities
   ui-design-hash [--repo PATH]
@@ -145,6 +149,7 @@ export async function main(argv, services = {}) {
     'ui-recover': ['repo'], 'ui-design-hash':['repo'],'ui-design-init':['repo'],'ui-design-check':['repo'],'ui-capabilities': [], 'ui-prepare': ['repo','dry-run'], 'ui-status': ['repo'], 'ui-generate': ['repo','dry-run'], 'ui-validate': ['repo','local'],
     'release-init':['repo','id'],'release-check':['repo','id','stage'],'release-deploy':['repo','id','stage','approval-file','dry-run'],
     'sdd-plan':['repo','dry-run'],'sdd-task':['repo','id'],'sdd-status':['repo'],'sdd-complete':['repo','id','run-id'],
+    'capability-status':['repo'],'capability-report':['repo','preparation-file'],
     'attach-project':['repo','id','source','name','provider','context-file','dry-run'], 'attached-projects':['repo'], 'project-status':['repo','project'],
     help: [], 'create-project': ['repo', 'name', 'target', 'provider', 'dry-run', 'context-file', 'technology-file', 'preparation-file'], precheck: ['repo', 'phase'], route: ['category','request','last-asset'], providers: [], hash: ['file'],
     onboarding: ['repo', 'name', 'context-file'], 'adopt-project': ['repo', 'name', 'context-file', 'dry-run', 'technology-file', 'provider', 'preparation-file'], 'technology-check': ['repo', 'context-file', 'decision-file'], 'restore-adoption': ['journal', 'dry-run'],
@@ -158,7 +163,7 @@ export async function main(argv, services = {}) {
   };
   Object.assign(allowed,{'system-design-assess':['context-file','specification-file'],'architecture-assess':['repo','context-file','requirements-file'],'architecture-check':['repo','context-file','technology-file','decision-file'],'architecture-hash':['decision-file'],'architecture-status':['repo'],'architecture-baseline':['repo'],'architecture-complete':['repo']});
   allowed['create-project'].push('architecture-file');allowed['adopt-project'].push('architecture-file');
-  const projectCommands=['system-design-assess','architecture-status','architecture-baseline','architecture-complete','release-init','release-check','release-deploy','dispatch','precheck','policy-check','loop-start','loop-advance','loop-candidate','loop-validate','loop-review','loop-status','loop-handoff','loop-recover','run-state','close-interrupted-run','specialist-prepare','specialist-status','consultation-record','consultation-check','coherence-snapshot','coherence-run','coherence-check','coherence-status','sdd-plan','sdd-task','sdd-complete','sdd-status','graph-sync','graph-validate','graph-impact','ui-design-hash','ui-design-init','ui-design-check','ui-prepare','ui-recover','ui-status','ui-generate','ui-validate','technology-check'];
+  const projectCommands=['system-design-assess','architecture-status','architecture-baseline','architecture-complete','release-init','release-check','release-deploy','dispatch','precheck','policy-check','loop-start','loop-advance','loop-candidate','loop-validate','loop-review','loop-status','loop-handoff','loop-recover','run-state','close-interrupted-run','specialist-prepare','specialist-status','consultation-record','consultation-check','coherence-snapshot','coherence-run','coherence-check','coherence-status','sdd-plan','sdd-task','sdd-complete','sdd-status','capability-status','capability-report','graph-sync','graph-validate','graph-impact','ui-design-hash','ui-design-init','ui-design-check','ui-prepare','ui-recover','ui-status','ui-generate','ui-validate','technology-check'];
   for(const name of projectCommands)allowed[name].push('project');
   if (!Object.hasOwn(allowed, command) || Object.keys(options).some(key => !allowed[command].includes(key))) throw new Error('comando/opção desconhecido');
   const read = path => JSON.parse(readFileSync(resolve(path), 'utf8'));
@@ -211,6 +216,8 @@ export async function main(argv, services = {}) {
     case 'sdd-plan': return prepareActionPlan({repo:resolve(options.repo??repoRoot),dryRun:options['dry-run']??false});
     case 'sdd-task': return sddDelegation({repo:resolve(options.repo??repoRoot),id:options.id});
     case 'sdd-status': return sddStatus({repo:resolve(options.repo??repoRoot)});
+    case 'capability-status': return capabilityRecommendationsStatus({repo:resolve(options.repo??repoRoot)});
+    case 'capability-report': return refreshCapabilityRecommendations({repo:resolve(options.repo??repoRoot),preparation:readDecision(options['preparation-file'])});
     case 'sdd-complete': return completeSDDTask({repo:resolve(options.repo??repoRoot),id:options.id,runId:options['run-id']});
     case 'release-init':return initializeRelease({repo:resolve(options.repo??repoRoot),id:options.id});
     case 'release-check':return checkRelease({repo:resolve(options.repo??repoRoot),id:options.id,stage:options.stage});
@@ -304,6 +311,22 @@ export async function main(argv, services = {}) {
       task: read(options.task), phase: options.phase, files: read(options.files), timeoutMs: options.timeout === undefined ? 120000 : Number(options.timeout) });
   }
 }
+export function formatOperationalError(command,error){
+  const code=typeof error?.code==='string'&&/^[A-Z0-9_]{2,24}$/.test(error.code)?error.code:null;
+  if(!code)return null;
+  const recovery={
+    EPERM:'verifique as permissões de escrita do diretório; preserve o destino e inspecione temporários antes de removê-los.',
+    EACCES:'verifique as permissões de escrita do diretório e tente novamente após corrigir o acesso.',
+    EEXIST:'o destino já existe; preserve seu conteúdo e escolha um novo identificador ou reconcilie o registro.',
+    ENOENT:'confirme que a pasta de destino existe e que o caminho informado está correto.',
+    ENOTDIR:'confirme a estrutura da pasta de destino e preserve os arquivos existentes.',
+    ENOSPC:'libere espaço em disco e confira os artefatos parciais antes de repetir.',
+    EMFILE:'feche recursos/processos que mantenham muitos arquivos abertos e repita a operação.',
+    ENFILE:'reduza a concorrência no host e repita a operação.'
+  }[code]??'consulte o código operacional, preserve o destino e inspecione os artefatos antes de repetir.';
+  const safeCommand=typeof command==='string'&&/^[a-z0-9-]{1,48}$/.test(command)?command:'toolkit';
+  return `Comando ${safeCommand}: erro operacional ${code}; ${recovery}`;
+}
 if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {
   try {
     const result = await main(process.argv.slice(2));
@@ -311,7 +334,8 @@ if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1]
     if (['blocked', 'failed', 'needs_input', 'empty', 'needs_review', 'needs_clarification', 'preparing', 'installation_required', 'verification_required'].includes(result?.status) || result?.failed > 0) process.exitCode = 2;
   } catch (error) {
     // Adoption errors identify controlled conflicts/recovery paths, never print file contents.
-    if (['install', 'adopt-project', 'restore-adoption', 'create-project', 'dependencies', 'research-collect', 'specialist-check', 'specialist-prepare', 'specialist-status', 'consultation-record', 'consultation-check', 'coherence-check', 'coherence-status', 'coherence-run'].includes(process.argv[2])) console.error(error instanceof SyntaxError ? 'Documento da operação inválido.' : error.message);
+    if(formatOperationalError(process.argv[2],error))console.error(formatOperationalError(process.argv[2],error));
+    else if (['install', 'adopt-project', 'restore-adoption', 'create-project', 'dependencies', 'research-collect', 'specialist-check', 'specialist-prepare', 'specialist-status', 'consultation-record', 'consultation-check', 'coherence-check', 'coherence-status', 'coherence-run','capability-report'].includes(process.argv[2])) console.error(error instanceof SyntaxError ? 'Documento da operação inválido.' : error.message);
     else console.error('Operação rejeitada: verifique comando, arquivos, contratos e conflitos. Use help.');
     process.exitCode = 2;
   }

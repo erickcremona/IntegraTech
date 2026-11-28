@@ -6,6 +6,7 @@ import { tmpdir } from 'node:os';
 import { startTask, advanceTask } from '../scripts/lib/task-loop.mjs';
 import { fingerprint } from '../scripts/lib/candidate.mjs';
 import * as engineering from '../scripts/lib/engineering-loop.mjs';
+import {inventory,changes,owns} from '../scripts/lib/candidate.mjs';
 
 function fixture({ includeTest = true, architectureImpact = null } = {}) {
   const repo = mkdtempSync(join(tmpdir(), 'engineering-loop-'));
@@ -42,6 +43,22 @@ test('candidate detects additions/deletions and rejects changes outside original
     writeFileSync(join(f.repo, 'references/project-state.json'), '{"changed":true}');
     assert.throws(() => engineering.acceptCandidate({ ...f, expectedRevision: state.revision, profile: 'node-tests-v1' }), /ownership|insumos|gate/);
   } finally { rmSync(f.repo, { recursive: true, force: true }); }
+});
+
+test('loop inventory includes large local documentation and still detects authorized source changes',()=>{
+ const f=fixture();
+ try{
+  mkdirSync(join(f.repo,'docs'),{recursive:true});
+  const attachment=Buffer.alloc(1800*1024,0x41);writeFileSync(join(f.repo,'docs/local-attachment.bin'),attachment);
+  const baseline=inventory(f.repo);
+  assert.equal(baseline.find(item=>item.path==='docs/local-attachment.bin').sha256,fingerprint(attachment));
+  writeFileSync(join(f.repo,'src/main.mjs'),'export const value = 3;');
+  const authorized=changes(baseline,inventory(f.repo));
+  assert.deepEqual(authorized,['src/main.mjs']);assert.equal(owns(['src'],authorized[0]),true);
+  writeFileSync(join(f.repo,'docs/local-attachment.bin'),Buffer.alloc(1800*1024,0x42));
+  const outsideOwnership=changes(baseline,inventory(f.repo));
+  assert.ok(outsideOwnership.includes('docs/local-attachment.bin'));assert.equal(owns(['src'],'docs/local-attachment.bin'),false);
+ }finally{rmSync(f.repo,{recursive:true,force:true});}
 });
 
 test('observed validation and both fixed reviews are required for delivery; edits invalidate it', async () => {

@@ -6,6 +6,7 @@ import { mkdtempSync, readFileSync, existsSync, readdirSync, writeFileSync, syml
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { pathToFileURL } from 'node:url';
+import {symlinkTest} from './host-capability-fixture.mjs';
 const generatorUrl = new URL('./generation-fixture.mjs', import.meta.url);
 const read = path => JSON.parse(readFileSync(path, 'utf8'));
 const canonicalAuthors = readFileSync(new URL('../../../AUTHORS.md', import.meta.url), 'utf8');
@@ -27,9 +28,11 @@ test('gerador: simulação não escreve; rejeita nomes, destino interno e colis�
   writeFileSync(join(empty, 'personal.txt'), 'preservar');
   assert.throws(() => createProject({ name: 'NovaLoja', target: empty, provider: 'both', presentation: 'worker' }));
   assert.equal(readFileSync(join(empty, 'personal.txt'), 'utf8'), 'preservar');
-  const linkParent = mkdtempSync(join(tmpdir(), 'model-link-'));
-  symlinkSync(empty, join(linkParent, 'link'), 'junction');
-  assert.throws(() => createProject({ name: 'NovaLoja', target: join(linkParent, 'link', 'new'), provider: 'both', presentation: 'worker' }));
+});
+symlinkTest(test,'gerador: rejeita destino que atravessa junction',async()=>{
+ const {createProject}=await import(generatorUrl);const empty=mkdtempSync(join(tmpdir(),'model-link-target-'));const linkParent=mkdtempSync(join(tmpdir(),'model-link-'));
+ symlinkSync(empty,join(linkParent,'link'),'junction');
+ assert.throws(()=>createProject({name:'NovaLoja',target:join(linkParent,'link','new'),provider:'both',presentation:'worker'}));
 });
 test('gerador: materializa identidade e provedores independentes', async () => {
   const { createProject } = await import(generatorUrl);

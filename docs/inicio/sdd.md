@@ -35,6 +35,10 @@ npm run toolkit -- sdd-complete --id ID_DA_TAREFA --run-id ID_DO_LOOP
 npm run toolkit -- sdd-status
 ```
 
+`sdd-status` também mostra `project_progress`, derivado do estado do projeto, do plano aprovado e dos checkpoints verificados. `active_phase` aponta para a primeira fase sem conclusão; `business_implementation` informa se há tarefa liberada ou se tudo terminou. Esse resumo não reescreve `project-state.json` nem modifica o histórico. O mesmo comando apresenta o estado de `capability_recommendations`; recomendações ausentes, alteradas ou vinculadas a contexto antigo não devem ser apresentadas como atuais.
+
+Após mudar o contexto, gere e confira novas recomendações com `capability-report --repo PATH --preparation-file PATH` e verifique com `capability-status --repo PATH`. A preparação precisa estar vinculada ao contexto e incluir consultas verificáveis; o relatório anterior é preservado em `references/history/capability-recommendations/` antes da substituição.
+
 sdd-complete exige delivery_valid do loop e atestação dos testes previstos para os bytes atuais. Registra checkpoint em qa-artifacts/sdd (ignorado pelo Git), com vínculo ao plano, aceite, execução e pareceres. Não aceita --passed ou declaração do chamador. Repetir conclusão idêntica não reexecuta trabalho. Alterar evidências ou a execução do checkpoint invalida suas dependências.
 
 O checkpoint preserva a conclusão histórica do incremento. Fases seguintes podem modificar arquivos compartilhados no escopo aprovado; não se exige que o snapshot global da primeira fase seja igual ao código após a segunda. Cada novo incremento precisa de sua própria validação/revisão. A fase só é concluída quando todas suas tarefas têm checkpoints válidos. Não apagar checkpoints para reiniciar orçamento. Registros locais não são autenticados contra quem escreve no workspace.
@@ -50,6 +54,8 @@ Referências consultadas: [GitHub Spec Kit](https://github.com/github/spec-kit),
 Cada novo aceite cria uma identidade de execução própria, mesmo sem alterações no plano, preservando o histórico. Checkpoints registram a versão validada: alterações posteriores não são cobertas pelo registro antigo. A próxima tarefa deve começar nessa versão e só pode modificar seus arquivos aprovados; mudanças fora desse fluxo exigem retomada válida ou replanejamento.
 
 A versão atual é conferida pelo encadeamento dos inventários das execuções, sem usar a data declarada do checkpoint como autoridade. Checkpoints divergentes ou ciclos de versões bloqueiam o avanço até reconciliação e nova validação. Para evitar conflitos, conclua um incremento antes de integrar outro, inclusive em fases independentes.
+
+O inventário do loop é um snapshot de integridade diferente do snapshot arquitetural: o loop inclui documentação e anexos locais para perceber alterações nos insumos, com limites por arquivo, total e quantidade; o snapshot arquitetural filtra documentação de gestão para descrever o código-fonte do produto. Nenhuma dessas visões ignora arquivos autorizados: mudanças autorizadas são comparadas com a linha de base do loop, e mudanças fora do ownership bloqueiam.
 
 
 Código e segurança são revisados em paralelo sobre o mesmo candidato, aguardando ambos os resultados; a revisão arquitetural e de dados são adicionadas conforme o impacto, e UX continua após a aprovação das revisões técnicas. O `security-reviewer` usa a skill `integratech-seguranca` com referências OWASP contextuais; decisões de segurança arquiteturais também exigem acionamento do CTO antes do aceite/implementação. Análises independentes somente de leitura podem ser delegadas pelo CTO na sessão nativa, até duas por produto, com entradas fixadas e consolidação. Não há executor automático dessas análises. Implementação permanece sequencial. Recomendações devem explicar fundamentos, alternativas, custos e limites, inclusive quando for melhor simplificar, adiar ou não implementar.

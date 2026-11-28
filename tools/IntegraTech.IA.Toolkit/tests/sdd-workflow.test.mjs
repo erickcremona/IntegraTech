@@ -160,6 +160,15 @@ test('SDD dependencies block the second phase before a verified checkpoint exist
   assert.throws(() => startTask({ repo: f.repo, delegation, phase: 'business', provider: 'codex' }));
 });
 
+test('SDD status derives current phase and implementation readiness without rewriting project history',t=>{
+ const f=fixture(t);prepareActionPlan(f);
+ f.state.active_phase='design';f.state.business_implementation='blocked_until_scope_and_plan';f.save('references/project-state.json',f.state);
+ const status=sddStatus(f);
+ assert.deepEqual(status.project_progress,{source:'references/project-state.json + approved SDD plan/checkpoints',scope_status:'defined',plan_gate:'approved',active_phase:'register',business_implementation:'ready'});
+ const stored=JSON.parse(readFileSync(join(f.repo,'references/project-state.json'),'utf8'));
+ assert.equal(stored.active_phase,'design');assert.equal(stored.business_implementation,'blocked_until_scope_and_plan');
+});
+
 test('SDD completion rejects a generic run and an exact but unobserved task run', t => {
   const f = fixture(t); prepareActionPlan(f);
   assert.throws(() => completeSDDTask({ repo: f.repo, id: 'register-task', runId: 'generic-run' }), /corresponde/);

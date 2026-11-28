@@ -35,6 +35,8 @@ Fases: toolkit (manutenção técnica), discovery (contexto incompleto permitido
 
 O loop assistido registra candidatos, validação isolada e pareceres vinculados ao mesmo digest. Use `loop-candidate`, `loop-validate`, `loop-review` e `loop-handoff` após os gates. `loop-status` recalcula delivery_valid; alterações invalidam evidências. Há limites persistidos de tentativas, correções e tempo. Isolamento indisponível e revisão interrompida sem término dos descendentes comprovado bloqueiam, sem fallback no host ou replay. Implementação automática permanece desabilitada. [Procedimento e limites](../../docs/inicio/loop-engenharia.md).
 
+`sdd-status` deriva a fase atual e a liberação de implementação do plano aprovado e dos checkpoints, sem alterar o histórico em `project-state.json`. Use `capability-status` para conferir se o relatório de recomendações ainda corresponde ao contexto; após nova pesquisa, `capability-report --repo PATH --preparation-file PATH` arquiva a versão anterior e publica a atual. Erros operacionais informam comando, código e recuperação sem imprimir conteúdo privado.
+
 ## Instalação e manutenção
 
 ```powershell

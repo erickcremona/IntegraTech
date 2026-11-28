@@ -5,6 +5,7 @@ import assert from 'node:assert/strict';
 import { mkdtempSync, readFileSync, writeFileSync, existsSync, mkdirSync, symlinkSync, readdirSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import {symlinkTest} from './host-capability-fixture.mjs';
 import { pathToFileURL } from 'node:url';
 import { install, providerFiles, validateInstalled, repoRoot } from '../scripts/lib/installer.mjs';
 import { catalog } from '../scripts/lib/governance.mjs';
@@ -68,7 +69,7 @@ test('Cursor: valida arquivo com finais de linha Windows equivalentes', () => {
   writeFileSync(rulePath, readFileSync(rulePath, 'utf8').replace(/\n/g, '\r\n'));
   assert.deepEqual(validateInstalled(repo, 'all'), []);
 });
-test('Cursor: conflitos e links são detectados antes de escrever', () => {
+symlinkTest(test,'Cursor: conflitos e links são detectados antes de escrever', () => {
   const repo = temp('cursor-conflict-');
   mkdirSync(join(repo, '.cursor/rules'), { recursive: true });
   writeFileSync(join(repo, '.cursor/rules/integratech.mdc'), 'regra própria');

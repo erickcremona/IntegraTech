@@ -14,3 +14,8 @@ export function failureCode(result) {
   if (result.code !== 0) return 'EXIT_NONZERO';
   return 'UNKNOWN';
 }
+export function testSuiteOutcome({result,report='',symlinkStatus='available'}){
+  if(symlinkStatus==='unavailable'||report.includes('symlink_unavailable'))return {status:'blocked',reason_code:'symlink_unavailable'};
+  if(result.code===0&&!result.timedOut&&!result.overflow&&!result.error)return {status:'passed'};
+  return {status:'failed',reason_code:failureCode(result)};
+}

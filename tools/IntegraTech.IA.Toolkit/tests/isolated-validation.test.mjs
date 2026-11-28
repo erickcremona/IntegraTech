@@ -5,6 +5,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { createHash } from 'node:crypto';
 import { validateIsolated as actualValidateIsolated } from '../scripts/lib/isolated-validation.mjs';
+import { symlinkCapability } from '../scripts/lib/host-capabilities.mjs';
 const validateIsolated = options => actualValidateIsolated({...options,oracles:options.oracles ?? {root:options.repo,files:options.files}});
 const parentTap='TAP version 13\n# Subtest: registered\nok 1 - registered\n1..1\n# tests 1\n# suites 1\n# pass 1\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 1\n';
 const leafTap=parentTap.replaceAll('registered','assertion').replace('# suites 1','# suites 0');
@@ -16,13 +17,27 @@ async function withHostControl(fn) {
 test('rejects arbitrary command profiles without executing candidate', () => fixture(async repo => {
  const r = await validateIsolated({repo,files:{},profile:'sh -c true'}); assert.equal(r.status,'blocked'); assert.equal(r.reason_code,'unsupported_profile');
 }));
-test('rejects inventory escapes, symlinks, changed bytes and secrets', () => fixture(async repo => {
- await writeFile(join(repo,'ok.test.mjs'),'test'); await mkdir(join(repo,'linked-target')); await writeFile(join(repo,'linked-target','link.test.mjs'),'test');
- await symlink(join(repo,'linked-target'),join(repo,'linked'),'junction');
- for (const [path, hash, code] of [['../escape',digest(''),'invalid_inventory'],['linked/link.test.mjs',digest('test'),'unsafe_inventory'],['ok.test.mjs',digest('different'),'inventory_mismatch']]) {
+test('rejects inventory escapes, changed bytes and secrets', () => fixture(async repo => {
+ await writeFile(join(repo,'ok.test.mjs'),'test');
+ for (const [path, hash, code] of [['../escape',digest(''),'invalid_inventory'],['ok.test.mjs',digest('different'),'inventory_mismatch']]) {
  const r=await validateIsolated({repo,files:{[path]:hash},profile:'node-tests-v1'}); assert.equal(r.reason_code,code); }
  const secret=['-----BEGIN', 'PRIVATE KEY-----'].join(' '); await writeFile(join(repo,'secret.test.mjs'),secret);
  assert.equal((await validateIsolated({repo,files:{'secret.test.mjs':digest(secret)},profile:'node-tests-v1'})).reason_code,'secret_detected');
+}));
+test('rejects symlinked inventory paths when the host can create directory junctions',t=>{
+ const capability=symlinkCapability();if(capability.status==='unavailable')return t.skip(`${capability.reason_code} (${capability.error_code}); this host cannot execute the symlink security oracle.`);
+ return fixture(async repo=>{
+  await writeFile(join(repo,'target.test.mjs'),'test');await symlink(join(repo,'target.test.mjs'),join(repo,'linked.test.mjs'));
+  const r=await validateIsolated({repo,files:{'linked.test.mjs':digest('test')},profile:'node-tests-v1'});assert.equal(r.reason_code,'unsafe_inventory');
+ });
+});
+test('preflights symlink-dependent frozen tests and reports a host capability block',()=>fixture(async repo=>{
+ const source="import test from 'node:test'; import {symlinkSync} from 'node:fs'; test('junction security',()=>symlinkSync('outside','link'));";
+ await writeFile(join(repo,'junction.test.mjs'),source);let spawned=false;
+ const cp=await import('node:child_process');const {syncBuiltinESMExports}=await import('node:module');const previous=cp.default.spawn;
+ cp.default.spawn=()=>{spawned=true;throw Error('must not start')};syncBuiltinESMExports();
+ try{const r=await actualValidateIsolated({repo,files:{'junction.test.mjs':digest(source)},profile:'node-tests-v1',oracles:{root:repo,files:{'junction.test.mjs':digest(source)}},symlinkProbe:()=>({status:'unavailable',reason_code:'symlink_unavailable',error_code:'EPERM'})});assert.equal(r.status,'blocked');assert.equal(r.reason_code,'symlink_unavailable');assert.equal(spawned,false);}
+ finally{cp.default.spawn=previous;syncBuiltinESMExports();}
 }));
 test('zero tests are blocked', () => fixture(async repo => {
  await writeFile(join(repo,'readme.md'),'hello'); assert.equal((await validateIsolated({repo,files:{'readme.md':digest('hello')},profile:'node-tests-v1'})).reason_code,'no_tests');

@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { mkdtempSync, readFileSync, writeFileSync, existsSync, mkdirSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import {symlinkTest} from './host-capability-fixture.mjs';
 const moduleUrl = new URL('../scripts/lib/installer.mjs', import.meta.url);
 test('instalador: simula sem escrever, instala ambos e detecta deriva', async () => {
   const { install } = await import(moduleUrl);
@@ -29,7 +30,7 @@ test('instalador: conflito não produz instalação parcial e escolha é explíc
   assert.equal(existsSync(join(only, 'CLAUDE.md')), false);
   assert.throws(() => install(only, 'other'));
 });
-test('instalador: bloqueia caminhos que atravessam junction', async () => {
+symlinkTest(test,'instalador: bloqueia caminhos que atravessam junction', async () => {
   const { install } = await import(moduleUrl);
   const { symlinkSync } = await import('node:fs');
   const repo = mkdtempSync(join(tmpdir(), 'integratech-link-'));

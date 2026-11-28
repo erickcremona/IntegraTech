@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { mkdtempSync, mkdirSync, readFileSync, writeFileSync, symlinkSync, existsSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { tmpdir } from 'node:os';
+import {symlinkTest} from './host-capability-fixture.mjs';
 import { createHash } from 'node:crypto';
 import { pathToFileURL } from 'node:url';
 const graphUrl = new URL('../scripts/lib/traceability-graph.mjs', import.meta.url);
@@ -79,19 +80,22 @@ test('grafo: rejeita ids, pontas, duplicações, pointers e fontes inválidos',a
     f=>f.graph.nodes[0].id='unsafe id'
   ]) { const f=fixture();mutate(f);f.persist();assert.equal(validateGraph({repo:f.repo}).status,'blocked'); }
 });
-test('grafo: caminhos, links, segredos e limites não expõem conteúdo nem permitem impacto',async()=>{
+test('grafo: caminhos, segredos e limites não expõem conteúdo nem permitem impacto',async()=>{
   const {validateGraph,graphImpact}=await import(graphUrl);
   for(const path of ['../escape.json','/tmp/escape.json','references/../context.json','.env','.git/config','secrets/config.json','references\\context.json']) {
     const f=fixture();f.graph.nodes[0].source.path=path; f.persist();assert.equal(validateGraph({repo:f.repo}).status,'blocked');
     assert.equal(graphImpact({repo:f.repo,id:'REQ'}).status,'blocked');
   }
-  const f=fixture(),outside=mkdtempSync(join(tmpdir(),'trace-outside-'));
-  writeFileSync(join(outside,'data.json'),'{}'); symlinkSync(outside,join(f.repo,'linked'),'junction');
-  f.graph.nodes[0].source.path='linked/data.json';f.persist(); assert.equal(validateGraph({repo:f.repo}).status,'blocked');
+  const f=fixture();
   f.graph.nodes[0].source.path='references/context.json'; f.save('references/context.json','api_key = private-value-do-not-print'); f.persist();
   const serialized=JSON.stringify(validateGraph({repo:f.repo}));assert.ok(serialized.includes('blocked'));assert.ok(!serialized.includes('private-value-do-not-print'));
   f.save('references/traceability-graph.json','{invalid-private-document');assert.equal(validateGraph({repo:f.repo}).status,'blocked');
   f.save('references/traceability-graph.json',' '.repeat(262145));assert.equal(validateGraph({repo:f.repo}).status,'blocked');
+});
+symlinkTest(test,'grafo: rejeita fontes atravessadas por links',async()=>{
+ const {validateGraph}=await import(graphUrl);const f=fixture(),outside=mkdtempSync(join(tmpdir(),'trace-outside-'));
+ writeFileSync(join(outside,'data.json'),'{}');symlinkSync(outside,join(f.repo,'linked'),'junction');f.graph.nodes[0].source.path='linked/data.json';f.persist();
+ assert.equal(validateGraph({repo:f.repo}).status,'blocked');
 });
 test('grafo: CLI aceita subcomandos e rejeita vazio/inválido',async()=>{
   const f=fixture();const {main}=await import('../scripts/toolkit.mjs');
